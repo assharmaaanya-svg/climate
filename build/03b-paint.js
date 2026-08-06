@@ -107,9 +107,9 @@ function ridgeLine(g, pts, yBase, rough, seed){
 */
 function paintTree(g, x, base, h, kind, tint){
   const w = h*(kind==="poplar"?0.16: kind==="pine"?0.42: kind==="willow"?0.62:0.72);
-  const dark = mixL([38,54,34],[58,74,40], tint);
-  const mid  = mixL([62,88,46],[96,120,54], tint);
-  const lite = mixL([120,148,72],[164,182,96], tint);
+  const dark = mixL([34,52,38],[56,74,42], tint);
+  const mid  = mixL([58,88,50],[98,122,56], tint);
+  const lite = mixL([126,152,74],[176,188,98], tint);
 
   // trunk, tapering, never straight
   const lean = sr(-0.10,0.10);
@@ -242,7 +242,9 @@ function bakeTerrain(){
       const depth = band/3;
       const base = hy - band*bh*0.010;
       const amp  = bh*(0.100 - band*0.017);
-      const col  = mixL([70,98,86],[132,148,134], depth*0.78);
+      // hue steps, not just value steps: the farthest range is frankly blue,
+      // the nearest frankly green. This is what makes depth read at a glance.
+      const col  = mixL([58,92,104],[122,146,124], (1-depth)*0.85);
       const pts=[];
       for (let x=-20; x<=bw+20; x+=5){
         const n  = fbm(x*0.0014 + band*7.7, 5);
@@ -375,7 +377,7 @@ function bakeTerrain(){
     blocks.sort((a,b)=>a.h-b.h);
 
     for (const b of blocks){
-      const col = mixL([94,108,122],[130,132,138], b.k||0.5);
+      const col = mixL([86,104,124],[128,130,140], b.k||0.5);
       const top = base-b.h;
       if (b.kind==="tower"){
         g.strokeStyle=rgb(shade(col,0.78)); g.lineWidth=Math.max(1,b.w*0.09);
@@ -709,6 +711,14 @@ function blitLayer(img, L, dx, dy, extraA){
     sctx.globalCompositeOperation="source-atop";
     sctx.fillStyle=rgba(airlight(), Math.min(0.985, veil));
     sctx.fillRect(0,0,bw,bh);
+    // an explicit cool push on top of the veil. Aerial perspective is a hue
+    // shift as much as a contrast loss, and stating it plainly reads better than
+    // letting the maths do it alone.
+    if (veil>0.05 && AIR.h<0.55){
+      sctx.globalCompositeOperation="source-atop";
+      sctx.fillStyle=rgba([96,140,182], Math.min(0.34, veil*0.30)*(1-AIR.h*1.4));
+      sctx.fillRect(0,0,bw,bh);
+    }
   }
   ctx.save();
   ctx.globalAlpha = cl01(T0*3.4)*(extraA===undefined?1:extraA);
@@ -883,5 +893,598 @@ function bloom(amount, thresholdLift){
   ctx.globalAlpha=amount;
   ctx.imageSmoothingEnabled=true;
   ctx.drawImage(BL2, 0,0, W,H);
+  ctx.restore();
+}
+
+/* ============================================================================
+   FOREGROUND FRINGE
+   The single biggest cinematic difference between a diagram of a field and the
+   memory of standing in one: a band of near-black vegetation across the bottom
+   of the frame, close enough to be out of focus, catching a thread of rim light
+   on the sun's side, moving all the time. The sky and the light behind it do the
+   emotional work; this is what makes them read as *depth* rather than as layers.
+   Grasses, seedheads and cow parsley, because a fringe of identical blades is
+   just a comb.
+   ========================================================================== */
+const FRINGE = [];
+function buildFringe(){
+  FRINGE.length=0;
+  _sd = 5150221;
+  const n = LOW ? 90 : 190;
+  for (let i=0;i<n;i++){
+    const kind = srnd();
+    FRINGE.push({
+      x: sr(-0.04, 1.04),
+      // depth: 0 is right against the lens, 1 is a few metres back
+      z: Math.pow(srnd(), 0.7),
+      h: sr(0.045, 0.30),
+      lean: sr(-1, 1),
+      ph: sr(0, TAU),
+      sp: sr(0.7, 1.5),
+      kind: kind<0.26 ? "blade" : kind<0.44 ? "seed" : kind<0.54 ? "parsley"
+          : kind<0.60 ? "dock"  : kind<0.80 ? "cosmos" : kind<0.93 ? "daisy" : "echinacea",
+      k: sr(0,1),
+      hue: sr(0,1),
+      bokeh: srnd()<0.16
+    });
+  }
+  FRINGE.sort((a,b)=>b.z-a.z);        // far ones first
+}
+
+function drawFringe(t, opt){
+  opt = opt||{};
+  if (!FRINGE.length) buildFringe();
+  const baseY = AP.y + AP.h*(opt.base===undefined?1.03:opt.base);
+  const sp = sunPos(AP);
+  const w8 = AIR.wind + AIR.gust;
+  const amount = opt.a===undefined?1:opt.a;
+  if (amount<0.02) return;
+
+  ctx.save();
+  for (const f of FRINGE){
+    // nearer stems are bigger, darker and softer
+    const near = 1-f.z;
+    const x = AP.x + f.x*AP.w;
+    const hgt = AP.h*f.h*(0.55+near*0.95);
+    const tipY = baseY - hgt;
+    if (tipY > AP.y+AP.h) continue;
+
+    // silhouette value: almost black in front, lifting toward airlight behind
+    const dark = mixL([16,20,18], [40,48,42], f.k*0.6);
+    const col = mixL(dark, airlight(), f.z*0.42 + AIR.h*0.18);
+    const a = (0.40 + near*0.30) * amount;
+
+    const sway = Math.sin(t*f.sp + f.ph)*hgt*0.10*w8
+               + Math.sin(t*f.sp*2.3 + f.ph)*hgt*0.03*w8;
+    const tipX = x + f.lean*hgt*0.20 + sway;
+    const lw = Math.max(0.8, AP.h*0.0022*(0.35+near*1.4));
+
+    // the stem
+    ctx.strokeStyle = rgba(col, a);
+    ctx.lineWidth = lw;
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.moveTo(x, baseY);
+    ctx.quadraticCurveTo(x + f.lean*hgt*0.06 + sway*0.35, baseY-hgt*0.58, tipX, tipY);
+    ctx.stroke();
+
+    if (f.kind==="blade"){
+      // a broad grass blade folding over
+      ctx.fillStyle = rgba(col, a*0.9);
+      ctx.beginPath();
+      ctx.moveTo(x-lw*0.6, baseY);
+      ctx.quadraticCurveTo(x + f.lean*hgt*0.10 + sway*0.4, baseY-hgt*0.60, tipX, tipY);
+      ctx.quadraticCurveTo(x + f.lean*hgt*0.02 + sway*0.4 + lw*2.2, baseY-hgt*0.56, x+lw*0.6, baseY);
+      ctx.closePath(); ctx.fill();
+    } else if (f.kind==="seed"){
+      // a feathered seedhead — the thing that catches the light
+      const sl = hgt*0.26, dir = Math.atan2(tipY-(baseY-hgt*0.6), tipX-x);
+      for (let k=0;k<16;k++){
+        const fk = k/15;
+        const px2 = tipX + Math.cos(dir)*sl*fk*0.5;
+        const py2 = tipY + Math.sin(dir)*sl*fk*0.5;
+        const spread = sl*0.30*Math.sin(fk*PI);
+        ctx.strokeStyle = rgba(col, a*0.55);
+        ctx.lineWidth = Math.max(1, lw*0.5);
+        ctx.beginPath();
+        ctx.moveTo(px2, py2);
+        ctx.lineTo(px2 + (hash(k*3.1+f.ph)-0.5)*spread*2.4, py2 - spread*1.5);
+        ctx.stroke();
+      }
+    } else if (f.kind==="parsley"){
+      // cow parsley: an umbel of tiny rays
+      const n2 = 13;
+      for (let k=0;k<n2;k++){
+        const a2 = -PI*0.5 + (k/(n2-1)-0.5)*PI*0.95;
+        const rl = hgt*0.10*(0.6+hash(k*5.7+f.ph)*0.7);
+        ctx.strokeStyle = rgba(col, a*0.6);
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(tipX, tipY);
+        const ex = tipX+Math.cos(a2)*rl, ey = tipY+Math.sin(a2)*rl;
+        ctx.lineTo(ex, ey); ctx.stroke();
+        ctx.fillStyle = rgba(col, a*0.7);
+        ctx.beginPath(); ctx.arc(ex, ey, Math.max(1, lw*0.55), 0, TAU); ctx.fill();
+      }
+    } else if (f.kind==="dock"){
+      // a dock head: a dense dark spike
+      ctx.fillStyle = rgba(col, a);
+      for (let k=0;k<9;k++){
+        const fk=k/8;
+        ctx.beginPath();
+        ctx.ellipse(tipX + (hash(k*7.7+f.ph)-0.5)*lw*2.5,
+                    tipY + fk*hgt*0.16,
+                    lw*1.1, lw*1.7, 0, 0, TAU);
+        ctx.fill();
+      }
+    } else {
+      /* A flower head. These are not silhouettes — they are the things that
+         catch the low sun and glow, which is what the references all do. So they
+         keep their colour, lift toward the light, and the nearest ones go soft. */
+      const petalCols = {
+        cosmos:    [[240,182,206],[248,214,226],[232,152,186],[252,236,240]],
+        daisy:     [[252,248,238],[246,240,224],[255,252,246]],
+        echinacea: [[228,168,196],[214,146,180],[238,190,210]]
+      }[f.kind];
+      const base = petalCols[(f.hue*petalCols.length)|0];
+      // backlight: petals are thin, so they transmit
+      const lit  = mixL(base, mixL(skyStops().sun,[255,255,250],0.4), 0.30+near*0.26);
+      const petalCol = mixL(lit, airlight(), f.z*0.30);
+      const R = hgt*(f.kind==="daisy"?0.055:0.075);
+      const np = f.kind==="daisy" ? 14 : f.kind==="cosmos" ? 8 : 13;
+      const softness = near;                    // nearest ones are out of focus
+      ctx.save();
+      ctx.translate(tipX, tipY);
+      ctx.rotate(Math.sin(t*f.sp*0.7+f.ph)*0.10);
+      if (f.kind==="echinacea"){
+        // petals sweep back and down
+        for (let k=0;k<np;k++){
+          const a2 = k/np*TAU + f.ph;
+          ctx.fillStyle = rgba(petalCol, a*0.42*(0.62+0.3*Math.abs(Math.cos(a2))));
+          ctx.save(); ctx.rotate(a2);
+          ctx.beginPath();
+          ctx.ellipse(0, R*0.62, R*0.16, R*0.60, 0, 0, TAU); ctx.fill();
+          ctx.restore();
+        }
+        // the dark cone in the middle
+        ctx.fillStyle = rgba(mixL([166,86,44], airlight(), f.z*0.3), a*0.55);
+        ctx.beginPath(); ctx.ellipse(0,0,R*0.30,R*0.26,0,0,TAU); ctx.fill();
+      } else {
+        for (let k=0;k<np;k++){
+          const a2 = k/np*TAU + f.ph;
+          ctx.fillStyle = rgba(petalCol, a*0.42*(0.70+0.26*Math.abs(Math.cos(a2))));
+          ctx.save(); ctx.rotate(a2);
+          ctx.beginPath();
+          ctx.ellipse(0, -R*0.56, R*(f.kind==="daisy"?0.11:0.24), R*0.56, 0, 0, TAU);
+          ctx.fill();
+          ctx.restore();
+        }
+        ctx.fillStyle = rgba(mixL([246,204,88], [255,238,170], near*0.5), a*0.5);
+        ctx.beginPath(); ctx.arc(0,0,R*(f.kind==="daisy"?0.24:0.20),0,TAU); ctx.fill();
+      }
+      // a glow around it, because it is between you and the sun
+      if (sp.up>0.02){
+        ctx.globalCompositeOperation="lighter";
+        const gg=ctx.createRadialGradient(0,0,0,0,0,R*2.1);
+        gg.addColorStop(0, rgba(mixL(petalCol,[255,252,242],0.6), a*0.16*(1-AIR.h*0.5)));
+        gg.addColorStop(1, rgba(petalCol,0));
+        ctx.fillStyle=gg; ctx.beginPath(); ctx.arc(0,0,R*2.1,0,TAU); ctx.fill();
+      }
+      ctx.restore();
+      // and a couple of them are so close they are only a disc of light
+      if (f.bokeh && sp.up>0.02){
+        ctx.save(); ctx.globalCompositeOperation="lighter";
+        const br=R*2.4;
+        const bg=ctx.createRadialGradient(tipX,tipY,0,tipX,tipY,br);
+        bg.addColorStop(0, rgba(mixL(petalCol,[255,250,238],0.5), a*0.20));
+        bg.addColorStop(0.7, rgba(petalCol, a*0.10));
+        bg.addColorStop(1, rgba(petalCol,0));
+        ctx.fillStyle=bg; ctx.beginPath(); ctx.arc(tipX,tipY,br,0,TAU); ctx.fill();
+        ctx.restore();
+      }
+    }
+
+    // rim light on the sun's side — this is what stops it reading as a black mask
+    if (sp.up > 0.02 && f.z < 0.62){
+      const dir = sp.x > x ? 1 : -1;
+      ctx.strokeStyle = rgba(mixL(skyStops().sun, [255,255,244], 0.35), a*0.34*(1-AIR.h*0.5));
+      ctx.lineWidth = Math.max(1, lw*0.42);
+      ctx.beginPath();
+      ctx.moveTo(x + dir*lw*0.45, baseY);
+      ctx.quadraticCurveTo(x + f.lean*hgt*0.06 + sway*0.35 + dir*lw*0.45, baseY-hgt*0.58,
+                           tipX + dir*lw*0.4, tipY);
+      ctx.stroke();
+    }
+  }
+  ctx.restore();
+}
+
+/* ============================================================================
+   PRESENCE WITHOUT PEOPLE
+   The reference that settles this: two figures seen only as soft shadows thrown
+   onto a sunlit sheet. You read the gesture instantly and you never see a face.
+   So nobody in this work is ever drawn as a body in the light — they are drawn
+   as shadows on cloth, shadows on a floor, a hand at the edge of frame.
+   ========================================================================== */
+
+/* a soft shadow cast onto a cloth region, in multiply, so it belongs to the
+   fabric rather than sitting on top of it */
+function shadowOnCloth(o){
+  const { x, y, s, t } = o;
+  const a = (o.a===undefined?1:o.a);
+  if (a<0.02) return;
+  ctx.save();
+  if (o.clip) o.clip();
+  ctx.globalCompositeOperation = "multiply";
+  // three passes at increasing offset = a penumbra without a filter
+  const passes = [[0,0,0.30,1.00],[-5,-3,0.16,1.06],[6,4,0.14,1.09],[-11,7,0.09,1.14]];
+  for (const p of passes){
+    ctx.save();
+    ctx.globalAlpha = a*p[2];
+    ctx.fillStyle = o.col ? rgb(o.col) : "rgb(96,78,72)";
+    const sc = p[3];
+    ctx.translate(x+p[0], y+p[1]);
+    ctx.scale(sc, sc);
+    ctx.translate(-x, -y);
+    // a figure reduced to its gesture: head, shoulders, one raised arm
+    const HEAD = s*0.070;
+    const shY = y - s*0.78, neck = y - s*0.845;
+    ctx.beginPath();
+    ctx.ellipse(x, neck-HEAD*0.95, HEAD*0.92, HEAD*1.06, 0.05, 0, TAU); ctx.fill();
+    // hair, loose, moving
+    ctx.beginPath();
+    ctx.ellipse(x-s*0.014, neck-HEAD*0.86, HEAD*1.10, HEAD*1.22,
+                0.08+Math.sin(t*0.8)*0.05, 0, TAU); ctx.fill();
+    // torso, tapering
+    ctx.beginPath();
+    ctx.moveTo(x-s*0.095, shY);
+    ctx.quadraticCurveTo(x-s*0.070, y-s*0.56, x-s*0.085, y-s*0.44);
+    ctx.lineTo(x+s*0.085, y-s*0.44);
+    ctx.quadraticCurveTo(x+s*0.070, y-s*0.56, x+s*0.095, shY);
+    ctx.quadraticCurveTo(x, shY-s*0.026, x-s*0.095, shY);
+    ctx.closePath(); ctx.fill();
+    // a skirt, which the wind gets under
+    const sw = Math.sin(t*1.2)*s*0.030*(AIR.wind+AIR.gust);
+    ctx.beginPath();
+    ctx.moveTo(x-s*0.085, y-s*0.46);
+    ctx.lineTo(x+s*0.085, y-s*0.46);
+    ctx.quadraticCurveTo(x+s*0.160+sw, y-s*0.20, x+s*0.120+sw, y);
+    ctx.quadraticCurveTo(x+sw*0.6, y+s*0.02, x-s*0.120+sw, y);
+    ctx.quadraticCurveTo(x-s*0.160+sw, y-s*0.20, x-s*0.085, y-s*0.46);
+    ctx.closePath(); ctx.fill();
+    // the arm that is doing something — reaching up to the line
+    const up = o.reach===undefined ? 0.85 : o.reach;
+    ctx.strokeStyle = ctx.fillStyle; ctx.lineCap="round";
+    ctx.lineWidth = s*0.048;
+    const shx = x+s*0.088;
+    const ex = shx + s*0.070, ey = shY - s*0.14*up + s*0.10*(1-up);
+    const hx = ex + s*0.030, hy = ey - s*0.30*up + s*0.22*(1-up);
+    ctx.beginPath(); ctx.moveTo(shx, shY+s*0.010); ctx.lineTo(ex,ey); ctx.lineTo(hx,hy); ctx.stroke();
+    // and the other, down
+    ctx.beginPath();
+    ctx.moveTo(x-s*0.088, shY+s*0.010);
+    ctx.lineTo(x-s*0.120, y-s*0.56); ctx.lineTo(x-s*0.108, y-s*0.40); ctx.stroke();
+    ctx.restore();
+  }
+  ctx.restore();
+}
+
+/* a small child's shadow, running */
+function childShadowOnGround(o){
+  const { x, y, s, t } = o;
+  const a = o.a===undefined?0.26:o.a;
+  ctx.save();
+  ctx.globalCompositeOperation="multiply";
+  ctx.globalAlpha=a;
+  ctx.fillStyle="rgb(78,86,62)";
+  // foreshortened onto the grass, stretched away from the sun
+  ctx.translate(x,y);
+  ctx.transform(1, 0, o.skew===undefined?-0.85:o.skew, 0.34, 0, 0);
+  const run = Math.sin(t*6)*0.5;
+  ctx.beginPath(); ctx.ellipse(0,-s*0.86,s*0.10,s*0.11,0,0,TAU); ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(-s*0.075,-s*0.74); ctx.lineTo(s*0.075,-s*0.74);
+  ctx.lineTo(s*0.060,-s*0.40); ctx.lineTo(-s*0.060,-s*0.40); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle="rgb(78,86,62)"; ctx.lineCap="round"; ctx.lineWidth=s*0.048;
+  ctx.beginPath(); ctx.moveTo(-s*0.02,-s*0.40); ctx.lineTo(-s*0.10-run*s*0.10, 0); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo( s*0.02,-s*0.40); ctx.lineTo( s*0.10+run*s*0.10, 0); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(-s*0.06,-s*0.68); ctx.lineTo(-s*0.15+run*s*0.08,-s*0.50); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo( s*0.06,-s*0.68); ctx.lineTo( s*0.16-run*s*0.08,-s*0.56); ctx.stroke();
+  ctx.restore();
+}
+
+/* a hand at the very edge of frame, placing a peg. Never an arm, never a body. */
+function handAtEdge(o){
+  const { x, y, s, t } = o;
+  ctx.save();
+  ctx.globalAlpha = o.a===undefined?0.9:o.a;
+  ctx.fillStyle = rgb(o.col || farColour([52,46,50], 8));
+  ctx.translate(x,y); ctx.rotate(o.rot||0);
+  // forearm running off the edge
+  ctx.beginPath();
+  ctx.moveTo(-s*1.6, s*0.30); ctx.lineTo(-s*1.6,-s*0.24);
+  ctx.quadraticCurveTo(-s*0.5,-s*0.30, 0,-s*0.16);
+  ctx.quadraticCurveTo(s*0.10, s*0.02, 0, s*0.20);
+  ctx.quadraticCurveTo(-s*0.5, s*0.34, -s*1.6, s*0.30);
+  ctx.closePath(); ctx.fill();
+  // two fingers, pinching
+  const pinch = 0.5+0.5*Math.sin(t*0.8);
+  ctx.strokeStyle=ctx.fillStyle; ctx.lineCap="round"; ctx.lineWidth=s*0.17;
+  ctx.beginPath(); ctx.moveTo(-s*0.06,-s*0.10);
+  ctx.quadraticCurveTo(s*0.26,-s*0.18, s*0.40,-s*0.04-pinch*s*0.05); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(-s*0.04, s*0.12);
+  ctx.quadraticCurveTo(s*0.24, s*0.18, s*0.38, s*0.02+pinch*s*0.05); ctx.stroke();
+  ctx.restore();
+}
+
+/* ============================================================================
+   DAPPLE
+   Branch shadows moving across a wall, a bed, a floor. In the reference this is
+   the single detail that makes an empty bedroom feel like somewhere real, so it
+   gets its own baked canopy and a projection.
+   ========================================================================== */
+const CANOPY = { img:null };
+function bakeCanopy(){
+  if (CANOPY.img) return;
+  const S = LOW?256:384;
+  const c=document.createElement("canvas"); c.width=c.height=S;
+  const g=c.getContext("2d");
+  _sd = 771;
+  g.clearRect(0,0,S,S);
+  g.fillStyle="#000";
+  // boughs, forking outward from one corner
+  function bough(x,y,ang,len,wd,depth){
+    if (depth>4 || len<S*0.03) return;
+    const ex=x+Math.cos(ang)*len, ey=y+Math.sin(ang)*len;
+    g.strokeStyle="#000"; g.lineWidth=wd; g.lineCap="round";
+    g.beginPath(); g.moveTo(x,y);
+    g.quadraticCurveTo(x+Math.cos(ang+0.3)*len*0.5, y+Math.sin(ang+0.3)*len*0.5, ex,ey);
+    g.stroke();
+    // leaf clusters along it
+    const nl = 3+((srnd()*4)|0);
+    for (let i=0;i<nl;i++){
+      const f=sr(0.35,1.0);
+      const lx=lerp(x,ex,f), ly=lerp(y,ey,f);
+      const lr=S*sr(0.020,0.052);
+      for (let k=0;k<7;k++){
+        g.beginPath();
+        g.ellipse(lx+sr(-lr,lr), ly+sr(-lr,lr)*0.8, lr*sr(0.28,0.5), lr*sr(0.16,0.30),
+                  sr(0,PI), 0, TAU);
+        g.fill();
+      }
+    }
+    bough(ex,ey, ang+sr(0.20,0.70), len*sr(0.52,0.74), wd*0.62, depth+1);
+    bough(ex,ey, ang-sr(0.20,0.70), len*sr(0.52,0.74), wd*0.62, depth+1);
+    if (srnd()<0.4) bough(lerp(x,ex,0.6), lerp(y,ey,0.6), ang+sr(-1.2,1.2), len*0.44, wd*0.5, depth+1);
+  }
+  bough(S*0.04, S*0.10, 0.62, S*0.42, S*0.030, 0);
+  bough(S*0.30, S*0.02, 1.05, S*0.38, S*0.026, 0);
+  bough(S*0.72, S*0.06, 1.60, S*0.34, S*0.022, 0);
+  CANOPY.img = c;
+}
+/* project the canopy onto a region. `warp` skews it so it reads as light thrown
+   at an angle rather than a decal. */
+function dapple(t, x, y, w, h, amount, warp){
+  if (amount<0.015 || REDUCE) return;
+  bakeCanopY_safe();
+  ctx.save();
+  ctx.beginPath(); ctx.rect(x,y,w,h); ctx.clip();
+  ctx.globalCompositeOperation="multiply";
+  const sway = Math.sin(t*0.42)*w*0.012 + Math.sin(t*0.27)*w*0.006;
+  const sway2 = Math.cos(t*0.35)*h*0.008;
+  const S = Math.max(w,h)*1.45;
+  // two passes at different scales and offsets: near leaves and far leaves
+  for (const p of [[0.0,1.00,0.62],[0.5,1.34,0.30]]){
+    ctx.save();
+    ctx.globalAlpha = amount*p[2];
+    ctx.translate(x+w*0.5+sway*(1+p[0]), y+h*0.42+sway2);
+    ctx.transform(1, 0, warp===undefined?0.28:warp, 1, 0, 0);
+    ctx.rotate(0.06+p[0]*0.1);
+    ctx.drawImage(CANOPY.img, -S*p[1]*0.5, -S*p[1]*0.5, S*p[1], S*p[1]);
+    ctx.restore();
+  }
+  ctx.restore();
+}
+function bakeCanopY_safe(){ if(!CANOPY.img) bakeCanopy(); }
+
+/* ============================================================================
+   FLARE
+   Every reference shot into the sun has it: a warm veil, prismatic ghosts along
+   the axis through the frame centre, and one hard streak. It is what tells the
+   eye there is a real light source in front of the camera.
+   ========================================================================== */
+function flare(sx, sy, amount){
+  if (amount<0.012 || REDUCE) return;
+  const cxx=W*0.5, cyy=H*0.5;
+  const dx=cxx-sx, dy=cyy-sy;
+  ctx.save();
+  ctx.globalCompositeOperation="lighter";
+  // the veil, straight off the source
+  const veil=ctx.createRadialGradient(sx,sy,0,sx,sy,MIN*1.1);
+  veil.addColorStop(0, rgba([255,246,224], amount*0.16));
+  veil.addColorStop(0.25, rgba([255,238,208], amount*0.05));
+  veil.addColorStop(1, "rgba(255,238,208,0)");
+  ctx.fillStyle=veil; ctx.fillRect(0,0,W,H);
+  // prismatic ghosts along the axis
+  const ghosts = [
+    [0.34, 0.055, [255,214,170], 0.10],
+    [0.62, 0.030, [180,232,214], 0.09],
+    [0.88, 0.075, [214,190,255], 0.07],
+    [1.22, 0.042, [255,196,186], 0.08],
+    [1.62, 0.100, [196,222,255], 0.05]
+  ];
+  for (const g of ghosts){
+    const gx=sx+dx*g[0]*2, gy=sy+dy*g[0]*2;
+    const gr=MIN*g[1];
+    const rg=ctx.createRadialGradient(gx,gy,0,gx,gy,gr);
+    rg.addColorStop(0, rgba(g[2], amount*g[3]*0.5));
+    rg.addColorStop(0.72, rgba(g[2], amount*g[3]));
+    rg.addColorStop(0.94, rgba(g[2], amount*g[3]*0.7));
+    rg.addColorStop(1, rgba(g[2],0));
+    ctx.fillStyle=rg; ctx.beginPath(); ctx.arc(gx,gy,gr,0,TAU); ctx.fill();
+  }
+  // one anamorphic streak
+  const st=ctx.createLinearGradient(sx-MIN*0.5,sy, sx+MIN*0.5,sy);
+  st.addColorStop(0,"rgba(255,240,214,0)");
+  st.addColorStop(0.5, rgba([255,244,222], amount*0.14));
+  st.addColorStop(1,"rgba(255,240,214,0)");
+  ctx.fillStyle=st; ctx.fillRect(sx-MIN*0.5, sy-MIN*0.0035, MIN, MIN*0.007);
+  ctx.restore();
+}
+
+/* ============================================================================
+   CANOPY FRAMING
+   The compositional device the game references all use and this piece was
+   missing entirely: foliage entering the top of the frame. It does three things
+   at once — it gives the sky an edge to be measured against, it puts something
+   very near the lens so the distance reads as distance, and it makes an ordinary
+   view feel composed rather than surveyed.
+   ========================================================================== */
+const BOUGHS = [];
+function buildBoughs(){
+  BOUGHS.length=0;
+  _sd = 313377;
+  // two clusters, top-left and top-right, of different species and depth
+  for (const side of [-1, 1]){
+    const n = LOW?2:3;
+    for (let i=0;i<n;i++){
+      BOUGHS.push({
+        side,
+        ax: side<0 ? sr(-0.10,0.16) : sr(0.84,1.10),
+        ay: sr(-0.16,-0.02),
+        len: sr(0.34,0.70),
+        ang: side<0 ? sr(0.18,0.72) : sr(PI-0.72, PI-0.18),
+        z: sr(0,1),
+        ph: sr(0,TAU),
+        sp: sr(0.5,0.9),
+        k: sr(0,1),
+        leaves: []
+      });
+    }
+  }
+  for (const b of BOUGHS){
+    const nl = LOW?34:78;
+    for (let i=0;i<nl;i++){
+      b.leaves.push({ f: sr(0.12,1.10), off: sr(-1.5,1.5), r: sr(0.45,1.5),
+                      rot: sr(0,PI), k: sr(0,1), ph: sr(0,TAU) });
+    }
+  }
+}
+function drawCanopy(t, opt){
+  opt = opt||{};
+  if (!BOUGHS.length) buildBoughs();
+  const amount = opt.a===undefined?1:opt.a;
+  if (amount<0.02) return;
+  const sp = sunPos(AP);
+  const w8 = AIR.wind + AIR.gust;
+  const s = skyStops();
+
+  ctx.save();
+  for (const b of BOUGHS){
+    const near = 1-b.z;
+    const ox = AP.x + b.ax*AP.w, oy = AP.y + b.ay*AP.h;
+    const L  = AP.h*b.len*(0.7+near*0.7);
+    const sway = Math.sin(t*b.sp + b.ph)*0.030*w8 + Math.sin(t*b.sp*2.1+b.ph)*0.010*w8;
+    const ang = b.ang + sway;
+    const ex = ox + Math.cos(ang)*L, ey = oy + Math.sin(ang)*L;
+
+    // foliage is nearly black in front of a bright sky, warmer when it is nearer
+    const dark  = mixL([18,26,20],[38,50,30], b.k*0.7);
+    const col   = mixL(dark, airlight(), b.z*0.30 + AIR.h*0.22);
+    const a     = (0.72+near*0.26)*amount;
+
+    // the bough
+    ctx.strokeStyle = rgba(mixL(col,[42,32,26],0.4), a);
+    ctx.lineWidth = Math.max(2, AP.h*0.010*(0.4+near));
+    ctx.lineCap="round";
+    ctx.beginPath();
+    ctx.moveTo(ox,oy);
+    ctx.quadraticCurveTo(lerp(ox,ex,0.5)+Math.sin(ang)*L*0.10,
+                         lerp(oy,ey,0.5)-Math.cos(ang)*L*0.10, ex, ey);
+    ctx.stroke();
+    // a couple of side twigs
+    for (const tf of [0.42, 0.68, 0.86]){
+      const tx=lerp(ox,ex,tf), ty=lerp(oy,ey,tf);
+      const ta=ang+(b.side<0?1:-1)*sr(0.5,1.1)*0+ (b.k>0.5?0.7:-0.7);
+      ctx.lineWidth = Math.max(1, AP.h*0.004*(0.4+near));
+      ctx.beginPath(); ctx.moveTo(tx,ty);
+      ctx.lineTo(tx+Math.cos(ta)*L*0.22, ty+Math.sin(ta)*L*0.22); ctx.stroke();
+    }
+    // the leaves
+    for (const lf of b.leaves){
+      const lx = lerp(ox,ex,lf.f) + lf.off*L*0.16 + Math.sin(t*b.sp*1.4+lf.ph)*L*0.010*w8;
+      const ly = lerp(oy,ey,lf.f) + lf.off*L*0.11 + Math.cos(t*b.sp*1.6+lf.ph)*L*0.008*w8;
+      const lr = AP.h*0.026*lf.r*(0.5+near*0.9);
+      const lc = mixL(col, mixL(dark,[74,96,48],0.6), lf.k*0.5);
+      ctx.fillStyle = rgba(lc, a*(0.82+lf.k*0.18));
+      ctx.save();
+      ctx.translate(lx,ly);
+      ctx.rotate(lf.rot + Math.sin(t*b.sp+lf.ph)*0.16);
+      // a leaf, not a circle: a pointed ellipse with a midrib
+      ctx.beginPath();
+      ctx.moveTo(-lr,0);
+      ctx.quadraticCurveTo(0,-lr*0.62, lr,0);
+      ctx.quadraticCurveTo(0, lr*0.62, -lr,0);
+      ctx.closePath(); ctx.fill();
+      ctx.restore();
+      // sunlight coming through the leaf, which is what makes a canopy glow
+      if (sp.up>0.02 && b.z<0.7){
+        const d = Math.hypot(lx-sp.x, ly-sp.y);
+        const g2 = 1-cl01(d/(MIN*0.55));
+        if (g2>0.02){
+          ctx.save();
+          ctx.globalCompositeOperation="lighter";
+          ctx.fillStyle = rgba(mixL([132,176,74], s.sun, 0.45), a*g2*g2*0.40*(1-AIR.h*0.6));
+          ctx.beginPath(); ctx.ellipse(lx,ly,lr*0.9,lr*0.55,lf.rot,0,TAU); ctx.fill();
+          ctx.restore();
+        }
+      }
+    }
+  }
+  ctx.restore();
+}
+
+/* ============================================================================
+   HARD LIGHT PATCH
+   A window throws a shape, not a glow. The reference interior has a crisp
+   quadrilateral of sun on the floorboards with the glazing bars printed across
+   it. That hard edge is what makes the light feel like it is coming from
+   somewhere specific.
+   ========================================================================== */
+function lightPatch(o){
+  const a = o.a;
+  if (a<0.01) return;
+  ctx.save();
+  ctx.globalCompositeOperation="lighter";
+  // the patch, keystoned as a real projection would be
+  const g = ctx.createLinearGradient(o.x0,o.y0,o.x3,o.y3);
+  g.addColorStop(0, rgba(o.col, a));
+  g.addColorStop(0.72, rgba(o.col, a*0.82));
+  g.addColorStop(1, rgba(o.col, a*0.10));
+  ctx.fillStyle=g;
+  ctx.beginPath();
+  ctx.moveTo(o.x0,o.y0); ctx.lineTo(o.x1,o.y1); ctx.lineTo(o.x2,o.y2); ctx.lineTo(o.x3,o.y3);
+  ctx.closePath();
+  ctx.fill();
+  // the glazing bars printed across it as darker gaps
+  ctx.globalCompositeOperation="source-over";
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(o.x0,o.y0); ctx.lineTo(o.x1,o.y1); ctx.lineTo(o.x2,o.y2); ctx.lineTo(o.x3,o.y3);
+  ctx.closePath(); ctx.clip();
+  ctx.globalCompositeOperation="destination-out";
+  ctx.globalAlpha = a*2.2;
+  // vertical bar
+  const mvx0=lerp(o.x0,o.x1,0.5), mvy0=lerp(o.y0,o.y1,0.5);
+  const mvx1=lerp(o.x3,o.x2,0.5), mvy1=lerp(o.y3,o.y2,0.5);
+  ctx.lineWidth=Math.max(3, MIN*0.010);
+  ctx.strokeStyle="#000"; ctx.lineCap="butt";
+  ctx.beginPath(); ctx.moveTo(mvx0,mvy0); ctx.lineTo(mvx1,mvy1); ctx.stroke();
+  // horizontal bar, further down the projection
+  const hax=lerp(o.x0,o.x3,0.46), hay=lerp(o.y0,o.y3,0.46);
+  const hbx=lerp(o.x1,o.x2,0.46), hby=lerp(o.y1,o.y2,0.46);
+  ctx.lineWidth=Math.max(4, MIN*0.013);
+  ctx.beginPath(); ctx.moveTo(hax,hay); ctx.lineTo(hbx,hby); ctx.stroke();
+  ctx.restore();
   ctx.restore();
 }

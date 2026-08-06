@@ -205,8 +205,8 @@ function sunPos(ap){
   const t = AIR.tod;
   // rises left, arcs, sets right
   const a = (t-0.25)*PI;                    // 0 at dawn, PI at dusk
-  const x = ap.cx + Math.cos(PI-a)*ap.w*0.62;
-  const y = ap.hy - Math.sin(a)*ap.h*0.72;
+  const x = ap.cx + Math.cos(PI-a)*ap.w*0.34;
+  const y = ap.hy - Math.sin(a)*ap.h*0.62;
   return { x, y, up: Math.sin(a) };
 }
 
@@ -271,11 +271,11 @@ const CAM = { x:0, y:0, zoom:1, tilt:0 };
    (for looks). The distances are chosen so that the hills go first, the town
    next, and the near roofs last — which is what the physics gives you. */
 const LAYER = {
-  hills:   { d: 14000, p: 0.030, y: 0.00 },
-  ridge:   { d:  7200, p: 0.055, y: 0.02 },
-  town:    { d:  3100, p: 0.115, y: 0.05 },
-  poplars: { d:  1400, p: 0.190, y: 0.07 },
-  roofs:   { d:   420, p: 0.400, y: 0.11 },
+  hills:   { d:  6200, p: 0.030, y: 0.00 },
+  ridge:   { d:  3400, p: 0.055, y: 0.02 },
+  town:    { d:  1500, p: 0.115, y: 0.05 },
+  poplars: { d:   700, p: 0.190, y: 0.07 },
+  roofs:   { d:   240, p: 0.400, y: 0.11 },
   garden:  { d:    26, p: 0.860, y: 0.30 },
   near:    { d:     4, p: 1.000, y: 0.55 }
 };

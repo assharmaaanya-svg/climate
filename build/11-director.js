@@ -812,6 +812,8 @@ function frame(now){
    ========================================================================== */
 function boot(){
   buildNoise();          // must come before anything bakes
+  buildFringe();
+  buildBoughs();
   fit();
   updateAir();
   buildGrain();

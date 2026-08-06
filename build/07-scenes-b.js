@@ -110,16 +110,49 @@ function drawKite(t, dt, o){
   ctx.stroke();
   ctx.restore();
 
-  /* ---- the child on the hill, both arms up, leaning back against the pull ---- */
-  groundShadow(KITE.handX + MIN*0.02, childFeet, childS*0.34, MIN*0.010, 0.22);
+  /* ---- Whoever is holding the line is only ever a silhouette against the sky,
+     plus their shadow stretched away across the grass. No face, no detail — the
+     kite is the thing you are meant to be looking at. ---- */
+  childShadowOnGround({ x: KITE.handX + MIN*0.03, y: childFeet, s: childS, t,
+                        a: 0.24*(1-AIR.h*0.6), skew: -0.95 });
   ctx.save();
-  // they lean into the wind as the line goes tight
   ctx.translate(KITE.handX, childFeet);
-  ctx.rotate(-cl(KITE.tension*0.13 + KITE.vx*0.002, -0.18, 0.18));
+  ctx.rotate(-cl(KITE.tension*0.13 + KITE.vx*0.002, -0.20, 0.20));
   ctx.translate(-KITE.handX, -childFeet);
-  figure({ x:KITE.handX, y:childFeet, s:childS, d:8, t,
-           col: farColour([48,44,52], 8), a:0.92, child:true,
-           reach: 0.55 + KITE.tension*0.45 });
+  // flat, near-black, backlit
+  const silh = mixL([16,20,26], airlight(), 0.10 + AIR.h*0.30);
+  const cs = childS, cx0 = KITE.handX, cy0 = childFeet;
+  const HD = cs*0.072;
+  ctx.fillStyle = rgba(silh, 0.94);
+  ctx.strokeStyle = rgba(silh, 0.94);
+  ctx.lineCap="round";
+  // legs mid-stride
+  const strd = Math.sin(t*3.2)*0.5;
+  ctx.lineWidth = cs*0.062;
+  ctx.beginPath(); ctx.moveTo(cx0, cy0-cs*0.46); ctx.lineTo(cx0-cs*0.10-strd*cs*0.06, cy0); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cx0, cy0-cs*0.46); ctx.lineTo(cx0+cs*0.10+strd*cs*0.06, cy0); ctx.stroke();
+  // body
+  ctx.beginPath();
+  ctx.moveTo(cx0-cs*0.085, cy0-cs*0.44);
+  ctx.lineTo(cx0+cs*0.085, cy0-cs*0.44);
+  ctx.lineTo(cx0+cs*0.075, cy0-cs*0.80);
+  ctx.lineTo(cx0-cs*0.075, cy0-cs*0.80);
+  ctx.closePath(); ctx.fill();
+  // head, tipped back to watch it
+  ctx.beginPath(); ctx.ellipse(cx0-cs*0.012, cy0-cs*0.885, HD*0.94, HD, -0.16, 0, TAU); ctx.fill();
+  // scruff of hair lifting in the wind
+  ctx.beginPath();
+  ctx.ellipse(cx0-cs*0.030, cy0-cs*0.925, HD*0.95, HD*0.62,
+              -0.35+Math.sin(t*2.1)*0.10, 0, TAU); ctx.fill();
+  // both arms up on the line
+  ctx.lineWidth = cs*0.050;
+  const up = 0.55 + KITE.tension*0.45;
+  for (const sd of [-1,1]){
+    const shx = cx0+sd*cs*0.070, shy = cy0-cs*0.78;
+    const ex = shx+sd*cs*0.055, ey = shy-cs*0.13*up;
+    ctx.beginPath(); ctx.moveTo(shx,shy); ctx.lineTo(ex,ey);
+    ctx.lineTo(cx0+sd*cs*0.030, cy0-cs*1.02); ctx.stroke();
+  }
   ctx.restore();
 
   /* ---- the tail ---- */
@@ -165,6 +198,9 @@ function drawKite(t, dt, o){
   partRole = lerp(0,2,AIR.h);
   drawParticles(t, 0.2+AIR.h*0.75, sp?{x:sp.x,y:sp.y,r:H}:null);
   drawLeaves();
+  // the hilltop grasses, right against the lens
+  drawFringe(t, { base: 1.055, a: 0.9 });
+  if (sp && sp.up>0.02) flare(sp.x, sp.y, 0.5-AIR.h*0.2);
   return { groundAt, contrast };
 }
 
@@ -371,6 +407,8 @@ function drawStars(t, dt, o){
   drawLand(t, { upTo: 5 });
   partRole = 2;
   drawParticles(t, AIR.h*0.55, null);
+  // sparse dark stems along the bottom, the way every night-sky photograph has
+  drawFringe(t, { base: 1.07, a: 0.75 });
 }
 function starsInteract(g, dt){
   if (P.down && P.active && P.drag>6){
@@ -437,6 +475,9 @@ function drawHorizon(t, dt, o){
   drawGround(t, AP.hy+AP.h*0.14, {});
   partRole = lerp(0,2,AIR.h);
   drawParticles(t, 0.2+AIR.h*0.8, sp?{x:sp.x,y:sp.y,r:H}:null);
+  drawCanopy(t, { a: 0.7 });
+  drawFringe(t, { base: 1.05, a: 0.85 });
+  if (sp && sp.up>0.02) flare(sp.x, sp.y, 0.42-AIR.h*0.18);
 
   /* ---- the binoculars ---- */
   LOOK.fx = lerp(LOOK.fx, P.active? cl(P.x/W,0.08,0.92) : 0.5, 0.14);

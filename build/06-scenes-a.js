@@ -153,6 +153,34 @@ function drawRoomScene(t, o){
   for (const r of [0.55,0.78]){ ctx.beginPath(); ctx.arc(0,0,MIN*0.34*r,0,TAU); ctx.stroke(); }
   ctx.restore();
 
+  /* ---- branch shadows, thrown across the wall and the floor. This is the one
+     detail that stops a bedroom being a diagram of a bedroom. ---- */
+  const dapA = openAmt*(0.30+ROOM.sash*0.12)*(0.30+0.70*sm(AIR.tod,0.15,0.36))*(1-AIR.h*0.75);
+  dapple(t, 0, H*0.06, W, H*0.76, dapA*0.62, 0.34);
+  dapple(t, 0, fy, W, H-fy, dapA*0.80, 0.85);
+
+  /* ---- the window's own shape, thrown hard onto the floor ---- */
+  if (openAmt>0.05){
+    const pa = openAmt*(0.26+ROOM.sash*0.16)*(0.30+0.70*sm(AIR.tod,0.14,0.38))*(1-AIR.h*0.6);
+    const sunX = wr.x+wr.w*0.5;
+    const throwX = -W*0.30;          // low morning sun throws it left and long
+    lightPatch({
+      x0: wr.x+wr.w*0.10,          y0: fy+MIN*0.010,
+      x1: wr.x+wr.w*0.90,          y1: fy+MIN*0.004,
+      x2: wr.x+wr.w*0.74+throwX*0.9, y2: H*1.02,
+      x3: wr.x+wr.w*0.02+throwX,     y3: H*1.02,
+      col: mixL(L.warm,[255,250,236],0.35), a: pa
+    });
+    // and a fainter one climbing the far wall
+    lightPatch({
+      x0: wr.x-wr.w*0.30, y0: H*0.34,
+      x1: wr.x-wr.w*0.02, y1: H*0.30,
+      x2: wr.x-wr.w*0.06, y2: H*0.70,
+      x3: wr.x-wr.w*0.36, y3: H*0.74,
+      col: L.warm, a: pa*0.42
+    });
+  }
+
   /* ---------- 3. the sunbeam, before the props, so props sit inside it ---------- */
   const beamA = openAmt*(0.20+ROOM.sash*0.30) * (0.35+0.65*sm(AIR.tod,0.14,0.36));
   if (beamA>0.01){
@@ -654,7 +682,10 @@ let OUTSIDE_T = 0;
 const WASH = {
   walk:0, vel:0, sheets:[], passed:0, lastSide:[],
   shirtFound:false, shirtWarm:0, hide:0, basketTouched:false, pegsDropped:0,
-  brushed:0, dust:0, taken:0
+  brushed:0, dust:0, taken:0,
+  // implied presence: where she is, and a child who runs past now and then
+  motherU:0.62, motherX:null, motherReach:0.7,
+  runX:0, runT:0, runNext:6, runDir:1
 };
 function buildWash(){
   WASH.sheets.length=0; WASH.lastSide.length=0;
@@ -733,46 +764,36 @@ function drawLaundry(t, o){
     ctx.beginPath(); ctx.moveTo(x, lineY+MIN*0.02); ctx.lineTo(x+(pu<0.5?MIN*0.03:-MIN*0.03), groundY+MIN*0.02); ctx.stroke();
   }
 
-  // mother, down at the far end, hanging one more. She is small because she is
-  // a long way down the garden, and the sheets keep getting in front of her.
-  const mu = 0.88 - WASH.walk*0.20;
-  if (mu > -0.25 && mu < 1.35 && o.mother!==false){
+  /* ---- Her presence, and only her presence.
+     She is never a body standing in the garden. She is a shadow thrown onto the
+     back of a sunlit sheet, and a hand at the edge of it holding a peg. You read
+     the whole gesture and never see a face. ---- */
+  WASH.motherU = 0.62 - WASH.walk*0.20;
+  const mu = WASH.motherU;
+  if (mu > -0.30 && mu < 1.40 && o.mother!==false){
     const mx = AP.x + mu*AP.w;
-    const reach = 0.50+0.45*Math.abs(Math.sin(t*0.5));
-    const ms = MIN*0.185;
-    const mfeet = groundY + MIN*0.028;
-    groundShadow(mx, mfeet, ms*0.30, MIN*0.008, 0.20);
-    const f = figure({ x:mx, y:mfeet, s:ms, d:26, t,
-                       col: farColour([62,56,62], 26), a:0.88-WASH.taken*0.5, reach });
-    // the sheet she is pegging up rises as her arms go up
-    if (WASH.taken<0.5){
-      const hangH = MIN*0.10*(0.35+reach*0.65);
-      cloth({ ax:mx-MIN*0.036, ay:lineY+MIN*0.004, bx:mx+MIN*0.036, by:lineY+MIN*0.004,
-              h:hangH, col:farColour([248,246,238],26),
-              ph:4.2, folds:3, amp:MIN*0.004, windAmp:MIN*0.009, thin:0.78,
-              light:sp, pegs:reach>0.88, seed:99 }, t);
-      // her raised hand meets the corner of it
-      if (f.handR){
-        ctx.strokeStyle=rgba(farColour([62,56,62],26),0.5); ctx.lineWidth=1;
-        ctx.beginPath(); ctx.moveTo(f.handR.x,f.handR.y);
-        ctx.lineTo(mx+MIN*0.030, lineY+MIN*0.010); ctx.stroke();
-      }
-    }
-    // a basket at her feet
-    const bkx=mx+MIN*0.050, bky=mfeet;
-    ctx.fillStyle=rgba(farColour([170,132,80],26),0.95);
-    ctx.beginPath(); ctx.moveTo(bkx-MIN*0.017,bky-MIN*0.016);
-    ctx.lineTo(bkx+MIN*0.017,bky-MIN*0.016); ctx.lineTo(bkx+MIN*0.013,bky); ctx.lineTo(bkx-MIN*0.013,bky);
-    ctx.closePath(); ctx.fill();
-    ctx.strokeStyle=rgba([120,90,52],0.5); ctx.lineWidth=1;
-    for (let i=1;i<3;i++){ const yy=bky-MIN*0.016+i*MIN*0.005;
-      ctx.beginPath(); ctx.moveTo(bkx-MIN*0.016,yy); ctx.lineTo(bkx+MIN*0.016,yy); ctx.stroke(); }
-    spot("basket", bkx, bky-MIN*0.010, MIN*0.045, ()=>{
+    const reach = 0.55+0.42*Math.abs(Math.sin(t*0.45));
+    // a basket in the grass — the object that says somebody is here
+    const bkx=mx+MIN*0.085, bky=groundY+MIN*0.030;
+    ctx.fillStyle=rgba(farColour([176,138,84],26),0.95);
+    ctx.beginPath(); ctx.moveTo(bkx-MIN*0.026,bky-MIN*0.024);
+    ctx.lineTo(bkx+MIN*0.026,bky-MIN*0.024); ctx.lineTo(bkx+MIN*0.020,bky);
+    ctx.lineTo(bkx-MIN*0.020,bky); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle=rgba([120,90,52],0.45); ctx.lineWidth=1;
+    for (let i=1;i<4;i++){ const yy=bky-MIN*0.024+i*MIN*0.006;
+      ctx.beginPath(); ctx.moveTo(bkx-MIN*0.025,yy); ctx.lineTo(bkx+MIN*0.025,yy); ctx.stroke(); }
+    // a sheet spilling out of it
+    ctx.fillStyle=rgba(farColour([244,240,230],26),0.9);
+    ctx.beginPath();
+    ctx.ellipse(bkx-MIN*0.006,bky-MIN*0.026,MIN*0.021,MIN*0.008,-0.2,0,TAU); ctx.fill();
+    groundShadow(bkx, bky+MIN*0.002, MIN*0.042, MIN*0.010, 0.24);
+    spot("basket", bkx, bky-MIN*0.014, MIN*0.055, ()=>{
       WASH.basketTouched=true; sfx.cloth(0.7);
       whisper("Still warm from the sun.");
       curiosity+=0.4;
     });
-  }
+    WASH.motherX = mx; WASH.motherReach = reach;
+  } else { WASH.motherX = null; }
 
   // ---- the sheets. Drawn far-to-near so pushing between them reads as depth.
   const push = (P.active) ? { x:P.x, y:P.y, r:MIN*0.30, k:MIN*0.16 } : null;
@@ -798,6 +819,48 @@ function drawLaundry(t, o){
             hem: sh.hem ? [206,170,120] : null, stitch: sh.stitch,
             pegs:true, dust: WASH.dust*(1-WASH.brushed*0.8), seed:sh.seed,
             push }, t);
+
+    /* her shadow, cast onto whichever sheet she is standing behind */
+    if (WASH.motherX!=null && Math.abs(WASH.motherX - x) < w*0.62 && sh.kind!=="shirt"){
+      const dist = 1 - Math.abs(WASH.motherX - x)/(w*0.62);
+      shadowOnCloth({
+        x: lerp(x, WASH.motherX, 0.55), y: lyy + h*0.94,
+        s: h*0.80, t,
+        a: dist*0.78*(1-WASH.dust*0.4)*(1-WASH.taken*0.6),
+        reach: WASH.motherReach,
+        col: mixL(shade(col,0.52),[92,74,66],0.5),
+        clip: ()=>{ ctx.beginPath(); ctx.rect(ax-w*0.1, lyy, w*1.2, h); ctx.clip(); }
+      });
+      // and her hand at the top corner, putting a peg on
+      if (WASH.motherReach>0.86){
+        handAtEdge({ x: x + w*0.46, y: lyy + MIN*0.004,
+                     s: MIN*0.026, t, rot: -0.5,
+                     col: farColour([48,42,46], 10), a: dist*0.85 });
+      }
+    }
+    /* and, once in a while, a child running past behind the washing */
+    if (WASH.runT>0 && Math.abs(WASH.runX - x) < w*0.75 && sh.kind!=="shirt"){
+      const d2 = 1 - Math.abs(WASH.runX - x)/(w*0.75);
+      ctx.save();
+      ctx.beginPath(); ctx.rect(ax-w*0.1, lyy, w*1.2, h); ctx.clip();
+      ctx.globalCompositeOperation="multiply";
+      ctx.globalAlpha = d2*0.42*WASH.runT;
+      ctx.fillStyle = rgb(shade(col,0.56));
+      // a small running shape, no detail at all
+      const rx = WASH.runX, ry = lyy+h*0.72, rs=h*0.34;
+      const stride = Math.sin(t*9)*0.5;
+      ctx.beginPath(); ctx.ellipse(rx, ry-rs*0.88, rs*0.16, rs*0.18, 0,0,TAU); ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(rx-rs*0.13, ry-rs*0.74); ctx.lineTo(rx+rs*0.13, ry-rs*0.74);
+      ctx.lineTo(rx+rs*0.16, ry-rs*0.34); ctx.lineTo(rx-rs*0.16, ry-rs*0.34);
+      ctx.closePath(); ctx.fill();
+      ctx.strokeStyle=ctx.fillStyle; ctx.lineCap="round"; ctx.lineWidth=rs*0.11;
+      ctx.beginPath(); ctx.moveTo(rx-rs*0.04,ry-rs*0.34); ctx.lineTo(rx-rs*0.20-stride*rs*0.2, ry); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(rx+rs*0.04,ry-rs*0.34); ctx.lineTo(rx+rs*0.20+stride*rs*0.2, ry); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(rx-rs*0.10,ry-rs*0.66); ctx.lineTo(rx-rs*0.30+stride*rs*0.16, ry-rs*0.46); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(rx+rs*0.10,ry-rs*0.66); ctx.lineTo(rx+rs*0.32-stride*rs*0.16, ry-rs*0.54); ctx.stroke();
+      ctx.restore();
+    }
 
     // the small yellow shirt, hanging among them
     if (sh.kind==="shirt"){
@@ -886,9 +949,33 @@ function drawLaundry(t, o){
   partRole = lerp(0, 2, AIR.h);
   drawParticles(t, 0.28+AIR.h*0.7, { x:sp?sp.x:W*0.7, y:sp?sp.y:H*0.2, r:H*1.1 });
   drawLeaves();
+  // near the lens, in front of everything: wildflowers and a bough overhead
+  drawCanopy(t, { a: 0.85 });
+  drawFringe(t, { base: 1.045, a: 1 });
+  if (sp && sp.up>0.02) flare(sp.x, sp.y, (0.55-AIR.h*0.25));
   return { lineY, groundY };
 }
+/* somebody small goes through the washing every so often. You never see them
+   except as a shape moving behind the cloth, and you hear it. */
+function washRunner(dt){
+  if (WASH.runT>0){
+    WASH.runT -= dt*0.55;
+    WASH.runX += WASH.runDir*W*0.42*dt;
+    if (WASH.runT<=0) WASH.runT=0;
+  } else {
+    WASH.runNext -= dt;
+    if (WASH.runNext<=0){
+      WASH.runNext = rnd(9, 20);
+      WASH.runDir = Math.random()<0.5?1:-1;
+      WASH.runX = WASH.runDir>0 ? -W*0.1 : W*1.1;
+      WASH.runT = 1;
+      sfx.cloth(0.8);
+      if (!FOUND["runner"]){ FOUND["runner"]=true; foundN++; whisper("Somebody went through them just now."); }
+    }
+  }
+}
 function washInteract(g, dt){
+  washRunner(dt);
   // travelling down the line: drag horizontally to walk
   if (P.down && P.active){
     WASH.vel += (-P.dx/W)*2.4;

@@ -40,8 +40,13 @@ function cloth(o, t){
       y += v*h + sag*Math.sin(g*PI);
       x += z*amp*(0.22+0.78*v);
       // the hem is never a straight line: it dips where the folds hang heaviest
-      if (r===CR) y += (Math.sin(u*folds*TAU + ph + 1.1)*0.5 + Math.sin(u*7.1+ph)*0.22) * amp*0.55;
-      else if (r===CR-1) y += Math.sin(u*folds*TAU + ph + 1.1) * amp*0.20;
+      if (r>=CR-1){
+        const w = (r===CR) ? 1 : 0.35;
+        // one slow wave the mesh can actually resolve, plus a gentle droop
+        y += (Math.sin(u*folds*0.42*TAU + ph + 1.1)*0.6
+              + Math.sin(u*1.7 + ph)*0.3) * amp*0.85*w;
+        y += Math.sin(u*PI)*amp*0.55*w;
+      }
       // wind swing — the bottom travels furthest
       const swing = Math.sin(t*1.55 + ph + g*1.4)*windAmp*w8;
       x += swing*v2;
