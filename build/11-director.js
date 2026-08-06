@@ -420,9 +420,13 @@ function render(t, dt){
     /* -------------------------------- chapter two */
     case "laundry":
     case "shirt": {
-      washInteract(BEATS[T.i].gate, dt);
-      if (bid==="shirt" && q>0.01) morphSheetToKite(t, q);
-      else drawLaundry(t, {});
+      // the paintings are the world here; walking between the sheets is what
+      // makes the air change, so the visitor causes it rather than watching it
+      setPop({ birds:0.9, butterflies:0.8, dragonflies:0.8, fireflies:0, seeds:0.9 });
+      drawLaundryPlate(t, dt, { air: PWASH.progress*0.30, mother:true, paintedMother:true });
+      PWASH.motherOn = lerp(PWASH.motherOn, 1, 0.02);
+      if (PWASH.through>=3) meet("sheets");
+      if (bid==="shirt" && PWASH.through>=5) meet("shirt");
       break;
     }
     case "kite": {
@@ -461,9 +465,12 @@ function render(t, dt){
     }
     /* -------------------------------- chapter three */
     case "r-laundry": {
+      setPop({ birds:0.15, butterflies:0.05, dragonflies:0.1, fireflies:0, seeds:0.3 });
+      drawLaundryPlate(t, dt, { air: 0.55 + PWASH.progress*0.35, mother:true, paintedMother:true });
+      PWASH.motherOn = lerp(PWASH.motherOn, 0.45, 0.02);
       WASH.dust = 0.55;
       washInteract("brush", dt);
-      drawLaundry(t, { mother:true });
+      if (false) drawLaundry(t, { mother:true });
       updLens(dt, done["brush"]);
       pastLens(t, P.x, P.y, LENS.r, LENS.a, (tt,ss)=>{
         const lineY=AP.y+AP.h*0.20;
@@ -621,6 +628,7 @@ let shownFin = -1, lastCap="", lastCh=-1;
 function isLight(){
   const b=id();
   return b==="drawing" || b==="r-drawing" || b==="e-hills" ||
+         b==="laundry" || b==="shirt" || b==="r-laundry" ||
          (b==="horizon" && T.f<0.8) || b==="r-horizon";
 }
 function updText(now, dt){
@@ -796,9 +804,10 @@ function frame(now){
   updWind(dt);
 
   const t = now*0.001;
+  updPlateCam(dt, t);
   updParticles(dt,t); updClouds(dt); updBirds(dt,t); updBugs(dt,t);
   updTrain(dt); updPlane(dt); updLeaves(dt); updMoth(dt,t);
-  updFlashes(dt); updWhisper(dt); updSound(dt,t);
+  updFlashes(dt); updWhisper(dt); updSound(dt,t); updFireflies(dt,t);
   if (soundOn && AIR.h<0.5 && OUTSIDE>0.4 && Math.random()<0.011*(1-AIR.h)*dt*60) sfx.bird();
   curiosity = Math.max(0, curiosity - dt*0.02);
 
@@ -811,6 +820,7 @@ function frame(now){
    BOOT
    ========================================================================== */
 function boot(){
+  preloadPlates();       // the paintings, which everything now sits on
   buildNoise();          // must come before anything bakes
   buildFringe();
   buildBoughs();
@@ -825,6 +835,7 @@ function boot(){
   buildWash();
   buildIndoors();
   buildGrid();
+  buildFireflies();
   buildEvidenceCards();
   // paint the drawing now: it is already taped to the bedroom wall in the very
   // first frame, years before the visitor is handed it
