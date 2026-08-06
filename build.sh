@@ -11,6 +11,7 @@ cat build/01-shell.html \
     build/05-sound.js \
     build/06-scenes-a.js \
     build/06c-curtains.js \
+    build/06d-room.js \
     build/06b-plate-scenes.js \
     build/07-scenes-b.js \
     build/08-scenes-c.js \

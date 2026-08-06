@@ -113,16 +113,30 @@ const sfx = {
   latch(){ cc("a metal latch turning"); burst(3200, 9, 0.09, 0.05); tone(760,0.10,"square",0.016); },
   slide(){ cc("the window sliding up"); burst(340, 0.9, 0.52, 0.055, "lowpass"); },
   thud(){ cc("wood settling"); burst(140, 1.2, 0.20, 0.06, "lowpass"); },
-  bird(){ if(!AC||!soundOn||AIR.h>0.62) return; cc("birdsong");
-    const f=rnd(1900,3100), now=AC.currentTime;
+  /* One chirp. `v` is how near it sounds: through a shut window it is faint and
+     dull, through an open one it is close and bright — the same birds, the same
+     distance, a different amount of glass. */
+  bird(v, bright){ if(!AC||!soundOn||AIR.h>0.62) return; cc("birdsong");
+    v = v===undefined ? 1 : v;
+    bright = bright===undefined ? 1 : bright;
+    const f=rnd(1900,3100)*(0.82+0.18*bright), now=AC.currentTime;
     const o=AC.createOscillator(); o.type="sine";
     o.frequency.setValueAtTime(f,now);
     o.frequency.linearRampToValueAtTime(f*rnd(1.15,1.5), now+0.07);
     o.frequency.linearRampToValueAtTime(f*0.95, now+0.15);
+    const lp=AC.createBiquadFilter(); lp.type="lowpass";
+    lp.frequency.value = 900 + 5200*bright;            // glass in the way
     const g=AC.createGain(); g.gain.setValueAtTime(0.0001,now);
-    g.gain.exponentialRampToValueAtTime(0.035*(1-AIR.h),now+0.02);
+    g.gain.exponentialRampToValueAtTime(Math.max(0.0005, 0.035*v*(1-AIR.h)),now+0.02);
     g.gain.exponentialRampToValueAtTime(0.0001,now+0.22);
-    o.connect(g); g.connect(master); o.start(now); o.stop(now+0.24); },
+    o.connect(lp); lp.connect(g); g.connect(master); o.start(now); o.stop(now+0.24); },
+  /* the casement: a dry hinge, then the sash coming to rest against its stop */
+  hinge(){ cc("a window swinging open");
+    burst(240, 1.1, 0.62, 0.026, "lowpass");
+    tone(150, 0.42, "sine", 0.016, 104); },
+  casementRest(){ cc("the window settling open");
+    burst(180, 1.4, 0.26, 0.034, "lowpass");
+    tone(96, 0.22, "sine", 0.020, 62); },
   crayon(){ cc("wax on paper"); burst(rnd(900,1500), 0.4, 0.13, 0.030, "bandpass"); },
   paper(){ cc("paper"); burst(2400, 0.5, 0.24, 0.032); },
   train(){ cc("a train, somewhere past the town"); burst(150, 0.6, 2.4, 0.030, "lowpass"); tone(196,1.2,"sine",0.012); },

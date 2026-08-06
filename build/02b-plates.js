@@ -72,6 +72,22 @@ const PLATES = {
     bands:[ {to:0.13,p:0.02}, {to:0.60,p:0.05}, {to:0.78,p:0.10}, {to:1.0,p:0.18} ],
     repair:[ { x:0.549, y:0.243, w:0.036, h:0.062 } ]
   },
+  /* ------------------------------------------------------------------ the room
+     Two plates of the same bedroom, painted with nothing in them that the code
+     needs to own: no curtains, no rod, no pull cord, no birds. Outside the
+     window they are identical to the pixel, so they can be laid straight over
+     each other and only the casement moves. Everything else in this chapter is
+     a sprite or is drawn. */
+  roomShut: {
+    clean:"bedroomwithnobulbandcurtainsandbirdsandadifferentwindowframe.png",
+    crop:{ x:0.0, y:0.045, w:1.0, h:0.830 },
+    bands:[ {to:0.16,p:0.015}, {to:0.62,p:0.04}, {to:0.80,p:0.09}, {to:1.0,p:0.17} ]
+  },
+  roomOpen: {
+    clean:"widnowopennocrtains.png",
+    crop:{ x:0.0, y:0.045, w:1.0, h:0.830 },
+    bands:[ {to:0.16,p:0.015}, {to:0.62,p:0.04}, {to:0.80,p:0.09}, {to:1.0,p:0.17} ]
+  },
   bedroomOpenAlt: {
     clean:"bedroomopenver2.png",
     crop:{ x:0.0, y:0.05, w:1.0, h:0.82 },
@@ -138,7 +154,9 @@ const PLATES = {
 
 /* preload everything the piece will need, in rough order of appearance */
 function preloadPlates(){
-  const order = ["bedroomclosed.png","bedroomopen.png","bedroompostpollution.png",
+  const order = ["bedroomwithnobulbandcurtainsandbirdsandadifferentwindowframe.png",
+    "widnowopennocrtains.png","bulb latch png transparent.png","birdsonthedistanceinbedroom.png",
+    "bedroomclosed.png","bedroomopen.png","bedroompostpollution.png",
     "moresheets.png","moresheetspolluted.png","sheetswithmother.png","sheetspollutedwithmother.png",
     "childflykite.png","childflykiteevening.png","childflykite night.png","pollutedkitefly.png",
     "stargaze.png","pollutedstargaze.png","viewoftown.png","viewoftownafterpollution.png",

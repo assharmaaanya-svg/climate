@@ -409,23 +409,22 @@ function render(t, dt){
     case "dark": {
       setPop({ birds:0.7, butterflies:0.4, dragonflies:0.3, fireflies:0, seeds:0.5 });
       bedroomInteract("curtain", t, dt);
-      drawBedroomPlate(t, dt, { air:0 });
+      drawRoom(t, dt, { air:0, quietCord:true });
       break;
     }
     case "light": {
-      // the curtains are open; now the window itself, on its own brass pull
+      // the curtains are open; now the window, on the cord hanging in front of it
       setPop({ birds:0.8, butterflies:0.5, dragonflies:0.4, fireflies:0, seeds:0.6 });
       bedroomInteract(null, t, dt);
-      sashInteract("sash", t, dt);
-      drawBedroomPlate(t, dt, { air:0, noHint:true });
-      drawSashPull(t);
+      cordInteract("sash", t, dt);
+      drawRoom(t, dt, { air:0, noHint:true });
       break;
     }
     case "breathe": {
       setPop({ birds:0.9, butterflies:0.6, dragonflies:0.5, fireflies:0, seeds:0.8 });
       bedroomInteract(null, t, dt);
-      drawBedroomPlate(t, dt, { air:0, noHint:true });
-      drawSashPull(t);
+      cordInteract(null, t, dt);
+      drawRoom(t, dt, { air:0, noHint:true, quietCord:true });
       break;
     }
     /* -------------------------------- chapter two */
@@ -574,18 +573,18 @@ function render(t, dt){
       setPop({ birds:0.05, butterflies:0, dragonflies:0, fireflies:0, seeds:0.1 });
       bedroomInteract("curtain2", t, dt);
       grimeAdd(dt*0.02);
-      drawBedroomPlate(t, dt, { air:1 });
+      drawRoom(t, dt, { air:1 });
       break;
     }
     case "stopped": {
       setPop({ birds:0, butterflies:0, dragonflies:0, fireflies:0, seeds:0.05 });
-      drawBedroomPlate(t, dt, { air:1, forceOpen:true, noHint:true });
+      drawRoom(t, dt, { air:1, forceOpen:true, noHint:true, quietCord:true });
       updateStoppedPlate(t, dt);
       break;
     }
     case "named": {
       setPop({ birds:0, butterflies:0, dragonflies:0, fireflies:0, seeds:0.05 });
-      drawBedroomPlate(t, dt, { air:1, forceOpen:true, noHint:true });
+      drawRoom(t, dt, { air:1, forceOpen:true, noHint:true, quietCord:true });
       updateStoppedPlate(t, dt);
       if (f>0.55) hideAQ();
       break;
@@ -714,7 +713,7 @@ function updText(now, dt){
     titleEl.classList.add("on");
     const c=titleEl.querySelector(".c");
     if (foundN>0){
-      c.innerHTML = "drawn live in your browser · sound and captions, top right<br>"+
+      c.innerHTML = "Earth Partner Prize · drawn live in your browser<br>"+
         "every figure is linked to its source<br><br>"+
         "you found "+foundN+" small thing"+(foundN===1?"":"s")+" that nobody asked you to look for";
     }
@@ -879,6 +878,7 @@ function boot(){
   buildIndoors();
   buildGrid();
   buildFireflies();
+  buildWireBirds();
   buildEvidenceCards();
   // paint the drawing now: it is already taped to the bedroom wall in the very
   // first frame, years before the visitor is handed it
@@ -900,7 +900,7 @@ function boot(){
       introEl.classList.add("off");
       window.scrollTo(0,0);
       beatEnter = performance.now();
-      PROOM.idle = 2.4;                 // the hands come up soon, not instantly
+      PROOM.idle = 3.2;   // the card explains nothing, so the scene must, and soon
       try{ beginEl.blur(); }catch(_){}
     };
     beginEl.addEventListener("click", go);
@@ -922,6 +922,7 @@ document.getElementById("restart").addEventListener("click", ()=>{
   ROOM.cL=ROOM.cR=ROOM.sash=ROOM.latch=0; ROOM.latchDone=false;
   PROOM.cL=PROOM.cR=PROOM.open=PROOM.sash=0; PROOM.nudgeTo=0; PROOM.idle=0; PROOM.demo=0;
   PROOM.breeze=0; PROOM.grab=0; PROOM.sashGrab=0; PROOM.everMoved=0;
+  CORD.swing=0; CORD.swingV=0; CORD.grab=0; buildWireBirds();
   for (const k in done) delete done[k];
   WASH.passed=0; WASH.shirtFound=false; WASH.walk=0; WASH.brushed=0;
   for (const st of CONST) st.lit=false;
@@ -943,10 +944,11 @@ window.__bluer = {
   get gates(){ return done; },
   get fps(){ return window.__fps; },
   get missing(){ return imgFailed.slice(); },
-  sashPos, curtainGap, CTR, CG,
+  cordBall, curtainGap, CTR, CG, WIN,
   intro(){ return introOn; },
   reset(){ PROOM.cL=PROOM.cR=PROOM.open=PROOM.sash=0; PROOM.nudgeTo=0;
-           PROOM.idle=0; PROOM.demo=0; delete done.curtain; delete done.sash; }
+           PROOM.idle=0; PROOM.demo=0; CORD.swing=0; CORD.swingV=0;
+           buildWireBirds(); delete done.curtain; delete done.sash; }
 };
 
 if (document.readyState==="loading") document.addEventListener("DOMContentLoaded", boot);

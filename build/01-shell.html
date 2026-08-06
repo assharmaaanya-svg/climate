@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>Bluer — Aanya Sharma</title>
-<meta name="description" content="One continuous memory under a sky that quietly changes. An interactive artwork by Aanya Sharma about the ordinary things air pollution took from a childhood." />
+<title>Remember When — Aanya Sharma</title>
+<meta name="description" content="Remember When — an interactive artwork by Aanya Sharma for the Earth Partner Prize, about the ordinary childhood moments air pollution quietly changed." />
 <meta name="theme-color" content="#0b1a2b" />
 <style>
   :root{
@@ -165,20 +165,14 @@
     transition:opacity 1.6s ease, visibility 1.6s; }
   #intro.off{ opacity:0; visibility:hidden; pointer-events:none; }
   #intro .in{ width:min(92vw,38rem); margin:auto; }
-  #intro .t{ font-size:clamp(2.4rem,7.2vh,4.4rem); line-height:.9; margin:0; letter-spacing:-.02em;
+  #intro .t{ font-size:clamp(2.6rem,9vh,5.4rem); line-height:.9; margin:0; letter-spacing:-.02em;
     color:#f2e6d2; }
   #intro .a{ font-style:italic; opacity:.72; margin:.45rem 0 0; font-size:clamp(.85rem,1.6vh,1rem); }
   #intro .lede{ margin:clamp(1rem,3vh,1.9rem) auto 0; max-width:34ch;
     font-size:clamp(.9rem,1.85vh,1.04rem); line-height:1.55; opacity:.9; }
-  #intro ul{ list-style:none; margin:clamp(1rem,3vh,1.8rem) auto 0; padding:0; max-width:30ch;
-    text-align:left; display:grid; gap:clamp(.55rem,1.5vh,.9rem); }
-  #intro li{ display:grid; grid-template-columns:1.75rem 1fr; align-items:start; gap:.85rem;
-    font-family:var(--mono); font-size:clamp(.68rem,1.55vh,.76rem); letter-spacing:.05em;
-    line-height:1.6; opacity:.86; }
-  #intro li b{ font-weight:400; color:#ffd9a8; letter-spacing:.14em; text-transform:uppercase;
-    font-size:.86em; }
-  #intro .ic{ width:1.75rem; height:1.75rem; display:grid; place-items:center; border-radius:50%;
-    border:1px solid rgba(255,217,168,.4); color:#ffd9a8; font-size:.86rem; }
+  #intro .prize{ margin:0 0 clamp(.9rem,2.6vh,1.6rem); font-family:var(--mono);
+    font-size:clamp(.6rem,1.4vh,.7rem); letter-spacing:.34em; text-transform:uppercase;
+    color:#ffd9a8; opacity:.75; }
   #begin{ margin-top:clamp(1.2rem,3.4vh,2.3rem); font-family:var(--mono); font-size:.7rem; letter-spacing:.2em;
     text-transform:uppercase; color:#120c06; background:#f0dfc4; border:0; border-radius:999px;
     padding:1em 2.2em; cursor:pointer; transition:transform .25s, background .25s;
@@ -202,21 +196,14 @@
 <div class="noscene"><p>One continuous memory — this artwork is drawn live, and needs a browser with JavaScript.</p></div>
 
 
-<div id="intro" role="dialog" aria-label="How to move through this artwork"><div class="in">
-  <h1 class="t">Bluer</h1>
+<div id="intro" role="dialog" aria-label="Remember When, by Aanya Sharma"><div class="in">
+  <p class="prize">Earth Partner Prize</p>
+  <h1 class="t">Remember When</h1>
   <p class="a">Aanya Sharma</p>
   <p class="lede">A morning you have had a thousand times, and the small things
      that stopped happening in it.</p>
-  <ul>
-    <li><span class="ic">✋</span><span><b>Drag</b><br>Everything you can reach moves. Take hold of it
-      and pull — curtains, a kite line, the whole night sky.</span></li>
-    <li><span class="ic">↓</span><span><b>Scroll</b><br>Moves you forward, once the moment in front of
-      you has been finished.</span></li>
-    <li><span class="ic">♪</span><span><b>Sound</b><br>Worth turning on, top right. Captions for it are
-      there too.</span></li>
-  </ul>
-  <button id="begin" autofocus>Open the curtains</button>
-  <p class="fine">about twelve minutes · nothing is timed · stuck? use skip, top right</p>
+  <button id="begin" autofocus>Begin</button>
+  <p class="fine">sound and captions, top right</p>
 </div></div>
 
 <div id="chapter" aria-hidden="true"></div>
@@ -279,16 +266,16 @@
 </div></div>
 
 <div id="title" aria-hidden="true">
-  <h1 class="t">Bluer</h1>
+  <h1 class="t">Remember When</h1>
   <p class="a">Aanya Sharma</p>
-  <p class="c">drawn live in your browser · sound and captions, top right<br>every figure is linked to its source</p>
+  <p class="c">Earth Partner Prize · drawn live in your browser<br>every figure is linked to its source</p>
   <button id="restart">Open the window again</button>
 </div>
 
 <main id="spine" aria-hidden="true"></main>
 
 <section class="sr">
-  <h1>Bluer — an interactive artwork by Aanya Sharma</h1>
+  <h1>Remember When — an interactive artwork by Aanya Sharma</h1>
   <p>A text description, for anyone who cannot experience the interactive version.</p>
   <h2>Chapter one — the world came inside</h2>
   <p>A dark bedroom before sunrise. A clock ticks. A mother's silhouette crosses the room and takes hold of the
@@ -341,7 +328,7 @@
   uneven blue. You may take the blue crayon and draw one small patch of it directly onto the glass, and through that
   patch the old world briefly shows. It stays where you put it.</p>
   <p>My mother used to open the window before I was awake. I check the air before I do.</p>
-  <p>Bluer — Aanya Sharma.</p>
+  <p>Remember When — Aanya Sharma.</p>
 </section>
 
 <script>

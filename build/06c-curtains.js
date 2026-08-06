@@ -63,16 +63,19 @@ function curtainLut(airQ){
   return out;
 }
 
-/* geometry, registered to bedroomopen.png (crop y 0.05, h 0.82) ------------ */
+/* geometry, registered to the new room plates. The paintings have no rod and no
+   curtains in them at all now, so these numbers answer only to the window:
+   the cloth clears the glass when it is drawn back, and covers the frame when
+   it is not. */
 const CG = {
-  top:  0.044,        // the cloth meets the painted rod here
-  hemC: 0.898,        // hem, curtains closed — just below the painted hem
-  hemO: 0.882,        // hem, fully drawn back — still on the boards
-  lOut: 0.286,        // left panel, outer edge (fixed to the rod end)
-  rOut: 0.786,        // right panel, outer edge
-  mid:  0.514,        // where they meet
-  lIn:  0.399,        // left panel, inner edge when fully drawn back
-  rIn:  0.689,        // right panel, inner edge when fully drawn back
+  top:  0.040,        // just under the rod this file's neighbour draws
+  hemC: 0.845,        // hem, curtains closed — on the boards
+  hemO: 0.838,        // hem, drawn back
+  lOut: 0.298,        // left panel, outer edge (the rod's own end)
+  rOut: 0.752,        // right panel, outer edge
+  mid:  0.525,        // where they meet
+  lIn:  0.386,        // drawn back, clear of the glass at 0.377
+  rIn:  0.672,        // drawn back, clear of the glass at 0.663
   slack: 1.55         // arc length as a multiple of the closed width
 };
 
@@ -98,14 +101,15 @@ function panelGeom(side, t, rev, W_, H_){
   const dirn = side ? -1 : 1;               // which way the inner edge lies
   const pull = ease.io(cl01(side ? PROOM.cR : PROOM.cL));
 
-  const xOut = outF*W_;
+  const CC = CGEO.cam || {x:0,y:0};
+  const xOut = outF*W_ + CC.x;
   const wClosed = Math.abs(CG.mid - outF)*W_;
   const fab = wClosed*CG.slack;                            // arc length, fixed
-  const xInClosed = CG.mid*W_, xInOpen = inOpenF*W_;
+  const xInClosed = CG.mid*W_ + CC.x, xInOpen = inOpenF*W_ + CC.x;
   const xIn0 = lerp(xInClosed, xInOpen, pull);
 
-  const top = CG.top*H_;
-  const hem = lerp(CG.hemC, CG.hemO, pull)*H_;
+  const top = CG.top*H_ + CC.y;
+  const hem = lerp(CG.hemC, CG.hemO, pull)*H_ + CC.y;
   const bodyH = hem - top;
 
   const folds = Math.max(5, Math.round(fab/(W_*0.0335)));
@@ -187,17 +191,30 @@ function panelGeom(side, t, rev, W_, H_){
   // the hem, scalloped by the folds and lifted where the panel is held back
   const hx = new Float64Array(NS+1), hy = new Float64Array(NS+1);
   const hm = rowMap(1, hx, null);
-  const sc = MIN*0.0028 + hm.amp*MIN*0.0075;
+  const sc = MIN*0.0007 + hm.amp*MIN*0.0011;   // barely there, on purpose
   for (let i=0;i<=NS;i++){
     const u = i/NS;
-    hy[i] = hem + sc*Math.cos(TAU*g.folds*u + hm.ph + 0.9) - pull*u*u*MIN*0.026;
+    /* One slow swag across the whole hem, and almost nothing else. A hemmed
+       edge hangs in a smooth line — the folds run down into it, they do not
+       scallop it. Ripple it once per fold and you get a row of teeth; ripple it
+       every twenty pixels and you still do. It is measured in screen distance
+       now, kept long, and kept shallow. */
+    const across = Math.abs(hx[i] - hx[0]);
+    hy[i] = hem
+          + MIN*0.0052*Math.sin(PI*u)*(0.5+hm.amp*0.5)
+          + sc*Math.cos(across/(MIN*0.060)*TAU + hm.ph)
+          - pull*u*u*MIN*0.026;
   }
   g.hemX = hx; g.hemY = hy;
-  g.hemMax = hem + sc + 2;
+  // every term that can push the hem down has to be in here: the fill stops at
+  // hemMax while the clip follows the hem, so anything lower than hemMax comes
+  // out as an unpainted notch — a row of them reads as a pinked edge
+  g.hemMax = hem + MIN*0.0052 + sc + pull*0 + 3;
   return g;
 }
 
 function curtainGeom(t, rev, air){
+  CGEO.cam = roomCam(CAM_CLOTH);      // the cloth moves with the room it is in
   CGEO.air = cl01(air||0);
   CGEO.rev = rev;
   CGEO.L = panelGeom(0, t, rev, W, H);
@@ -311,18 +328,25 @@ function drawPanel(g, lut, t){
   ctx.fillRect(Math.min(ox - g.dirn*MIN*0.006, ox + g.dirn*MIN*0.026), g.top,
                MIN*0.032, g.hem-g.top);
 
-  // and where the hem meets the floor — following the hem, not cutting across it
-  const drop = MIN*0.030;
-  const cg2 = ctx.createLinearGradient(0, g.hem, 0, g.hem+drop);
-  cg2.addColorStop(0, rgba([12,5,1], 0.40));
-  cg2.addColorStop(1, rgba([12,5,1], 0));
+  /* Where the hem meets the floor. A single gradient cannot do this: anchored
+     at the mean hem it clamps to full strength above that line and bites teeth
+     into the cloth, and anchored at the hem's highest point it smears shadow up
+     the inner edge wherever the panel is held back. So the shadow is a few flat
+     bands that each follow the hem exactly, fading as they go down. */
+  const drop = MIN*0.030, steps = 5;
   ctx.save();
-  ctx.beginPath();
-  ctx.moveTo(g.hemX[0], g.hemY[0]);
-  for (let i=1;i<=NS;i++) ctx.lineTo(g.hemX[i], g.hemY[i]);
-  for (let i=NS;i>=0;i--) ctx.lineTo(g.hemX[i], g.hemY[i]+drop);
-  ctx.closePath();
-  ctx.fillStyle = cg2; ctx.fill();
+  for (let k=0;k<steps;k++){
+    const o0 = drop*k/steps, o1 = drop*(k+1)/steps;
+    ctx.beginPath();
+    for (let i=0;i<=NS;i++){
+      const x = g.hemX[i], y = g.hemY[i]+o0;
+      i ? ctx.lineTo(x,y) : ctx.moveTo(x,y);
+    }
+    for (let i=NS;i>=0;i--) ctx.lineTo(g.hemX[i], g.hemY[i]+o1);
+    ctx.closePath();
+    ctx.fillStyle = rgba([12,5,1], 0.155*(1 - k/steps));
+    ctx.fill();
+  }
   ctx.restore();
 }
 
@@ -424,7 +448,7 @@ function bedroomInteract(g, t, dt){
   // how much help to offer
   if (Math.min(PROOM.cL,PROOM.cR) < CTR.need && isCurtain && !introOn){
     PROOM.idle += dt*(P.down?0.35:1);
-    PROOM.demo = lerp(PROOM.demo, PROOM.idle>4.5 ? 1 : 0, Math.min(1, dt*1.6));
+    PROOM.demo = lerp(PROOM.demo, PROOM.idle>1.8 ? 1 : 0, Math.min(1, dt*1.6));
   } else {
     PROOM.idle = 0;
     PROOM.demo = lerp(PROOM.demo, 0, Math.min(1, dt*3));
@@ -517,6 +541,7 @@ function curtainHelp(t, dt){
     ctx.font = "500 " + Math.max(12, MIN*0.021) + "px " + MONO;
     ctx.textAlign = "center"; ctx.textBaseline = "middle";
     const msg = PROOM.everMoved ? "keep pulling" : "drag the curtains apart";
+    // direct, and in the place where the hands already are
     const yy = y + MIN*0.085;
     ctx.shadowColor = "rgba(8,4,0,0.9)"; ctx.shadowBlur = MIN*0.03;
     ctx.fillStyle = rgba([255,246,228], 0.80+0.20*pulse);
@@ -528,65 +553,4 @@ function curtainHelp(t, dt){
     }
     ctx.restore();
   }
-}
-
-/* ============================================================================
-   THE WINDOW ITSELF
-   The painting hangs a brass pull on a cord in the middle of the window. That
-   is the latch. Draw it down and the sash lifts, and the outside comes in.
-   ========================================================================== */
-const SASH = { x:0.549, y:0.243, r:0.0132 };   // where the painting hung it
-
-function sashPos(){
-  return { x: SASH.x*W, y: (SASH.y + PROOM.sash*0.085)*H, r: MIN*SASH.r };
-}
-function sashInteract(g, t, dt){
-  const p = sashPos();
-  const near = Math.hypot(P.x-p.x, P.y-p.y) < MIN*0.075;
-  if (P.down && (PROOM.sashGrab || near)){
-    if (!PROOM.sashGrab){ PROOM.sashGrab = 1; cv.className="grabbing"; }
-    if (P.dy > 0) PROOM.sash = cl01(PROOM.sash + P.dy/(H*0.16));
-    if (Math.random()<0.10) sfx.cloth(0.20);
-  } else {
-    if (PROOM.sashGrab && PROOM.sash < 0.99) sfx.thud();
-    PROOM.sashGrab = 0;
-    if (near && !P.down) cv.className = "grabbable";
-    if (P.tapped && near){ P.tapped=false; PROOM.sash = cl01(PROOM.sash+0.34); sfx.slide(); }
-  }
-  PROOM.pullSwing = lerp(PROOM.pullSwing, Math.sin(t*1.7)*(0.4+AIR.wind), Math.min(1,dt*2));
-  if (g && PROOM.sash > 0.55) meet(g);
-}
-function drawSashPull(t){
-  const p = sashPos();
-  const sw = PROOM.pullSwing*MIN*0.004*PROOM.sash;
-  ctx.save();
-  // the cord
-  ctx.strokeStyle = rgba([120,86,44], 0.85);
-  ctx.lineWidth = Math.max(1, MIN*0.0022);
-  ctx.beginPath();
-  ctx.moveTo(SASH.x*W, H*0.052);
-  ctx.quadraticCurveTo(SASH.x*W + sw*2, (p.y+CG.top*H)*0.5, p.x + sw, p.y - p.r);
-  ctx.stroke();
-  // the brass
-  const bg = ctx.createRadialGradient(p.x+sw-p.r*0.35, p.y-p.r*0.4, p.r*0.1,
-                                      p.x+sw, p.y, p.r*1.25);
-  bg.addColorStop(0, "rgb(255,232,168)");
-  bg.addColorStop(0.45, "rgb(206,148,52)");
-  bg.addColorStop(1, "rgb(96,60,16)");
-  ctx.fillStyle = bg;
-  ctx.beginPath(); ctx.arc(p.x+sw, p.y, p.r, 0, TAU); ctx.fill();
-  // it says it can be taken hold of, until it has been
-  if (PROOM.sash < 0.4){
-    const a = 0.30 + 0.26*(0.5-0.5*Math.cos(t*1.6));
-    ctx.strokeStyle = rgba([255,240,206], a);
-    ctx.lineWidth = Math.max(1.2, MIN*0.0026);
-    ctx.beginPath(); ctx.arc(p.x+sw, p.y, p.r*2.1, 0, TAU); ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(p.x+sw, p.y + p.r*2.9);
-    ctx.lineTo(p.x+sw - p.r*0.55, p.y + p.r*2.1);
-    ctx.moveTo(p.x+sw, p.y + p.r*2.9);
-    ctx.lineTo(p.x+sw + p.r*0.55, p.y + p.r*2.1);
-    ctx.stroke();
-  }
-  ctx.restore();
 }

@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>Bluer — Aanya Sharma</title>
-<meta name="description" content="One continuous memory under a sky that quietly changes. An interactive artwork by Aanya Sharma about the ordinary things air pollution took from a childhood." />
+<title>Remember When — Aanya Sharma</title>
+<meta name="description" content="Remember When — an interactive artwork by Aanya Sharma for the Earth Partner Prize, about the ordinary childhood moments air pollution quietly changed." />
 <meta name="theme-color" content="#0b1a2b" />
 <style>
   :root{
@@ -165,20 +165,14 @@
     transition:opacity 1.6s ease, visibility 1.6s; }
   #intro.off{ opacity:0; visibility:hidden; pointer-events:none; }
   #intro .in{ width:min(92vw,38rem); margin:auto; }
-  #intro .t{ font-size:clamp(2.4rem,7.2vh,4.4rem); line-height:.9; margin:0; letter-spacing:-.02em;
+  #intro .t{ font-size:clamp(2.6rem,9vh,5.4rem); line-height:.9; margin:0; letter-spacing:-.02em;
     color:#f2e6d2; }
   #intro .a{ font-style:italic; opacity:.72; margin:.45rem 0 0; font-size:clamp(.85rem,1.6vh,1rem); }
   #intro .lede{ margin:clamp(1rem,3vh,1.9rem) auto 0; max-width:34ch;
     font-size:clamp(.9rem,1.85vh,1.04rem); line-height:1.55; opacity:.9; }
-  #intro ul{ list-style:none; margin:clamp(1rem,3vh,1.8rem) auto 0; padding:0; max-width:30ch;
-    text-align:left; display:grid; gap:clamp(.55rem,1.5vh,.9rem); }
-  #intro li{ display:grid; grid-template-columns:1.75rem 1fr; align-items:start; gap:.85rem;
-    font-family:var(--mono); font-size:clamp(.68rem,1.55vh,.76rem); letter-spacing:.05em;
-    line-height:1.6; opacity:.86; }
-  #intro li b{ font-weight:400; color:#ffd9a8; letter-spacing:.14em; text-transform:uppercase;
-    font-size:.86em; }
-  #intro .ic{ width:1.75rem; height:1.75rem; display:grid; place-items:center; border-radius:50%;
-    border:1px solid rgba(255,217,168,.4); color:#ffd9a8; font-size:.86rem; }
+  #intro .prize{ margin:0 0 clamp(.9rem,2.6vh,1.6rem); font-family:var(--mono);
+    font-size:clamp(.6rem,1.4vh,.7rem); letter-spacing:.34em; text-transform:uppercase;
+    color:#ffd9a8; opacity:.75; }
   #begin{ margin-top:clamp(1.2rem,3.4vh,2.3rem); font-family:var(--mono); font-size:.7rem; letter-spacing:.2em;
     text-transform:uppercase; color:#120c06; background:#f0dfc4; border:0; border-radius:999px;
     padding:1em 2.2em; cursor:pointer; transition:transform .25s, background .25s;
@@ -202,21 +196,14 @@
 <div class="noscene"><p>One continuous memory — this artwork is drawn live, and needs a browser with JavaScript.</p></div>
 
 
-<div id="intro" role="dialog" aria-label="How to move through this artwork"><div class="in">
-  <h1 class="t">Bluer</h1>
+<div id="intro" role="dialog" aria-label="Remember When, by Aanya Sharma"><div class="in">
+  <p class="prize">Earth Partner Prize</p>
+  <h1 class="t">Remember When</h1>
   <p class="a">Aanya Sharma</p>
   <p class="lede">A morning you have had a thousand times, and the small things
      that stopped happening in it.</p>
-  <ul>
-    <li><span class="ic">✋</span><span><b>Drag</b><br>Everything you can reach moves. Take hold of it
-      and pull — curtains, a kite line, the whole night sky.</span></li>
-    <li><span class="ic">↓</span><span><b>Scroll</b><br>Moves you forward, once the moment in front of
-      you has been finished.</span></li>
-    <li><span class="ic">♪</span><span><b>Sound</b><br>Worth turning on, top right. Captions for it are
-      there too.</span></li>
-  </ul>
-  <button id="begin" autofocus>Open the curtains</button>
-  <p class="fine">about twelve minutes · nothing is timed · stuck? use skip, top right</p>
+  <button id="begin" autofocus>Begin</button>
+  <p class="fine">sound and captions, top right</p>
 </div></div>
 
 <div id="chapter" aria-hidden="true"></div>
@@ -279,16 +266,16 @@
 </div></div>
 
 <div id="title" aria-hidden="true">
-  <h1 class="t">Bluer</h1>
+  <h1 class="t">Remember When</h1>
   <p class="a">Aanya Sharma</p>
-  <p class="c">drawn live in your browser · sound and captions, top right<br>every figure is linked to its source</p>
+  <p class="c">Earth Partner Prize · drawn live in your browser<br>every figure is linked to its source</p>
   <button id="restart">Open the window again</button>
 </div>
 
 <main id="spine" aria-hidden="true"></main>
 
 <section class="sr">
-  <h1>Bluer — an interactive artwork by Aanya Sharma</h1>
+  <h1>Remember When — an interactive artwork by Aanya Sharma</h1>
   <p>A text description, for anyone who cannot experience the interactive version.</p>
   <h2>Chapter one — the world came inside</h2>
   <p>A dark bedroom before sunrise. A clock ticks. A mother's silhouette crosses the room and takes hold of the
@@ -341,7 +328,7 @@
   uneven blue. You may take the blue crayon and draw one small patch of it directly onto the glass, and through that
   patch the old world briefly shows. It stays where you put it.</p>
   <p>My mother used to open the window before I was awake. I check the air before I do.</p>
-  <p>Bluer — Aanya Sharma.</p>
+  <p>Remember When — Aanya Sharma.</p>
 </section>
 
 <script>
@@ -957,6 +944,22 @@ const PLATES = {
     bands:[ {to:0.13,p:0.02}, {to:0.60,p:0.05}, {to:0.78,p:0.10}, {to:1.0,p:0.18} ],
     repair:[ { x:0.549, y:0.243, w:0.036, h:0.062 } ]
   },
+  /* ------------------------------------------------------------------ the room
+     Two plates of the same bedroom, painted with nothing in them that the code
+     needs to own: no curtains, no rod, no pull cord, no birds. Outside the
+     window they are identical to the pixel, so they can be laid straight over
+     each other and only the casement moves. Everything else in this chapter is
+     a sprite or is drawn. */
+  roomShut: {
+    clean:"bedroomwithnobulbandcurtainsandbirdsandadifferentwindowframe.png",
+    crop:{ x:0.0, y:0.045, w:1.0, h:0.830 },
+    bands:[ {to:0.16,p:0.015}, {to:0.62,p:0.04}, {to:0.80,p:0.09}, {to:1.0,p:0.17} ]
+  },
+  roomOpen: {
+    clean:"widnowopennocrtains.png",
+    crop:{ x:0.0, y:0.045, w:1.0, h:0.830 },
+    bands:[ {to:0.16,p:0.015}, {to:0.62,p:0.04}, {to:0.80,p:0.09}, {to:1.0,p:0.17} ]
+  },
   bedroomOpenAlt: {
     clean:"bedroomopenver2.png",
     crop:{ x:0.0, y:0.05, w:1.0, h:0.82 },
@@ -1023,7 +1026,9 @@ const PLATES = {
 
 /* preload everything the piece will need, in rough order of appearance */
 function preloadPlates(){
-  const order = ["bedroomclosed.png","bedroomopen.png","bedroompostpollution.png",
+  const order = ["bedroomwithnobulbandcurtainsandbirdsandadifferentwindowframe.png",
+    "widnowopennocrtains.png","bulb latch png transparent.png","birdsonthedistanceinbedroom.png",
+    "bedroomclosed.png","bedroomopen.png","bedroompostpollution.png",
     "moresheets.png","moresheetspolluted.png","sheetswithmother.png","sheetspollutedwithmother.png",
     "childflykite.png","childflykiteevening.png","childflykite night.png","pollutedkitefly.png",
     "stargaze.png","pollutedstargaze.png","viewoftown.png","viewoftownafterpollution.png",
@@ -4094,16 +4099,30 @@ const sfx = {
   latch(){ cc("a metal latch turning"); burst(3200, 9, 0.09, 0.05); tone(760,0.10,"square",0.016); },
   slide(){ cc("the window sliding up"); burst(340, 0.9, 0.52, 0.055, "lowpass"); },
   thud(){ cc("wood settling"); burst(140, 1.2, 0.20, 0.06, "lowpass"); },
-  bird(){ if(!AC||!soundOn||AIR.h>0.62) return; cc("birdsong");
-    const f=rnd(1900,3100), now=AC.currentTime;
+  /* One chirp. `v` is how near it sounds: through a shut window it is faint and
+     dull, through an open one it is close and bright — the same birds, the same
+     distance, a different amount of glass. */
+  bird(v, bright){ if(!AC||!soundOn||AIR.h>0.62) return; cc("birdsong");
+    v = v===undefined ? 1 : v;
+    bright = bright===undefined ? 1 : bright;
+    const f=rnd(1900,3100)*(0.82+0.18*bright), now=AC.currentTime;
     const o=AC.createOscillator(); o.type="sine";
     o.frequency.setValueAtTime(f,now);
     o.frequency.linearRampToValueAtTime(f*rnd(1.15,1.5), now+0.07);
     o.frequency.linearRampToValueAtTime(f*0.95, now+0.15);
+    const lp=AC.createBiquadFilter(); lp.type="lowpass";
+    lp.frequency.value = 900 + 5200*bright;            // glass in the way
     const g=AC.createGain(); g.gain.setValueAtTime(0.0001,now);
-    g.gain.exponentialRampToValueAtTime(0.035*(1-AIR.h),now+0.02);
+    g.gain.exponentialRampToValueAtTime(Math.max(0.0005, 0.035*v*(1-AIR.h)),now+0.02);
     g.gain.exponentialRampToValueAtTime(0.0001,now+0.22);
-    o.connect(g); g.connect(master); o.start(now); o.stop(now+0.24); },
+    o.connect(lp); lp.connect(g); g.connect(master); o.start(now); o.stop(now+0.24); },
+  /* the casement: a dry hinge, then the sash coming to rest against its stop */
+  hinge(){ cc("a window swinging open");
+    burst(240, 1.1, 0.62, 0.026, "lowpass");
+    tone(150, 0.42, "sine", 0.016, 104); },
+  casementRest(){ cc("the window settling open");
+    burst(180, 1.4, 0.26, 0.034, "lowpass");
+    tone(96, 0.22, "sine", 0.020, 62); },
   crayon(){ cc("wax on paper"); burst(rnd(900,1500), 0.4, 0.13, 0.030, "bandpass"); },
   paper(){ cc("paper"); burst(2400, 0.5, 0.24, 0.032); },
   train(){ cc("a train, somewhere past the town"); burst(150, 0.6, 2.4, 0.030, "lowpass"); tone(196,1.2,"sine",0.012); },
@@ -5202,16 +5221,19 @@ function curtainLut(airQ){
   return out;
 }
 
-/* geometry, registered to bedroomopen.png (crop y 0.05, h 0.82) ------------ */
+/* geometry, registered to the new room plates. The paintings have no rod and no
+   curtains in them at all now, so these numbers answer only to the window:
+   the cloth clears the glass when it is drawn back, and covers the frame when
+   it is not. */
 const CG = {
-  top:  0.044,        // the cloth meets the painted rod here
-  hemC: 0.898,        // hem, curtains closed — just below the painted hem
-  hemO: 0.882,        // hem, fully drawn back — still on the boards
-  lOut: 0.286,        // left panel, outer edge (fixed to the rod end)
-  rOut: 0.786,        // right panel, outer edge
-  mid:  0.514,        // where they meet
-  lIn:  0.399,        // left panel, inner edge when fully drawn back
-  rIn:  0.689,        // right panel, inner edge when fully drawn back
+  top:  0.040,        // just under the rod this file's neighbour draws
+  hemC: 0.845,        // hem, curtains closed — on the boards
+  hemO: 0.838,        // hem, drawn back
+  lOut: 0.298,        // left panel, outer edge (the rod's own end)
+  rOut: 0.752,        // right panel, outer edge
+  mid:  0.525,        // where they meet
+  lIn:  0.386,        // drawn back, clear of the glass at 0.377
+  rIn:  0.672,        // drawn back, clear of the glass at 0.663
   slack: 1.55         // arc length as a multiple of the closed width
 };
 
@@ -5237,14 +5259,15 @@ function panelGeom(side, t, rev, W_, H_){
   const dirn = side ? -1 : 1;               // which way the inner edge lies
   const pull = ease.io(cl01(side ? PROOM.cR : PROOM.cL));
 
-  const xOut = outF*W_;
+  const CC = CGEO.cam || {x:0,y:0};
+  const xOut = outF*W_ + CC.x;
   const wClosed = Math.abs(CG.mid - outF)*W_;
   const fab = wClosed*CG.slack;                            // arc length, fixed
-  const xInClosed = CG.mid*W_, xInOpen = inOpenF*W_;
+  const xInClosed = CG.mid*W_ + CC.x, xInOpen = inOpenF*W_ + CC.x;
   const xIn0 = lerp(xInClosed, xInOpen, pull);
 
-  const top = CG.top*H_;
-  const hem = lerp(CG.hemC, CG.hemO, pull)*H_;
+  const top = CG.top*H_ + CC.y;
+  const hem = lerp(CG.hemC, CG.hemO, pull)*H_ + CC.y;
   const bodyH = hem - top;
 
   const folds = Math.max(5, Math.round(fab/(W_*0.0335)));
@@ -5326,17 +5349,30 @@ function panelGeom(side, t, rev, W_, H_){
   // the hem, scalloped by the folds and lifted where the panel is held back
   const hx = new Float64Array(NS+1), hy = new Float64Array(NS+1);
   const hm = rowMap(1, hx, null);
-  const sc = MIN*0.0028 + hm.amp*MIN*0.0075;
+  const sc = MIN*0.0007 + hm.amp*MIN*0.0011;   // barely there, on purpose
   for (let i=0;i<=NS;i++){
     const u = i/NS;
-    hy[i] = hem + sc*Math.cos(TAU*g.folds*u + hm.ph + 0.9) - pull*u*u*MIN*0.026;
+    /* One slow swag across the whole hem, and almost nothing else. A hemmed
+       edge hangs in a smooth line — the folds run down into it, they do not
+       scallop it. Ripple it once per fold and you get a row of teeth; ripple it
+       every twenty pixels and you still do. It is measured in screen distance
+       now, kept long, and kept shallow. */
+    const across = Math.abs(hx[i] - hx[0]);
+    hy[i] = hem
+          + MIN*0.0052*Math.sin(PI*u)*(0.5+hm.amp*0.5)
+          + sc*Math.cos(across/(MIN*0.060)*TAU + hm.ph)
+          - pull*u*u*MIN*0.026;
   }
   g.hemX = hx; g.hemY = hy;
-  g.hemMax = hem + sc + 2;
+  // every term that can push the hem down has to be in here: the fill stops at
+  // hemMax while the clip follows the hem, so anything lower than hemMax comes
+  // out as an unpainted notch — a row of them reads as a pinked edge
+  g.hemMax = hem + MIN*0.0052 + sc + pull*0 + 3;
   return g;
 }
 
 function curtainGeom(t, rev, air){
+  CGEO.cam = roomCam(CAM_CLOTH);      // the cloth moves with the room it is in
   CGEO.air = cl01(air||0);
   CGEO.rev = rev;
   CGEO.L = panelGeom(0, t, rev, W, H);
@@ -5450,18 +5486,25 @@ function drawPanel(g, lut, t){
   ctx.fillRect(Math.min(ox - g.dirn*MIN*0.006, ox + g.dirn*MIN*0.026), g.top,
                MIN*0.032, g.hem-g.top);
 
-  // and where the hem meets the floor — following the hem, not cutting across it
-  const drop = MIN*0.030;
-  const cg2 = ctx.createLinearGradient(0, g.hem, 0, g.hem+drop);
-  cg2.addColorStop(0, rgba([12,5,1], 0.40));
-  cg2.addColorStop(1, rgba([12,5,1], 0));
+  /* Where the hem meets the floor. A single gradient cannot do this: anchored
+     at the mean hem it clamps to full strength above that line and bites teeth
+     into the cloth, and anchored at the hem's highest point it smears shadow up
+     the inner edge wherever the panel is held back. So the shadow is a few flat
+     bands that each follow the hem exactly, fading as they go down. */
+  const drop = MIN*0.030, steps = 5;
   ctx.save();
-  ctx.beginPath();
-  ctx.moveTo(g.hemX[0], g.hemY[0]);
-  for (let i=1;i<=NS;i++) ctx.lineTo(g.hemX[i], g.hemY[i]);
-  for (let i=NS;i>=0;i--) ctx.lineTo(g.hemX[i], g.hemY[i]+drop);
-  ctx.closePath();
-  ctx.fillStyle = cg2; ctx.fill();
+  for (let k=0;k<steps;k++){
+    const o0 = drop*k/steps, o1 = drop*(k+1)/steps;
+    ctx.beginPath();
+    for (let i=0;i<=NS;i++){
+      const x = g.hemX[i], y = g.hemY[i]+o0;
+      i ? ctx.lineTo(x,y) : ctx.moveTo(x,y);
+    }
+    for (let i=NS;i>=0;i--) ctx.lineTo(g.hemX[i], g.hemY[i]+o1);
+    ctx.closePath();
+    ctx.fillStyle = rgba([12,5,1], 0.155*(1 - k/steps));
+    ctx.fill();
+  }
   ctx.restore();
 }
 
@@ -5563,7 +5606,7 @@ function bedroomInteract(g, t, dt){
   // how much help to offer
   if (Math.min(PROOM.cL,PROOM.cR) < CTR.need && isCurtain && !introOn){
     PROOM.idle += dt*(P.down?0.35:1);
-    PROOM.demo = lerp(PROOM.demo, PROOM.idle>4.5 ? 1 : 0, Math.min(1, dt*1.6));
+    PROOM.demo = lerp(PROOM.demo, PROOM.idle>1.8 ? 1 : 0, Math.min(1, dt*1.6));
   } else {
     PROOM.idle = 0;
     PROOM.demo = lerp(PROOM.demo, 0, Math.min(1, dt*3));
@@ -5656,6 +5699,7 @@ function curtainHelp(t, dt){
     ctx.font = "500 " + Math.max(12, MIN*0.021) + "px " + MONO;
     ctx.textAlign = "center"; ctx.textBaseline = "middle";
     const msg = PROOM.everMoved ? "keep pulling" : "drag the curtains apart";
+    // direct, and in the place where the hands already are
     const yy = y + MIN*0.085;
     ctx.shadowColor = "rgba(8,4,0,0.9)"; ctx.shadowBlur = MIN*0.03;
     ctx.fillStyle = rgba([255,246,228], 0.80+0.20*pulse);
@@ -5668,66 +5712,591 @@ function curtainHelp(t, dt){
     ctx.restore();
   }
 }
-
 /* ============================================================================
-   THE WINDOW ITSELF
-   The painting hangs a brass pull on a cord in the middle of the window. That
-   is the latch. Draw it down and the sash lifts, and the outside comes in.
-   ========================================================================== */
-const SASH = { x:0.549, y:0.243, r:0.0132 };   // where the painting hung it
+   THE BEDROOM
+   ============================================================================
+   The room arrived as two paintings with holes deliberately left in them: no
+   curtains, no rod, no pull cord, no birds, and a casement window instead of a
+   sash. Everything that was taken out is something that has to move, so
+   everything that moves is now either a sprite with its own painted pixels or
+   is drawn here.
 
-function sashPos(){
-  return { x: SASH.x*W, y: (SASH.y + PROOM.sash*0.085)*H, r: MIN*SASH.r };
+   What is in this file:
+
+     THE ROD          drawn, because the paintings no longer have one, and the
+                      curtains need something to hang from that can be lit.
+     THE CASEMENT      the two plates are identical outside the window, so the
+                      window can be opened by foreshortening the shut leaves
+                      toward their hinges while the open painting comes through
+                      behind them. The leaf swings; nothing dissolves.
+     THE PULL CORD     one transparent sprite. The cord stretches, the ball does
+                      not, because that is what happens when you pull a cord.
+                      It hangs from the window head and swings on the draught.
+     THE WIREBIRDS         one sheet, cut into seven by alpha, each bird placed on
+                      the wires outside with its own clock — settling, turning,
+                      shuffling along the wire. They are outside the glass, so
+                      they are clipped to it, and they scatter when the window
+                      opens because that is what birds do.
+
+   The room's darkness is not a second painting. It is one lit room dimmed by
+   how far the curtains are still shut, which means the light in here always
+   agrees with the cloth in front of it.
+   ========================================================================== */
+
+/* the window, measured off bedroomwithnobulb…png through the plate crop
+   (image y 0.045 → 0.875 maps to the frame) */
+const WIN = {
+  fx0: 0.352, fx1: 0.697,      // outer frame, left and right
+  gx0: 0.377, gx1: 0.663,      // glass
+  mull: 0.520,                 // the centre mullion
+  fy0: 0.058, fy1: 0.789,      // outer frame, top and bottom (screen fractions)
+  gy0: 0.114, gy1: 0.726,      // glass
+  sill: 0.800,
+  rodY: 0.034, rodX0: 0.298, rodX1: 0.752,
+  wireY: [0.352, 0.386]        // the utility lines the birds sit on
+};
+
+/* ---------------------------------------------------------------- THE CAMERA
+   drawPlate offsets every band by the pointer camera and a slow involuntary
+   drift. Anything drawn on top has to take the same offset at its own depth, or
+   the painted room slides under a rod, a cord and a set of curtains that are
+   nailed to the glass. These are the depths things sit at:
+     0.015  outside, on the wires        0.040  the wall and the window
+     0.075  the cloth, nearest the room */
+function roomCam(p){
+  const dx0 = Math.sin(PCAM.drift*0.06)*W*0.006;
+  const dy0 = Math.cos(PCAM.drift*0.045)*H*0.004;
+  return { x: PCAM.x*p*W*0.36 + dx0*p*6,
+           y: PCAM.y*p*H*0.22 + dy0*p*6 };
 }
-function sashInteract(g, t, dt){
-  const p = sashPos();
-  const near = Math.hypot(P.x-p.x, P.y-p.y) < MIN*0.075;
-  if (P.down && (PROOM.sashGrab || near)){
-    if (!PROOM.sashGrab){ PROOM.sashGrab = 1; cv.className="grabbing"; }
-    if (P.dy > 0) PROOM.sash = cl01(PROOM.sash + P.dy/(H*0.16));
-    if (Math.random()<0.10) sfx.cloth(0.20);
-  } else {
-    if (PROOM.sashGrab && PROOM.sash < 0.99) sfx.thud();
-    PROOM.sashGrab = 0;
-    if (near && !P.down) cv.className = "grabbable";
-    if (P.tapped && near){ P.tapped=false; PROOM.sash = cl01(PROOM.sash+0.34); sfx.slide(); }
-  }
-  PROOM.pullSwing = lerp(PROOM.pullSwing, Math.sin(t*1.7)*(0.4+AIR.wind), Math.min(1,dt*2));
-  if (g && PROOM.sash > 0.55) meet(g);
-}
-function drawSashPull(t){
-  const p = sashPos();
-  const sw = PROOM.pullSwing*MIN*0.004*PROOM.sash;
+const CAM_WIRE = 0.015, CAM_WALL = 0.040, CAM_CLOTH = 0.075;
+
+/* ------------------------------------------------------------------ THE ROD
+   Drawn rather than painted, so it can catch the light that arrives when the
+   curtains part, and so the rings can shift as the cloth gathers. */
+function drawRod(t, rev, air){
+  const c  = roomCam(CAM_CLOTH);
+  const y  = WIN.rodY*H + c.y;
+  const x0 = WIN.rodX0*W + c.x, x1 = WIN.rodX1*W + c.x;
+  const r  = Math.max(2, MIN*0.0062);
+  const lit = 0.22 + 0.78*rev*(1-air*0.35);      // scales the colour, not the alpha
+  const K = c => [c[0]*lit, c[1]*lit, c[2]*lit];
+
   ctx.save();
-  // the cord
-  ctx.strokeStyle = rgba([120,86,44], 0.85);
-  ctx.lineWidth = Math.max(1, MIN*0.0022);
+  ctx.fillStyle = rgba([18,8,2], 0.26*(0.4+0.6*rev));
   ctx.beginPath();
-  ctx.moveTo(SASH.x*W, H*0.052);
-  ctx.quadraticCurveTo(SASH.x*W + sw*2, (p.y+CG.top*H)*0.5, p.x + sw, p.y - p.r);
-  ctx.stroke();
-  // the brass
-  const bg = ctx.createRadialGradient(p.x+sw-p.r*0.35, p.y-p.r*0.4, p.r*0.1,
-                                      p.x+sw, p.y, p.r*1.25);
-  bg.addColorStop(0, "rgb(255,232,168)");
-  bg.addColorStop(0.45, "rgb(206,148,52)");
-  bg.addColorStop(1, "rgb(96,60,16)");
-  ctx.fillStyle = bg;
-  ctx.beginPath(); ctx.arc(p.x+sw, p.y, p.r, 0, TAU); ctx.fill();
-  // it says it can be taken hold of, until it has been
-  if (PROOM.sash < 0.4){
-    const a = 0.30 + 0.26*(0.5-0.5*Math.cos(t*1.6));
-    ctx.strokeStyle = rgba([255,240,206], a);
-    ctx.lineWidth = Math.max(1.2, MIN*0.0026);
-    ctx.beginPath(); ctx.arc(p.x+sw, p.y, p.r*2.1, 0, TAU); ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(p.x+sw, p.y + p.r*2.9);
-    ctx.lineTo(p.x+sw - p.r*0.55, p.y + p.r*2.1);
-    ctx.moveTo(p.x+sw, p.y + p.r*2.9);
-    ctx.lineTo(p.x+sw + p.r*0.55, p.y + p.r*2.1);
-    ctx.stroke();
+  ctx.ellipse((x0+x1)/2, y + r*2.4, (x1-x0)/2, r*1.1, 0, 0, TAU);
+  ctx.fill();
+
+  // dark iron, with one warm line along the top where the window light lands
+  const g = ctx.createLinearGradient(0, y-r, 0, y+r);
+  g.addColorStop(0.00, rgb(K([ 96, 66, 38])));
+  g.addColorStop(0.26, rgb(K([158,116, 62])));
+  g.addColorStop(0.62, rgb(K([ 56, 34, 16])));
+  g.addColorStop(1.00, rgb(K([ 24, 13,  5])));
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(x0, y-r, x1-x0, r*2, r);
+  else ctx.rect(x0, y-r, x1-x0, r*2);
+  ctx.fill();
+
+  for (const fx of [x0, x1]){
+    const fg = ctx.createRadialGradient(fx-r*0.6, y-r*0.8, r*0.1, fx, y, r*1.9);
+    fg.addColorStop(0.00, rgb(K([182,136, 76])));
+    fg.addColorStop(0.55, rgb(K([ 92, 60, 28])));
+    fg.addColorStop(1.00, rgb(K([ 20, 11,  4])));
+    ctx.fillStyle = fg;
+    ctx.beginPath(); ctx.arc(fx, y, r*1.55, 0, TAU); ctx.fill();
   }
   ctx.restore();
+}
+
+/* ============================================================================
+   THE CASEMENT
+   Both plates are the same room; only the window differs. So the shut leaves
+   are squashed toward their hinges as they swing away, and the open painting is
+   already behind them. The leaf itself moves — there is no crossfade until the
+   last of it, by which point the two agree.
+   ========================================================================== */
+function drawCasement(t, dt, o){
+  const open = cl01(o.open);
+  const air  = cl01(o.air||0);
+  if (!getPlate("roomShut")) return false;
+
+  if (open < 0.002){ drawPlate("roomShut", { air }); return true; }
+  if (open > 0.998 || !getPlate("roomOpen")){ drawPlate("roomOpen", { air }); return true; }
+
+  // the room with its window already open, underneath
+  drawPlate("roomOpen", { air });
+
+  // the shut room, held back to the window, with the leaves swinging out of it
+  offscreen(()=>{ drawPlate("roomShut", { air, drift:false }); });
+
+  const y0 = WIN.fy0*H, y1 = WIN.fy1*H;
+  const sw = ease.io(open);
+  // everything but the two leaves stays exactly where it is until the very end
+  const frameA = 1 - sm(open, 0.72, 1.0);
+  ctx.save();
+  ctx.globalAlpha = frameA;
+  ctx.beginPath();
+  ctx.rect(WIN.fx0*W, y0, (WIN.fx1-WIN.fx0)*W, y1-y0);
+  ctx.rect(WIN.gx0*W, WIN.gy0*H, (WIN.gx1-WIN.gx0)*W, (WIN.gy1-WIN.gy0)*H);
+  ctx.clip("evenodd");
+  ctx.drawImage(TMP, 0, 0);
+  ctx.restore();
+
+  for (const side of [0,1]){
+    // hinged at the outer frame, so the free edge is the one at the mullion
+    const hinge = (side ? WIN.fx1 : WIN.fx0)*W;
+    const free  = WIN.mull*W;
+    const gy0 = WIN.gy0*H, gy1 = WIN.gy1*H;
+    // foreshortening: the leaf turns toward the room, so its width collapses
+    const k = Math.cos(sw*1.32);
+    const nw = (free - hinge)*k;
+    ctx.save();
+    ctx.globalAlpha = 1 - sm(open, 0.74, 0.98);
+    ctx.beginPath();
+    ctx.rect(Math.min(hinge, hinge+nw), gy0, Math.abs(nw), gy1-gy0);
+    ctx.clip();
+    // scale the painted leaf about its hinge
+    ctx.translate(hinge, 0);
+    ctx.scale(k, 1);
+    ctx.translate(-hinge, 0);
+    ctx.drawImage(TMP, 0, 0);
+    ctx.restore();
+    // the edge of the leaf, catching the light as it turns
+    const ex = hinge + nw;
+    const eg = ctx.createLinearGradient(ex - (side?-1:1)*MIN*0.010, 0, ex, 0);
+    eg.addColorStop(0, rgba([255,226,168], 0));
+    eg.addColorStop(1, rgba([255,226,168], 0.34*Math.sin(sw*PI)));
+    ctx.fillStyle = eg;
+    ctx.fillRect(Math.min(ex-MIN*0.010, ex+MIN*0.010), gy0, MIN*0.020, gy1-gy0);
+  }
+  return true;
+}
+
+/* ============================================================================
+   THE PULL CORD
+   One sprite: a long cord with a turned wooden ball on the end. The cord is
+   drawn stretched to whatever length it currently has; the ball is drawn at its
+   own size at the end of it, because pulling a cord lengthens the cord and does
+   nothing at all to the ball.
+   ========================================================================== */
+const CORD = {
+  x: 0.520,            // hanging in front of the mullion
+  // At rest it hangs clear of the painted latch on the mullion; pulling is what
+  // brings it down over the handle, which is the whole point of pulling it.
+  rest: 0.238,         // where the ball sits at rest, as a fraction of H
+  drop: 0.145,         // how much further it comes down when pulled
+  ballW: 0.034,        // the ball, as a fraction of MIN
+  splitY: 0.845,       // where the cord ends and the ball begins, in the sprite
+  swing: 0, swingV: 0, grab: 0, held: 0
+};
+function cordSprite(){
+  const im = IMG["bulb latch png transparent.png"];
+  return imgReady(im) ? im : null;
+}
+function cordBall(){
+  const ballW = MIN*CORD.ballW;
+  const c = roomCam(CAM_WALL);
+  const y = (CORD.rest + PROOM.sash*CORD.drop)*H + c.y;
+  const x = CORD.x*W + CORD.swing*MIN*0.055 + c.x;
+  return { x, y, r: ballW*0.5 };
+}
+function drawCord(t, dt, o){
+  const im = cordSprite();
+  const b  = cordBall();
+  const cc2 = roomCam(CAM_WALL);
+  const topY = WIN.gy0*H - MIN*0.004 + cc2.y;
+  const topX = CORD.x*W + CORD.swing*MIN*0.012 + cc2.x;
+  const lit = 0.34 + 0.66*cl01(o.rev);
+
+  if (!im){
+    // the sprite has not arrived; a plain cord still reads, and still works
+    ctx.save();
+    ctx.strokeStyle = rgba([132,94,50], 0.8*lit);
+    ctx.lineWidth = Math.max(1, MIN*0.0022);
+    ctx.beginPath(); ctx.moveTo(topX, topY); ctx.lineTo(b.x, b.y - b.r); ctx.stroke();
+    ctx.fillStyle = rgba([196,142,58], lit);
+    ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, TAU); ctx.fill();
+    ctx.restore();
+    return;
+  }
+
+  /* The sprite is mostly transparent margin. Only its own pixels are used, and
+     it is drawn opaque — dimming it with globalAlpha over a bright window made
+     brass read as pale plastic. The light is applied afterwards, as light. */
+  const ih = im.naturalHeight;
+  const CX = 75, CW = 93;                          // the sprite's content columns
+  const sy = CORD.splitY*ih;                       // cord above, ball below
+  const ballH = ih - sy;
+  const scale = (MIN*CORD.ballW) / CW;             // the ball at its proper size
+  const ballDrawW = CW*scale, ballDrawH = ballH*scale;
+  const cordLen = Math.max(4, (b.y - ballDrawH*0.44) - topY);
+  const cordW = Math.max(1.4, ballDrawW*0.30);     // the cord is not the ball
+
+  offscreen(()=>{
+    tc.clearRect(0,0,W,H);
+    // the cord, stretched down the drop and leaning with the swing
+    const lean = b.x - topX;
+    tc.save();
+    tc.transform(1, 0, lean/Math.max(1,cordLen), 1, topX - cordW*0.5, topY);
+    tc.drawImage(im, CX + CW*0.34, 0, CW*0.32, sy, 0, 0, cordW, cordLen);
+    tc.restore();
+    // the ball, at its own size, at the end of it
+    tc.drawImage(im, CX, sy, CW, ballH,
+                 b.x - ballDrawW*0.5, b.y - ballDrawH*0.44, ballDrawW, ballDrawH);
+    /* The light in the room falls on it like everything else — but only on it.
+       A multiply pass over a mostly empty buffer is not a no-op: multiply
+       against a transparent backdrop returns the source, so it fills the whole
+       frame with flat grey. source-atop keeps it to the sprite's own pixels. */
+    tc.globalCompositeOperation = "source-atop";
+    tc.fillStyle = rgba([12,6,2], 1-lit);
+    tc.fillRect(0,0,W,H);
+    tc.globalCompositeOperation = "source-over";
+  });
+  ctx.drawImage(TMP, 0, 0);
+
+  // it says it can be pulled, until it has been
+  if (PROOM.sash < 0.35 && !o.quiet){
+    // a breath of light around it, not a drawn ring — the ball is the object,
+    // the halo is only there to say it can be taken hold of
+    const a = 0.20 + 0.20*(0.5-0.5*Math.cos(t*1.7));
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    const hg = ctx.createRadialGradient(b.x, b.y, b.r*0.8, b.x, b.y, b.r*3.0);
+    hg.addColorStop(0, rgba([255,226,168], a*0.55));
+    hg.addColorStop(1, rgba([255,226,168], 0));
+    ctx.fillStyle = hg;
+    ctx.beginPath(); ctx.arc(b.x, b.y, b.r*3.0, 0, TAU); ctx.fill();
+    ctx.globalCompositeOperation = "source-over";
+    ctx.strokeStyle = rgba([255,240,206], a*0.8);
+    ctx.lineWidth = Math.max(1.1, MIN*0.0020);
+    ctx.beginPath();
+    ctx.moveTo(b.x, b.y + b.r*3.3);
+    ctx.lineTo(b.x - b.r*0.62, b.y + b.r*2.4);
+    ctx.moveTo(b.x, b.y + b.r*3.3);
+    ctx.lineTo(b.x + b.r*0.62, b.y + b.r*2.4);
+    ctx.stroke();
+    ctx.restore();
+  }
+}
+function updCord(dt, t){
+  // a pendulum, driven by the draught coming through the window
+  const drive = Math.sin(t*1.15)*0.030 + Math.sin(t*2.7+1.1)*0.012;
+  const force = drive*(0.25 + PROOM.breeze*1.5 + PROOM.sash*0.9) - CORD.swing*0.34;
+  CORD.swingV = (CORD.swingV + force*dt*9) * Math.pow(0.055, dt);
+  CORD.swing += CORD.swingV*dt*9;
+  CORD.swing = cl(CORD.swing, -1, 1);
+}
+function cordInteract(g, t, dt){
+  const b = cordBall();
+  const near = Math.hypot(P.x-b.x, P.y-b.y) < MIN*0.085;
+  if (P.down && (CORD.grab || near)){
+    if (!CORD.grab){ CORD.grab = 1; cv.className="grabbing"; sfx.cloth(0.25); }
+    if (P.dy > 0) PROOM.sash = cl01(PROOM.sash + P.dy/(H*0.13));
+    CORD.swingV += (P.dx/W)*5.5;
+    CORD.held = 1;
+  } else {
+    // the window's own sounds are owned by roomSound, on the crossings
+    if (CORD.grab){ CORD.grab = 0; CORD.swingV -= 0.5; }
+    if (near && !P.down) cv.className = "grabbable";
+    if (P.tapped && near){ P.tapped=false; PROOM.sash = cl01(PROOM.sash+0.38); }
+  }
+  // it settles back a little if it was barely pulled, and latches once it is
+  if (!CORD.grab && PROOM.sash < 0.30) PROOM.sash *= Math.pow(0.55, dt);
+  if (g && PROOM.sash > 0.55) meet(g);
+}
+
+/* ============================================================================
+   THE WIREBIRDS
+   One sheet, seven birds, cut apart by their own alpha. Each gets a place on
+   the wires, its own clock, and its own idea of what to do next. They are the
+   only living things in the frame, and they are outside it.
+   ========================================================================== */
+const WIRE_CUT = [                       // measured off the sheet's alpha
+  { x: 21, y:160, w: 64, h:89 }, { x:108, y:174, w: 68, h:69 },
+  { x:184, y:193, w: 32, h:76 }, { x:225, y:201, w: 41, h:72 },
+  { x:341, y:189, w: 66, h:66 }, { x:432, y:180, w: 66, h:70 },
+  { x:501, y:180, w: 66, h:70 }
+];
+const WIREBIRDS = [];
+function buildWireBirds(){
+  WIREBIRDS.length = 0;
+  // four on the near wire, three further along the far one
+  const spots = [
+    { u:0.075, w:0 }, { u:0.150, w:0 }, { u:0.215, w:0 }, { u:0.268, w:0 },
+    { u:0.660, w:1 }, { u:0.755, w:1 }, { u:0.830, w:1 }
+  ];
+  for (let i=0;i<7;i++){
+    const s = spots[i];
+    WIREBIRDS.push({
+      cut: WIRE_CUT[i],
+      u: s.u, wire: s.w,
+      scale: 0.62 + hash(i*5.1)*0.30,
+      flip: hash(i*9.7) > 0.62 ? -1 : 1,
+      // each one on its own clock, so they never move together
+      ph: hash(i*3.3)*TAU, rate: 0.55 + hash(i*7.7)*0.75,
+      hop: 0, hopT: 2 + hash(i*11.3)*7,
+      turn: 0, gone: 0, goneT: 0, flyPh: 0
+    });
+  }
+}
+function updWireBirds(dt, t, o){
+  const startled = o.startle;
+  for (let i=0;i<WIREBIRDS.length;i++){
+    const b = WIREBIRDS[i];
+    b.hopT -= dt*b.rate;
+    if (b.hopT <= 0){
+      b.hopT = 2.2 + hash(t*0.37 + i*4.4)*7.5;
+      // a small shuffle along the wire, a bob, or a look the other way
+      const r = hash(t*1.7 + i*2.9);
+      if (r < 0.42) b.hop = 1;
+      else if (r < 0.78){ b.hop = 0.55; b.u += (hash(t+i)*2-1)*0.010; }
+      else b.turn = 1;
+    }
+    b.hop = Math.max(0, b.hop - dt*2.1);
+    b.turn = Math.max(0, b.turn - dt*0.9);
+    if (b.turn > 0.995) b.flip = -b.flip;
+    b.u = cl(b.u, 0.03, 0.94);
+
+    // the window opening sends them off the wire, a beat apart
+    if (startled && !b.gone && b.goneT<=0){
+      if (hash(i*13.1) < startled*0.85){ b.goneT = 0.10 + hash(i*17.3)*0.85; }
+    }
+    if (b.goneT > 0){
+      b.goneT -= dt;
+      if (b.goneT <= 0){ b.gone = 0.0001; if (soundOn) sfx.flap(); }
+    }
+    if (b.gone > 0) b.gone = Math.min(1, b.gone + dt*0.42);
+    b.flyPh += dt*11;
+  }
+}
+function drawWireBirds(t, o){
+  const im = IMG["birdsonthedistanceinbedroom.png"];
+  if (!imgReady(im)) return;
+  const vis = cl01(o.vis);
+  if (vis < 0.02) return;
+  // the glass moves at the wall's depth; what is behind it moves less
+  const cw = roomCam(CAM_WALL), cb = roomCam(CAM_WIRE);
+  const gx0 = WIN.gx0*W + cw.x, gx1 = WIN.gx1*W + cw.x;
+  const gy0 = WIN.gy0*H + cw.y, gy1 = WIN.gy1*H + cw.y;
+  const bx = cb.x - cw.x, by = cb.y - cw.y;
+
+  ctx.save();
+  // they are on the far side of the glass
+  ctx.beginPath();
+  ctx.rect(gx0, gy0, gx1-gx0, gy1-gy0);
+  ctx.clip();
+
+  for (const b of WIREBIRDS){
+    const c = b.cut;
+    // distant, so small: the sheet is drawn at a fraction of the window
+    const dw = (gx1-gx0) * 0.052 * b.scale;
+    const dh = dw * (c.h/c.w);
+    const wy = WIN.wireY[b.wire]*H;
+    let x = gx0 + (gx1-gx0)*b.u + bx;
+    let y = wy + cw.y + by - dh*0.90;           // feet on the wire
+    let a = vis;
+
+    if (b.gone > 0){
+      // away over the rooftops, rising and shrinking as it goes
+      const g2 = ease.o(b.gone);
+      x += (b.flip>0 ? 1 : -1) * (gx1-gx0) * 0.55 * g2;
+      y -= (gy1-gy0) * 0.42 * g2 * g2 + Math.sin(b.flyPh)*dh*0.18*(1-g2);
+      a *= 1 - sm(b.gone, 0.55, 1.0);
+      if (a < 0.01) continue;
+    } else {
+      y -= b.hop * dh * 0.16;                   // the bob
+      x += Math.sin(t*0.7 + b.ph) * dw*0.04;    // the wire, moving a little
+    }
+
+    ctx.save();
+    ctx.globalAlpha = a;
+    ctx.translate(x, y + dh*0.5);
+    // a turn is read as the sprite narrowing and coming back the other way
+    const tw = b.turn>0 ? Math.cos(b.turn*PI) : 1;
+    ctx.scale(b.flip * (b.gone>0 ? 1 : Math.max(0.16, Math.abs(tw))), 1);
+    if (b.gone > 0) ctx.rotate((b.flip>0?-1:1) * 0.22 * ease.o(b.gone));
+    ctx.drawImage(im, c.x, c.y, c.w, c.h, -dw*0.5, -dh*0.5, dw, dh);
+    ctx.restore();
+  }
+  ctx.restore();
+}
+
+/* ============================================================================
+   WHAT THE ROOM SOUNDS LIKE
+   Quiet, and mostly birds. They are already out there before the curtains open;
+   what changes is how much is between you and them. Shut, they are faint and
+   muffled through glass. Open the window and the same birds are suddenly in the
+   room — nothing new arrives, the glass just stops being there.
+   ========================================================================== */
+const RSND = { chirp: 1.6, was: 0, wasOpen: 0 };
+function roomSound(dt, t, rev){
+  const sash = PROOM.sash;
+
+  // the hatch, the hinge, and the sash coming to rest — each fired once, on the
+  // crossing, so the window sounds like a thing being opened and not a slider
+  if (RSND.was < 0.05 && sash >= 0.05) sfx.latch();
+  if (RSND.was < 0.16 && sash >= 0.16) sfx.hinge();
+  if (RSND.was < 0.93 && sash >= 0.93) sfx.casementRest();
+  RSND.was = sash;
+
+  if (!soundOn) return;
+  // through glass, then through nothing
+  const near   = 0.16 + 0.34*rev + 0.86*sash;      // how loud
+  const bright = 0.10 + 0.24*rev + 0.66*sash;      // how much high end survives
+  const rate   = (0.22 + 0.30*rev + 0.95*sash);    // chirps a second
+  RSND.chirp -= dt*rate;
+  if (RSND.chirp <= 0){
+    RSND.chirp = 0.5 + Math.random()*2.4;
+    sfx.bird(near, bright);
+    // birds answer each other, so sometimes a second one follows
+    if (Math.random() < 0.30*(0.4+sash)) RSND.chirp = 0.16 + Math.random()*0.22;
+  }
+}
+
+/* ------------------------------------------------------- THE DRAWING ON THE WALL
+   The picture taped over the bed is the drawing the visitor is handed, years
+   later, in its original state — the sky filled corner to corner with blue.
+   It is on this wall from the very first frame, before anyone has been told it
+   matters, so that when it is put into their hands they have already seen it. */
+const TAPED = { x0:0.786, y0:0.161, x1:0.894, y1:0.313 };
+function drawTapedDrawing(t, rev, air){
+  if (!paperBuilt) return;
+  const c = roomCam(CAM_WALL);
+  // inset, so the painted tape at its corners still holds it to the wall
+  const ix = (TAPED.x1-TAPED.x0)*0.055, iy = (TAPED.y1-TAPED.y0)*0.075;
+  const x0 = (TAPED.x0+ix)*W + c.x, x1 = (TAPED.x1-ix)*W + c.x;
+  const y0 = (TAPED.y0+iy)*H + c.y, y1 = (TAPED.y1-iy)*H + c.y;
+  const cx = (x0+x1)/2, cy = (y0+y1)/2, w = x1-x0, h = y1-y0;
+  const lit = 0.20 + 0.58*rev*(1-air*0.30);
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(Math.sin(t*0.5)*0.004*(0.3+PROOM.breeze*2.2));
+  ctx.drawImage(PAPER, -w/2, -h/2, w, h);
+  // the room's own light, on it — the same warm lamp everything else is under,
+  // otherwise it reads as a sticker rather than a piece of paper on a wall
+  ctx.globalCompositeOperation = "multiply";
+  ctx.fillStyle = rgba([255,196,126], 0.52);
+  ctx.fillRect(-w/2, -h/2, w, h);
+  ctx.globalCompositeOperation = "source-atop";
+  ctx.fillStyle = rgba([10,5,1], 1-lit);
+  ctx.fillRect(-w/2, -h/2, w, h);
+  ctx.restore();
+}
+
+/* ============================================================================
+   THE CHAPTER
+   ========================================================================== */
+function drawRoom(t, dt, o){
+  o = o||{};
+  const air = cl01(o.air===undefined?0:o.air);
+  if (!getPlate("roomShut")){ ctx.fillStyle="#2b1b11"; ctx.fillRect(0,0,W,H); return; }
+  if (!WIREBIRDS.length) buildWireBirds();
+
+  if (o.forceOpen){ PROOM.cL = 1; PROOM.cR = 1; }
+  PROOM.open = lerp(PROOM.open, Math.min(PROOM.cL,PROOM.cR), Math.min(1, dt*3.0));
+  const rev = ease.io(cl01(PROOM.open));
+
+  /* the room, and the window in whatever state it is in */
+  drawCasement(t, dt, { open: ease.io(cl01(PROOM.sash)), air });
+
+  /* the birds, before the curtains, because they are outside */
+  updWireBirds(dt, t, { startle: PROOM.sash>0.10 ? cl01((PROOM.sash-0.10)*1.6) : 0 });
+  drawWireBirds(t, { vis: rev });
+
+  /* the room is one room. How dark it is, is how far the curtains are still
+     shut — so the light in here always agrees with the cloth in front of it. */
+  curtainGeom(t, rev, air);
+  const dark = 1 - rev;
+  if (dark > 0.004){
+    /* The dark is built in its own buffer and the opening is erased out of it
+       with a soft edge. Clipping a rectangle out instead gives light with a
+       straight vertical border running from the ceiling to the floor, which is
+       not what a gap in a curtain does to a room. */
+    const gp = curtainGap();
+    const fe = W*0.028;                       // how far the light bleeds sideways
+    offscreen(()=>{
+      const dg = tc.createLinearGradient(0, 0, 0, H);
+      const k0 = lerp(1, 0.40, dark), k1 = lerp(1, 0.29, dark);
+      dg.addColorStop(0,    rgb([255*k0, 244*k0, 232*k0]));
+      dg.addColorStop(0.62, rgb([255*k1, 240*k1, 230*k1]));
+      dg.addColorStop(1,    rgb([255*k1*0.92, 238*k1*0.92, 232*k1*0.92]));
+      tc.fillStyle = dg;
+      tc.fillRect(0,0,W,H);
+      if (gp.x1-gp.x0 > 1){
+        tc.globalCompositeOperation = "destination-out";
+        const eg = tc.createLinearGradient(gp.x0-fe, 0, gp.x1+fe, 0);
+        const span = (gp.x1-gp.x0) + fe*2;
+        eg.addColorStop(0, "rgba(0,0,0,0)");
+        eg.addColorStop(cl01(fe/span),     "rgba(0,0,0,1)");
+        eg.addColorStop(cl01(1-fe/span),   "rgba(0,0,0,1)");
+        eg.addColorStop(1, "rgba(0,0,0,0)");
+        tc.fillStyle = eg;
+        tc.fillRect(gp.x0-fe, 0, span, H);
+        tc.globalCompositeOperation = "source-over";
+      }
+    });
+    ctx.save();
+    ctx.globalCompositeOperation = "multiply";
+    ctx.drawImage(TMP, 0, 0);
+    ctx.restore();
+  }
+
+  /* the drawing taped over the bed, years before it is handed over */
+  drawTapedDrawing(t, rev, air);
+
+  /* the cord hangs in the window recess — behind the cloth, in front of nothing */
+  updCord(dt, t);
+  if (!o.noCord) drawCord(t, dt, { rev, quiet: o.quietCord || rev < 0.55 });
+
+  /* the rod, then the cloth on it */
+  drawRod(t, rev, air);
+  drawCurtains(t, dt, { air });
+
+  /* dust in the light, once there is light. The painting already has the pool
+     of it on the boards; this is only what a still image cannot hold. */
+  const lit = rev*(1-air*0.55);
+  if (lit>0.03){
+    const cx = (WIN.gx0+WIN.gx1)*0.5*W;
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    const wash = ctx.createRadialGradient(cx, H*0.70, 0, cx, H*0.70, W*0.42);
+    const wc = mixL([255,214,146], [238,232,214], air);
+    wash.addColorStop(0.00, rgba(wc, 0.060*lit*(0.94+0.06*Math.sin(t*0.5))));
+    wash.addColorStop(0.55, rgba(wc, 0.024*lit));
+    wash.addColorStop(1.00, rgba(wc, 0));
+    ctx.fillStyle = wash;
+    ctx.fillRect(0, H*0.26, W, H*0.74);
+    ctx.restore();
+
+    ctx.save();
+    offscreen2(()=>{
+      partRole = lerp(0, 2.3, air);
+      drawParticles(t, 0.30+lit*0.45, { x:cx, y:H*0.34, r:H*1.0 }, true);
+      const beam = tc2.createRadialGradient(cx, H*0.50, 0, cx, H*0.50, W*0.30);
+      beam.addColorStop(0, "rgba(255,255,255,1)");
+      beam.addColorStop(0.6, "rgba(255,255,255,0.5)");
+      beam.addColorStop(1, "rgba(255,255,255,0)");
+      tc2.globalCompositeOperation = "destination-in";
+      tc2.fillStyle = beam;
+      tc2.fillRect(0,0,W,H);
+      tc2.globalCompositeOperation = "source-over";
+    });
+    ctx.drawImage(TMP2, 0, 0);
+    ctx.restore();
+  }
+
+  /* the breeze the open window lets in, and everything that answers it */
+  const inflow = PROOM.sash*rev;
+  PROOM.breeze = lerp(PROOM.breeze, rev*0.35 + inflow*0.65, Math.min(1, dt*0.6));
+  AIR.wind = 0.26 + PROOM.breeze*0.52 + AIR.gust;
+  if (PROOM.breeze>0.02) plantSway(t, PROOM.breeze);
+
+  roomSound(dt, t, rev);
+
+  if (!o.noHint) curtainHelp(t, dt);
 }
 /* ============================================================================
    PLATE SCENES
@@ -5986,88 +6555,6 @@ function setPop(p){ for (const k in p) LITPOP[k] = p[k]; }
    — measured at 0.947 alignment, so the room stays exactly the room and only the
    view outside it dies. That contrast is the whole argument of the piece.
    ========================================================================== */
-function drawBedroomPlate(t, dt, o){
-  o = o||{};
-  const air = cl01(o.air===undefined?0:o.air);
-  if (!getPlate("bedroomOpen")){ ctx.fillStyle="#2b1b11"; ctx.fillRect(0,0,W,H); return; }
-
-  if (o.forceOpen){ PROOM.cL = 1; PROOM.cR = 1; }
-  PROOM.open = lerp(PROOM.open, Math.min(PROOM.cL,PROOM.cR), Math.min(1, dt*3.0));
-  const rev = ease.io(cl01(PROOM.open));
-
-  /* the room with the light already in it, and the window with the world in it */
-  drawPlate("bedroomOpen", { air });
-
-  /* the same room before any of that, laid over the top, with a hole in it
-     exactly the size of the opening the curtains have actually made. Nothing
-     crossfades through the window: the light arrives through the gap or not at
-     all, and the rest of the room comes up as the whole plate lets go. */
-  curtainGeom(t, rev, air);
-  if (rev < 0.995 && getPlate("bedroomClosed")){
-    const gp = curtainGap();
-    ctx.save();
-    ctx.beginPath();
-    ctx.rect(0,0,W,H);
-    if (gp.x1-gp.x0 > 1) ctx.rect(gp.x0, gp.y0, gp.x1-gp.x0, gp.y1-gp.y0);
-    ctx.clip("evenodd");
-    drawPlate("bedroomClosed", { a: 1-rev*rev*0.55-rev*0.45 });
-    ctx.restore();
-  }
-
-  /* the cloth itself */
-  drawCurtains(t, dt, { air });
-
-  /* ---- what the light does once it is in the room ----
-     The painting already has the pool of light on the boards, painted better
-     than any quad of mine. All that is added here is what a still image cannot
-     carry: the dust turning over in the beam, and the beam very slightly
-     breathing. Anything with a straight edge was stamping rectangles on the rug
-     and has been taken out. */
-  const lit = rev*(1-air*0.55);
-  if (lit>0.03){
-    const wx0 = W*0.415, wx1 = W*0.683;
-    const cx = (wx0+wx1)*0.5;
-    // a soft, edgeless warm lift where the light lands, keyed to the painting
-    ctx.save();
-    ctx.globalCompositeOperation = "lighter";
-    const wash = ctx.createRadialGradient(cx, H*0.72, 0, cx, H*0.72, W*0.44);
-    const wc = mixL([255,214,146], [238,232,214], air);
-    wash.addColorStop(0.00, rgba(wc, 0.070*lit*(0.94+0.06*Math.sin(t*0.5))));
-    wash.addColorStop(0.55, rgba(wc, 0.028*lit));
-    wash.addColorStop(1.00, rgba(wc, 0));
-    ctx.fillStyle = wash;
-    ctx.fillRect(0, H*0.30, W, H*0.70);
-    ctx.restore();
-
-    // dust turning over in the beam, faded out at every edge so the shaft has
-    // no boundary of its own
-    ctx.save();
-    offscreen2(()=>{
-      partRole = lerp(0, 2.3, air);
-      drawParticles(t, 0.30+lit*0.45, { x:cx, y:H*0.34, r:H*1.0 }, true);
-      // the mask has to be built on the surface it is used on
-      const beam = tc2.createRadialGradient(cx, H*0.52, 0, cx, H*0.52, W*0.30);
-      beam.addColorStop(0, "rgba(255,255,255,1)");
-      beam.addColorStop(0.6, "rgba(255,255,255,0.55)");
-      beam.addColorStop(1, "rgba(255,255,255,0)");
-      tc2.globalCompositeOperation = "destination-in";
-      tc2.fillStyle = beam;
-      tc2.fillRect(0,0,W,H);
-      tc2.globalCompositeOperation = "source-over";
-    });
-    ctx.drawImage(TMP2, 0, 0);
-    ctx.restore();
-  }
-  PROOM.breeze = lerp(PROOM.breeze, rev*(1-air*0.5), 0.02);
-  AIR.wind = 0.26 + PROOM.breeze*0.42 + AIR.gust;
-
-  /* ---- the plant answers the breeze, because everything should ---- */
-  if (PROOM.breeze>0.02) plantSway(t, PROOM.breeze);
-
-  /* ---- and the curtains say, unmistakably, that they can be pulled ---- */
-  if (!o.noHint) curtainHelp(t, dt);
-}
-
 /* the potted plant in the painting, given some life */
 function plantSway(t, amt){
   const px2 = W*0.795, py2 = H*0.545;
@@ -9556,23 +10043,22 @@ function render(t, dt){
     case "dark": {
       setPop({ birds:0.7, butterflies:0.4, dragonflies:0.3, fireflies:0, seeds:0.5 });
       bedroomInteract("curtain", t, dt);
-      drawBedroomPlate(t, dt, { air:0 });
+      drawRoom(t, dt, { air:0, quietCord:true });
       break;
     }
     case "light": {
-      // the curtains are open; now the window itself, on its own brass pull
+      // the curtains are open; now the window, on the cord hanging in front of it
       setPop({ birds:0.8, butterflies:0.5, dragonflies:0.4, fireflies:0, seeds:0.6 });
       bedroomInteract(null, t, dt);
-      sashInteract("sash", t, dt);
-      drawBedroomPlate(t, dt, { air:0, noHint:true });
-      drawSashPull(t);
+      cordInteract("sash", t, dt);
+      drawRoom(t, dt, { air:0, noHint:true });
       break;
     }
     case "breathe": {
       setPop({ birds:0.9, butterflies:0.6, dragonflies:0.5, fireflies:0, seeds:0.8 });
       bedroomInteract(null, t, dt);
-      drawBedroomPlate(t, dt, { air:0, noHint:true });
-      drawSashPull(t);
+      cordInteract(null, t, dt);
+      drawRoom(t, dt, { air:0, noHint:true, quietCord:true });
       break;
     }
     /* -------------------------------- chapter two */
@@ -9721,18 +10207,18 @@ function render(t, dt){
       setPop({ birds:0.05, butterflies:0, dragonflies:0, fireflies:0, seeds:0.1 });
       bedroomInteract("curtain2", t, dt);
       grimeAdd(dt*0.02);
-      drawBedroomPlate(t, dt, { air:1 });
+      drawRoom(t, dt, { air:1 });
       break;
     }
     case "stopped": {
       setPop({ birds:0, butterflies:0, dragonflies:0, fireflies:0, seeds:0.05 });
-      drawBedroomPlate(t, dt, { air:1, forceOpen:true, noHint:true });
+      drawRoom(t, dt, { air:1, forceOpen:true, noHint:true, quietCord:true });
       updateStoppedPlate(t, dt);
       break;
     }
     case "named": {
       setPop({ birds:0, butterflies:0, dragonflies:0, fireflies:0, seeds:0.05 });
-      drawBedroomPlate(t, dt, { air:1, forceOpen:true, noHint:true });
+      drawRoom(t, dt, { air:1, forceOpen:true, noHint:true, quietCord:true });
       updateStoppedPlate(t, dt);
       if (f>0.55) hideAQ();
       break;
@@ -9861,7 +10347,7 @@ function updText(now, dt){
     titleEl.classList.add("on");
     const c=titleEl.querySelector(".c");
     if (foundN>0){
-      c.innerHTML = "drawn live in your browser · sound and captions, top right<br>"+
+      c.innerHTML = "Earth Partner Prize · drawn live in your browser<br>"+
         "every figure is linked to its source<br><br>"+
         "you found "+foundN+" small thing"+(foundN===1?"":"s")+" that nobody asked you to look for";
     }
@@ -10026,6 +10512,7 @@ function boot(){
   buildIndoors();
   buildGrid();
   buildFireflies();
+  buildWireBirds();
   buildEvidenceCards();
   // paint the drawing now: it is already taped to the bedroom wall in the very
   // first frame, years before the visitor is handed it
@@ -10047,7 +10534,7 @@ function boot(){
       introEl.classList.add("off");
       window.scrollTo(0,0);
       beatEnter = performance.now();
-      PROOM.idle = 2.4;                 // the hands come up soon, not instantly
+      PROOM.idle = 3.2;   // the card explains nothing, so the scene must, and soon
       try{ beginEl.blur(); }catch(_){}
     };
     beginEl.addEventListener("click", go);
@@ -10069,6 +10556,7 @@ document.getElementById("restart").addEventListener("click", ()=>{
   ROOM.cL=ROOM.cR=ROOM.sash=ROOM.latch=0; ROOM.latchDone=false;
   PROOM.cL=PROOM.cR=PROOM.open=PROOM.sash=0; PROOM.nudgeTo=0; PROOM.idle=0; PROOM.demo=0;
   PROOM.breeze=0; PROOM.grab=0; PROOM.sashGrab=0; PROOM.everMoved=0;
+  CORD.swing=0; CORD.swingV=0; CORD.grab=0; buildWireBirds();
   for (const k in done) delete done[k];
   WASH.passed=0; WASH.shirtFound=false; WASH.walk=0; WASH.brushed=0;
   for (const st of CONST) st.lit=false;
@@ -10090,10 +10578,11 @@ window.__bluer = {
   get gates(){ return done; },
   get fps(){ return window.__fps; },
   get missing(){ return imgFailed.slice(); },
-  sashPos, curtainGap, CTR, CG,
+  cordBall, curtainGap, CTR, CG, WIN,
   intro(){ return introOn; },
   reset(){ PROOM.cL=PROOM.cR=PROOM.open=PROOM.sash=0; PROOM.nudgeTo=0;
-           PROOM.idle=0; PROOM.demo=0; delete done.curtain; delete done.sash; }
+           PROOM.idle=0; PROOM.demo=0; CORD.swing=0; CORD.swingV=0;
+           buildWireBirds(); delete done.curtain; delete done.sash; }
 };
 
 if (document.readyState==="loading") document.addEventListener("DOMContentLoaded", boot);
