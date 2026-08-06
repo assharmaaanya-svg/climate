@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Bluer — Aanya Sharma</title>
+<meta name="description" content="One continuous memory under a sky that quietly changes. An interactive artwork by Aanya Sharma about the ordinary things air pollution took from a childhood." />
+<meta name="theme-color" content="#0b1a2b" />
+<style>
+  :root{
+    --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
+    --mono:ui-monospace,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+    --ink:#fbfaf5;
+    --sh:0 2px 30px rgba(8,12,18,.62), 0 1px 3px rgba(8,12,18,.55);
+  }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html{ scroll-behavior:auto; }
+  html,body{ margin:0; padding:0; background:#08131f; color:var(--ink);
+    font-family:var(--serif); -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility; }
+  body{ overflow-x:hidden; }
+
+  #scene{ position:fixed; inset:0; width:100vw; height:100vh; display:block; z-index:0;
+    touch-action:none; cursor:default; }
+  #scene.grabbable{ cursor:grab; }
+  #scene.grabbing{ cursor:grabbing; }
+  #scene.crayon{ cursor:crosshair; }
+
+  .noscene{ position:fixed; inset:0; z-index:20; display:flex; align-items:center; justify-content:center;
+    text-align:center; padding:2rem; background:linear-gradient(#3f7ec0,#b9d2e8 58%,#e7dcb2); }
+  .noscene p{ max-width:34ch; font-size:1.15rem; line-height:1.5; color:#1b2c3a; }
+
+  /* the scroll spine — height is set by JS from the beat list */
+  #spine{ position:relative; z-index:1; pointer-events:none; }
+
+  /* ---------- narration ---------- */
+  #cap{ position:fixed; left:50%; bottom:12.5vh; transform:translate(-50%,12px); z-index:6; margin:0;
+    width:min(90vw,34ch); text-align:center; font-size:clamp(1.1rem,3.5vw,1.75rem); line-height:1.4;
+    letter-spacing:.004em; color:var(--ink); text-shadow:var(--sh); opacity:0; pointer-events:none;
+    transition:opacity 1.5s cubic-bezier(.4,0,.2,1), transform 1.5s cubic-bezier(.4,0,.2,1); }
+  #cap.on{ opacity:1; transform:translate(-50%,0); }
+  #cap.dark{ color:#16212c; text-shadow:0 1px 20px rgba(255,255,255,.7); }
+
+  /* ---------- interaction prompt ---------- */
+  #ask{ position:fixed; left:50%; top:8vh; transform:translate(-50%,-6px); z-index:6;
+    font-family:var(--mono); font-size:.66rem; letter-spacing:.2em; text-transform:uppercase;
+    color:var(--ink); text-shadow:var(--sh); opacity:0; pointer-events:none; text-align:center;
+    width:min(92vw,52ch); line-height:1.9; transition:opacity .9s, transform .9s; }
+  #ask.on{ opacity:.88; transform:translate(-50%,0); }
+  #ask.dark{ color:#1d2a36; text-shadow:0 1px 14px rgba(255,255,255,.85); }
+  #ask.urge{ animation:urge 2.6s ease-in-out infinite; }
+  @keyframes urge{ 0%,100%{ opacity:.88; } 50%{ opacity:.45; } }
+
+  /* ---------- gate: held at a beat until you act ---------- */
+  #gate{ position:fixed; left:50%; bottom:5.2vh; transform:translateX(-50%); z-index:6;
+    display:flex; flex-direction:column; align-items:center; gap:.5em;
+    font-family:var(--mono); font-size:.6rem; letter-spacing:.18em; text-transform:uppercase;
+    color:var(--ink); text-shadow:var(--sh); opacity:0; transition:opacity .8s; pointer-events:none; }
+  #gate.on{ opacity:.7; }
+  #gate.dark{ color:#1d2a36; text-shadow:0 1px 14px rgba(255,255,255,.85); }
+  #gate .bar{ width:74px; height:1px; background:currentColor; opacity:.35; position:relative; overflow:hidden; }
+  #gate .bar i{ position:absolute; inset:0 auto 0 0; width:0%; background:currentColor; transition:width .35s ease; }
+  #gate .chev{ width:8px; height:8px; border-right:1.5px solid currentColor; border-bottom:1.5px solid currentColor;
+    transform:rotate(45deg); animation:bob 2.1s ease-in-out infinite; }
+  @keyframes bob{ 0%,100%{ transform:rotate(45deg) translateY(0); opacity:.5 } 50%{ transform:rotate(45deg) translateY(4px); opacity:1 } }
+
+  /* ---------- captions for sound ---------- */
+  #cc{ position:fixed; left:50%; bottom:2.4vh; transform:translateX(-50%); z-index:6; font-family:var(--mono);
+    font-size:.66rem; letter-spacing:.09em; color:var(--ink); opacity:0; transition:opacity .45s;
+    text-shadow:var(--sh); pointer-events:none; background:rgba(8,14,22,.34); padding:.34em .8em; border-radius:999px;
+    -webkit-backdrop-filter:blur(5px); backdrop-filter:blur(5px); white-space:nowrap; }
+  #cc.on{ opacity:.92; }
+
+  /* ---------- controls ---------- */
+  .ctl{ position:fixed; top:max(13px,env(safe-area-inset-top)); right:14px; z-index:12; display:flex; gap:7px; align-items:center; }
+  .ctl button{ font-family:var(--mono); font-size:.6rem; letter-spacing:.13em; text-transform:uppercase; color:var(--ink);
+    background:rgba(10,18,28,.34); border:1px solid rgba(251,250,245,.3); border-radius:999px; padding:.48em .8em; cursor:pointer;
+    -webkit-backdrop-filter:blur(7px); backdrop-filter:blur(7px);
+    transition:background .25s, border-color .25s, color .25s, opacity .4s; }
+  .ctl button:hover{ background:rgba(10,18,28,.6); border-color:rgba(251,250,245,.72); }
+  .ctl button[aria-pressed="true"]{ background:rgba(251,250,245,.92); color:#0e1824; border-color:rgba(251,250,245,.92); }
+  .ctl button:focus-visible{ outline:2px solid #fff; outline-offset:3px; }
+  .ctl.dark button{ color:#1d2a36; background:rgba(255,255,255,.4); border-color:rgba(20,30,40,.3); }
+  .ctl.dark button:hover{ background:rgba(255,255,255,.72); }
+  #chapter{ position:fixed; top:max(15px,env(safe-area-inset-top)); left:16px; z-index:12; font-family:var(--mono);
+    font-size:.58rem; letter-spacing:.24em; text-transform:uppercase; color:var(--ink); text-shadow:var(--sh);
+    opacity:0; transition:opacity 1.2s; pointer-events:none; }
+  #chapter.on{ opacity:.5; }
+  #chapter.dark{ color:#1d2a36; text-shadow:0 1px 12px rgba(255,255,255,.8); }
+
+  /* ---------- air-quality warning (chapter 5) ---------- */
+  #aq{ position:fixed; left:50%; top:50%; transform:translate(-50%,-50%) scale(.96); z-index:9;
+    width:min(88vw,30rem); background:rgba(20,17,14,.82); border:1px solid rgba(255,214,150,.34);
+    border-radius:15px; padding:1.15rem 1.3rem; opacity:0; pointer-events:none;
+    -webkit-backdrop-filter:blur(13px); backdrop-filter:blur(13px);
+    transition:opacity .8s, transform .8s; box-shadow:0 24px 70px rgba(0,0,0,.5); }
+  #aq.on{ opacity:1; transform:translate(-50%,-50%) scale(1); }
+  #aq .row{ display:flex; align-items:baseline; gap:.7em; font-family:var(--mono); }
+  #aq .dot{ width:9px; height:9px; border-radius:50%; background:#e0705a; box-shadow:0 0 14px #e0705a; flex:none;
+    align-self:center; animation:pulse 2.4s ease-in-out infinite; }
+  @keyframes pulse{ 0%,100%{ opacity:1 } 50%{ opacity:.35 } }
+  #aq .lbl{ font-size:.58rem; letter-spacing:.2em; text-transform:uppercase; opacity:.62; }
+  #aq .num{ font-size:1.85rem; line-height:1; color:#f2b98a; }
+  #aq .unit{ font-size:.62rem; opacity:.6; letter-spacing:.06em; }
+  #aq p{ margin:.75rem 0 0; font-size:.86rem; line-height:1.55; opacity:.9; }
+  #aq .src{ margin-top:.6rem; font-family:var(--mono); font-size:.6rem; letter-spacing:.03em; opacity:.55; }
+  #aq a{ color:#ffd9b0; }
+
+  /* ---------- evidence: canvas is the visual, HTML holds only words + links ---------- */
+  #ev{ position:fixed; inset:0; z-index:7; opacity:0; pointer-events:none; transition:opacity 1s; }
+  #ev.on{ opacity:1; }
+  #ev .card{ position:absolute; width:min(86vw,33rem); left:50%; transform:translateX(-50%);
+    bottom:7vh; opacity:0; transition:opacity .8s, transform .8s; transform-origin:bottom center; }
+  #ev .card.on{ opacity:1; pointer-events:auto; }
+  #ev h2{ font-weight:400; font-size:clamp(1.05rem,3.3vw,1.4rem); line-height:1.32; margin:0 0 .5rem; letter-spacing:.005em; }
+  #ev p{ margin:0 0 .55rem; font-size:clamp(.84rem,2.4vw,.95rem); line-height:1.62; opacity:.93; }
+  #ev .src{ font-family:var(--mono); font-size:.62rem; letter-spacing:.02em; line-height:1.75; opacity:.72; margin:0; }
+  #ev .src a{ color:#cfe7ff; text-decoration-thickness:1px; text-underline-offset:3px; }
+  #ev .src a:hover{ color:#fff; }
+  #ev .tag{ display:inline-block; font-family:var(--mono); font-size:.55rem; letter-spacing:.2em;
+    text-transform:uppercase; opacity:.6; margin-bottom:.55rem; padding:.24em .6em;
+    border:1px solid currentColor; border-radius:999px; }
+  #ev .card.lit{ color:#16212c; }
+  #ev .card.lit .src a{ color:#1b4e86; }
+
+  /* ---------- ledger: literal vs metaphor ---------- */
+  #ledger{ position:fixed; inset:0; z-index:7; display:flex; align-items:center; justify-content:center;
+    padding:6vw; opacity:0; pointer-events:none; transition:opacity 1.1s; }
+  #ledger.on{ opacity:1; pointer-events:auto; }
+  #ledger .in{ width:min(92vw,44rem); }
+  #ledger h2{ font-weight:400; font-size:clamp(1.1rem,3.6vw,1.5rem); margin:0 0 1.2rem; opacity:.95; }
+  #ledger dl{ margin:0; display:grid; grid-template-columns:auto 1fr; gap:.55rem 1.1rem; align-items:baseline; }
+  #ledger dt{ font-family:var(--mono); font-size:.58rem; letter-spacing:.16em; text-transform:uppercase; opacity:.62; white-space:nowrap; }
+  #ledger dd{ margin:0; font-size:clamp(.84rem,2.4vw,.95rem); line-height:1.55; }
+  #ledger .fine{ margin-top:1.3rem; font-family:var(--mono); font-size:.62rem; line-height:1.8; opacity:.62; }
+  #ledger .fine a{ color:#cfe7ff; }
+  @media (max-width:520px){ #ledger dl{ grid-template-columns:1fr; gap:.15rem .0rem; } #ledger dd{ margin-bottom:.7rem; } }
+
+  /* ---------- title, only at the very end ---------- */
+  #title{ position:fixed; inset:0; z-index:8; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center; padding:8vw; opacity:0; pointer-events:none; transition:opacity 3s ease; }
+  #title.on{ opacity:1; pointer-events:auto; }
+  #title .t{ font-size:clamp(3rem,15vw,8rem); line-height:.9; margin:0; letter-spacing:-.015em;
+    color:#e9f1f8; text-shadow:0 3px 40px rgba(0,0,0,.4); }
+  #title .a{ font-style:italic; opacity:.8; margin:.5rem 0 0; font-size:clamp(.95rem,3vw,1.15rem); }
+  #title .c{ font-family:var(--mono); font-size:.6rem; letter-spacing:.2em; text-transform:uppercase; opacity:.5; margin-top:2.6rem; line-height:2; }
+  #title .c a{ color:inherit; }
+  #restart{ margin-top:1.6rem; font-family:var(--mono); font-size:.62rem; letter-spacing:.16em; text-transform:uppercase;
+    color:var(--ink); background:none; border:1px solid rgba(251,250,245,.34); border-radius:999px;
+    padding:.6em 1.15em; cursor:pointer; transition:background .25s,border-color .25s; }
+  #restart:hover{ background:rgba(251,250,245,.13); border-color:rgba(251,250,245,.7); }
+
+  .sr{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+
+  @media (prefers-reduced-motion: reduce){
+    #gate .chev{ animation:none; } #ask.urge{ animation:none; } #aq .dot{ animation:none; }
+    #cap,#title,#ev,#ledger{ transition-duration:.4s; }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="scene" aria-hidden="true"></canvas>
+<div class="noscene"><p>One continuous memory — this artwork is drawn live, and needs a browser with JavaScript.</p></div>
+
+<div id="chapter" aria-hidden="true"></div>
+
+<div class="ctl">
+  <button id="bSound" aria-pressed="false" aria-label="Turn sound on">Sound</button>
+  <button id="bCC" aria-pressed="false" aria-label="Turn captions for sound on">CC</button>
+  <button id="bSkip" aria-label="Skip this interaction and continue">Skip&nbsp;▸</button>
+</div>
+
+<p id="cap" aria-live="polite"></p>
+<div id="ask" aria-live="polite"></div>
+<div id="gate" aria-hidden="true"><span id="gateTxt"></span><span class="bar"><i id="gateBar"></i></span><span class="chev"></span></div>
+<div id="cc" aria-hidden="true"></div>
+
+<div id="aq" role="status" aria-hidden="true">
+  <div class="row">
+    <span class="dot"></span>
+    <span><span class="num" id="aqNum">168</span> <span class="unit">µg/m³ PM2.5</span></span>
+    <span class="lbl">outside · now</span>
+  </div>
+  <p><strong>Very unhealthy.</strong> Keep windows closed. Avoid outdoor exertion — children, older adults
+     and people with heart or lung conditions are affected first.</p>
+  <p class="src">Thresholds after the WHO 2021 guideline (annual PM2.5: 5&nbsp;µg/m³; 24-hour: 15&nbsp;µg/m³) —
+    <a href="https://www.who.int/publications/i/item/9789240034228" target="_blank" rel="noopener">WHO Global Air Quality Guidelines</a></p>
+</div>
+
+<div id="ev" aria-hidden="true"></div>
+
+<div id="ledger" aria-hidden="true"><div class="in">
+  <h2>What you just saw — and what is true.</h2>
+  <dl>
+    <dt>Physics</dt>
+    <dd>Haze whitening the sky, and the hills fading before the rooftops do. Fine particles scatter light almost
+        equally at all visible wavelengths, so they add white to the sky and wash out the blue that air molecules
+        alone would give you. Contrast falls off exponentially with distance, which is why the farthest things
+        vanish first.</dd>
+    <dt>Measured</dt>
+    <dd>Every visibility distance in this work is computed with the Koschmieder relation — the same equation used
+        in air-quality monitoring — from a PM2.5 concentration you can set yourself.</dd>
+    <dt>Documented</dt>
+    <dd>Guidance that moves children indoors above certain pollution levels. Health agencies publish these
+        thresholds, and schools act on them.</dd>
+    <dt>Light, not dust</dt>
+    <dd>Most of the stars this work takes away are lost to <em>artificial light at night</em>, not to particles.
+        Aerosol haze contributes by scattering that light back down, but skyglow is the dominant cause. These are
+        different problems and the artwork does not merge them.</dd>
+    <dt>Memory</dt>
+    <dd>The mother. The kite. The blue crayon. The small yellow shirt. Those are invented, and they belong to
+        everyone who recognises them.</dd>
+  </dl>
+  <p class="fine">Sources:
+    <a href="https://www.who.int/news-room/fact-sheets/detail/ambient-(outdoor)-air-quality-and-health" target="_blank" rel="noopener">WHO — Ambient air quality and health</a> ·
+    <a href="https://earthobservatory.nasa.gov/features/Aerosols" target="_blank" rel="noopener">NASA Earth Observatory — Aerosols</a> ·
+    <a href="https://www.epa.gov/visibility/basic-information-about-visibility" target="_blank" rel="noopener">US EPA — Visibility &amp; haze</a> ·
+    <a href="https://www.science.org/doi/10.1126/science.abq7781" target="_blank" rel="noopener">Kyba et&nbsp;al. 2023, <em>Science</em> — star visibility</a> ·
+    <a href="https://www.unicef.org/media/123156/file/Childhood_Air_Pollution_Key_Messages_2022.pdf" target="_blank" rel="noopener">UNICEF — childhood air pollution</a> ·
+    <a href="https://www.airnow.gov/sites/default/files/2018-09/air-quality-and-outdoor-activity-guidance-2014.pdf" target="_blank" rel="noopener">US EPA AirNow — school outdoor activity guidance</a>
+  </p>
+</div></div>
+
+<div id="title" aria-hidden="true">
+  <h1 class="t">Bluer</h1>
+  <p class="a">Aanya Sharma</p>
+  <p class="c">drawn live in your browser · sound and captions, top right<br>every figure is linked to its source</p>
+  <button id="restart">Open the window again</button>
+</div>
+
+<main id="spine" aria-hidden="true"></main>
+
+<section class="sr">
+  <h1>Bluer — an interactive artwork by Aanya Sharma</h1>
+  <p>A text description, for anyone who cannot experience the interactive version.</p>
+  <h2>Chapter one — the world came inside</h2>
+  <p>A dark bedroom before sunrise. A clock ticks. A mother's silhouette crosses the room and takes hold of the
+  curtains. You part them yourself, and the room fills with low orange light; dust turns over in the beam. You lift
+  the window sash and the outside enters — birdsong, a breeze that moves the curtain, the leaves of a plant, the
+  pages of a book, the hem of a bedsheet.</p>
+  <h2>Chapter two — life happened outdoors</h2>
+  <p>The window frame widens until it is no longer a frame, and the curtains lengthen into bedsheets on a washing
+  line. You push between them; sunlight comes through the weave; your mother pegs another sheet further down the
+  garden. Among the washing hangs a small yellow shirt that used to be yours. A corner of a sheet lifts free and
+  folds itself into a paper kite. You fly it — pulling the line to climb, letting it out to drift — and as it
+  climbs, the afternoon becomes evening and the evening becomes night. The kite becomes a star; the line you were
+  holding becomes the line between two stars. You drag the whole sky and trace the shape you always knew: it is the
+  shape of a kite. A meteor crosses; you can catch it. Two bright stars swell and become the two lenses of a pair of
+  binoculars, and it is daylight again. Through them you find the far hills, the water tower, a poplar row, the
+  rooftops, your school. The lens circle shrinks to a yellow crayon sun, and you are looking at a drawing you made:
+  a sky filled corner to corner with hard blue crayon, gone over so many times the wax shines, out past the edges of
+  the paper. Your mother kept it.</p>
+  <h2>Chapter three — the change is almost invisible</h2>
+  <p>The same garden, some years later. The sheets are still there, but grit settles on them. You can brush it off.
+  It comes back. The same hill, the same kite — it climbs and then simply stops being visible, while the line stays
+  in your hand. The same sky at night, and the shape you completed has stars missing from it. The same horizon, and
+  the binoculars no longer help, because what is between you and the hills is not distance. The same drawing, its
+  blue slowly bleaching towards the colour of the sky outside.</p>
+  <h2>Chapter four — habits change before anyone names the cause</h2>
+  <p>The washing comes indoors. Nobody says why.</p>
+  <h2>Chapter five — recognition</h2>
+  <p>The first bedroom, the same morning light, the curtains closed. You part them. You reach for the window latch,
+  and something stops you: a reading of the air outside, 168 micrograms of PM2.5 per cubic metre, and advice to keep
+  the window shut. This is the first time the work names air pollution.</p>
+  <h2>The evidence</h2>
+  <p>The memories themselves become the evidence. Soot from the windowsill is magnified until PM2.5 can be compared
+  with a grain of sand, a human hair and a red blood cell. A slider sets the concentration of fine particles in the
+  air, and the hills you searched for advance and retreat in response — the distance computed with the Koschmieder
+  relation, visual range equals 3.912 divided by the extinction coefficient, the same equation used in air-quality
+  monitoring. Two spheres of light show why molecules make a blue sky and larger particles make a white one. The
+  blue crayon draws a graph of visibility against concentration. The constellation rearranges into the finding that
+  99 percent of the world's population breathes air exceeding WHO guideline levels, and separately into the finding
+  that night skies are brightening about 9.6 percent a year — which is light pollution, not dust. A breath traces
+  where particles of different sizes stop inside the airway, and why a child, breathing faster and taking in more
+  air for their body weight, receives a larger dose. Sources: the World Health Organization, NASA Earth Observatory,
+  the US Environmental Protection Agency, UNICEF, and Kyba and colleagues in Science, 2023.</p>
+  <h2>The ending</h2>
+  <p>Morning again, in the first bedroom. You part the curtains and everything from the whole work is out there at
+  once, in one view, altered: the washing line, the rooftops, the hills where the hills used to be. You reach for the
+  latch, and for a few seconds both worlds hold the same frame — your mother's hand over yours, the old blue behind
+  the haze, clean sheets crossing the room, the kite above the roofs, stars where daylight should be. Then the
+  memory withdraws. You may open the window. Nothing is repaired: a weak breeze comes in, the curtain barely moves,
+  and the light is full of small things. Your drawing is propped beside the window, its sky still that deep,
+  uneven blue. You may take the blue crayon and draw one small patch of it directly onto the glass, and through that
+  patch the old world briefly shows. It stays where you put it.</p>
+  <p>My mother used to open the window before I was awake. I check the air before I do.</p>
+  <p>Bluer — Aanya Sharma.</p>
+</section>
+
+<script>
