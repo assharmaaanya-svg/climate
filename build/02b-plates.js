@@ -138,7 +138,8 @@ function preloadPlates(){
     "moresheets.png","moresheetspolluted.png","sheetswithmother.png","sheetspollutedwithmother.png",
     "childflykite.png","childflykiteevening.png","childflykite night.png","pollutedkitefly.png",
     "stargaze.png","pollutedstargaze.png","viewoftown.png","viewoftownafterpollution.png",
-    "sheetspostpollution.png","sheetspostpollution with basket.png","bedroomopenver2.png"];
+    "sheetspostpollution.png","sheetspostpollution with basket.png","bedroomopenver2.png",
+    "binoculras png.avif"];
   for (const n of order) loadImg(n);
 }
 
@@ -344,4 +345,34 @@ function warpImage(img, sx, sy, sw, sh, dstFn, cols, rows){
       ctx.restore();
     }
   }
+}
+
+/* ---------------------------------------------------------------- REPAIR
+   Sometimes a painted element has to go, because the code needs control of it —
+   the kite has to be flyable, so the painted one cannot stay. This paints a
+   region out by stretching the pixels either side of it inward, which on sky and
+   open ground is invisible. Only ever used on small areas over simple gradients.
+*/
+function patchOut(cv, x, y, w, h, o){
+  o = o||{};
+  const g = cv.getContext("2d");
+  const feather = o.feather===undefined ? Math.max(6, w*0.30) : o.feather;
+  // sample a column from each side and cross-fade them across the hole
+  const lw = Math.max(2, (w*0.22)|0);
+  g.save();
+  // left source stretched right, right source stretched left, blended in the middle
+  g.drawImage(cv, x-lw, y, lw, h, x, y, w, h);
+  g.globalAlpha = 0.5;
+  g.drawImage(cv, x+w, y, lw, h, x, y, w, h);
+  g.globalAlpha = 1;
+  // soften the join so the seam does not read as an edge
+  const gr = g.createLinearGradient(x, y, x, y+h);
+  g.restore();
+  // feather the patch boundary by redrawing the original ring over it
+  g.save();
+  g.beginPath();
+  g.rect(x-feather, y-feather, w+feather*2, h+feather*2);
+  g.rect(x, y, w, h);
+  g.clip("evenodd");
+  g.restore();
 }

@@ -88,17 +88,29 @@ LOW = mobile || (navigator.hardwareConcurrency||8) <= 4;
 const PAPER = document.createElement("canvas"), pc = PAPER.getContext("2d");
 const GLASS = document.createElement("canvas"), gc = GLASS.getContext("2d");
 const GRIME = document.createElement("canvas"), mc = GRIME.getContext("2d");
-/* TMP holds a whole remembered frame so it can be masked by the crayon marks */
+/* TMP holds a whole remembered frame so it can be masked by the crayon marks.
+   TMP2 is a second one, because the binoculars need the world as it is and the
+   world as it was held at the same time. */
 const TMP = document.createElement("canvas"), tc = TMP.getContext("2d");
+const TMP2 = document.createElement("canvas"), tc2 = TMP2.getContext("2d");
 let paperBuilt=false, paperW=0, paperH=0;
 
-/* render `fn` into the offscreen buffer instead of the screen */
+/* render `fn` into an offscreen buffer instead of the screen */
 function offscreen(fn){
   const keep = ctx;
   ctx = tc;
   tc.setTransform(1,0,0,1,0,0);
   tc.clearRect(0,0,TMP.width,TMP.height);
   tc.lineJoin="round";
+  fn();
+  ctx = keep;
+}
+function offscreen2(fn){
+  const keep = ctx;
+  ctx = tc2;
+  tc2.setTransform(1,0,0,1,0,0);
+  tc2.clearRect(0,0,TMP2.width,TMP2.height);
+  tc2.lineJoin="round";
   fn();
   ctx = keep;
 }
@@ -114,6 +126,7 @@ function fit(){
   ctx.lineJoin="round";
   if (GLASS.width!==W || GLASS.height!==H){ GLASS.width=Math.max(1,W); GLASS.height=Math.max(1,H); }
   if (TMP.width!==W || TMP.height!==H){ TMP.width=Math.max(1,W); TMP.height=Math.max(1,H); }
+  if (TMP2.width!==W || TMP2.height!==H){ TMP2.width=Math.max(1,W); TMP2.height=Math.max(1,H); }
   if (GRIME.width!==512){ GRIME.width=512; GRIME.height=512; }
   buildGeography();
   layoutSpine();

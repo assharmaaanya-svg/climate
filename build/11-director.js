@@ -407,14 +407,16 @@ function render(t, dt){
   switch (bid){
     /* -------------------------------- chapter one */
     case "dark":
-    case "light":
-      roomInteract(BEATS[T.i].gate, t, dt);
-      drawRoomScene(t, {});
+    case "light": {
+      setPop({ birds:0.7, butterflies:0.4, dragonflies:0.3, fireflies:0, seeds:0.5 });
+      bedroomInteract(BEATS[T.i].gate, t, dt);
+      drawBedroomPlate(t, dt, { air:0 });
       break;
+    }
     case "breathe": {
-      roomInteract(null, t, dt);
-      if (q>0.01){ morphRoomToWorld(t, q); }
-      else drawRoomScene(t, {});
+      setPop({ birds:0.9, butterflies:0.6, dragonflies:0.5, fireflies:0, seeds:0.8 });
+      bedroomInteract(null, t, dt);
+      drawBedroomPlate(t, dt, { air:0, noHint:true });
       break;
     }
     /* -------------------------------- chapter two */
@@ -430,30 +432,35 @@ function render(t, dt){
       break;
     }
     case "kite": {
-      drawKite(t, dt, {});
-      if (KITE.best>0.42) meet("kite");
+      setPop({ birds:1.0, butterflies:0.7, dragonflies:0.8, fireflies:0, seeds:0.9 });
+      drawKitePlate(t, dt, { plate:"kiteDay", air:0 });
+      if (PKITE.best>0.40) meet("kite");
       break;
     }
     case "climb": {
-      if (q>0.01) morphKiteToStar(t, dt, q);
-      else drawKite(t, dt, {});
+      // the sky travels from afternoon to night inside one shot: the evening
+      // plate dissolves toward its own night twin as the kite climbs
+      setPop({ birds:0.5, butterflies:0.1, dragonflies:0.5, fireflies:sm(f,0.35,0.9), seeds:0.5 });
+      drawKitePlate(t, dt, { plate:"kiteEvening", air: sm(f, 0.10, 0.95) });
       break;
     }
     case "stars": {
-      starsInteract("stars", dt);
-      drawStars(t, dt, {});
+      setPop({ birds:0, butterflies:0, dragonflies:0, fireflies:1.0, seeds:0.2 });
+      starsInteractP("stars", dt, { air:0.06, glow:0.06 });
+      drawStarsPlate(t, dt, { air:0.06, glow:0.06 });
       break;
     }
     case "wish": {
-      starsInteract(null, dt);
-      if (q>0.01) morphStarsToLenses(t, dt, q);
-      else drawStars(t, dt, {});
+      setPop({ birds:0, butterflies:0, dragonflies:0, fireflies:0.9, seeds:0.2 });
+      starsInteractP(null, dt, { air:0.08, glow:0.07 });
+      drawStarsPlate(t, dt, { air:0.08, glow:0.07 });
       break;
     }
     case "horizon": {
-      horizonInteract("find", dt);
-      if (q>0.01) morphLensToPaper(t, dt, q);
-      else drawHorizon(t, dt, {});
+      // the binoculars belong to this chapter and nowhere else
+      setPop({ birds:0.8, butterflies:0.4, dragonflies:0.4, fireflies:0, seeds:0.7 });
+      horizonInteractP("find", dt);
+      drawHorizonPlate(t, dt, { air:0.10 });
       break;
     }
     case "drawing": {
@@ -484,8 +491,10 @@ function render(t, dt){
       break;
     }
     case "r-kite": {
-      const r = drawKite(t, dt, { lose:true });
-      if (KITE.best>0.40) meet("rkite");
+      setPop({ birds:0.05, butterflies:0, dragonflies:0.05, fireflies:0, seeds:0.2 });
+      drawKitePlate(t, dt, { plate:"kiteHazed", air:0.55, lose:true });
+      if (PKITE.best>0.36) meet("rkite");
+      if (false){ const r = drawKite(t, dt, { lose:true }); }
       // the moment the line is all that is left
       if (KITE.lost>0.86 && !FOUND["lostkite"]){
         FOUND["lostkite"]=true; foundN++;
@@ -495,8 +504,11 @@ function render(t, dt){
       break;
     }
     case "r-stars": {
-      starsInteract("rstars", dt);
-      drawStars(t, dt, {});
+      // the fireflies are simply not here any more, and nothing says so
+      setPop({ birds:0, butterflies:0, dragonflies:0, fireflies:0, seeds:0.05 });
+      starsInteractP("rstars", dt, { air:0.78, glow:0.55 });
+      drawStarsPlate(t, dt, { air:0.78, glow:0.55 });
+      if (false){ starsInteract("rstars", dt); drawStars(t, dt, {}); }
       // the gaps where the shape used to close
       let missing=0;
       for (const st of CONST) if (!starVisible(st)) missing++;
@@ -519,10 +531,9 @@ function render(t, dt){
       break;
     }
     case "r-horizon": {
-      horizonInteract("rfind", dt);
-      drawHorizon(t, dt, { canFocus:false });
-      updLens(dt, true);
-      pastLens(t, P.x, P.y, LENS.r*(0.5+LOOK.remember*0.7), LENS.a);
+      setPop({ birds:0.05, butterflies:0, dragonflies:0, fireflies:0, seeds:0.1 });
+      horizonInteractP("rfind", dt);
+      drawHorizonPlate(t, dt, { air:0.92 });
       break;
     }
     case "r-drawing": {
@@ -551,21 +562,22 @@ function render(t, dt){
     }
     /* -------------------------------- chapter five */
     case "return": {
-      roomInteract("curtain2", t, dt);
+      setPop({ birds:0.05, butterflies:0, dragonflies:0, fireflies:0, seeds:0.1 });
+      bedroomInteract("curtain2", t, dt);
       grimeAdd(dt*0.02);
-      drawRoomScene(t, { mother:false, laundryOut:false });
+      drawBedroomPlate(t, dt, { air:1 });
       break;
     }
     case "stopped": {
-      roomInteract(null, t, dt);
-      const geo = drawRoomScene(t, { mother:false, laundryOut:false });
-      updateStopped(t, dt, geo);
+      setPop({ birds:0, butterflies:0, dragonflies:0, fireflies:0, seeds:0.05 });
+      drawBedroomPlate(t, dt, { air:1, forceOpen:true, noHint:true });
+      updateStoppedPlate(t, dt);
       break;
     }
     case "named": {
-      roomInteract(null, t, dt);
-      const geo = drawRoomScene(t, { mother:false, laundryOut:false });
-      updateStopped(t, dt, geo);
+      setPop({ birds:0, butterflies:0, dragonflies:0, fireflies:0, seeds:0.05 });
+      drawBedroomPlate(t, dt, { air:1, forceOpen:true, noHint:true });
+      updateStoppedPlate(t, dt);
       if (f>0.55) hideAQ();
       break;
     }
@@ -702,15 +714,15 @@ function updText(now, dt){
 }
 function gateProgress(g){
   switch(g){
-    case "curtain": case "curtain2": return Math.min(ROOM.cL,ROOM.cR)/0.55;
+    case "curtain": case "curtain2": return Math.min(PROOM.cL,PROOM.cR)/0.55;
     case "sash":    return ROOM.sash/0.45;
-    case "sheets":  return WASH.passed/3;
-    case "shirt":   return WASH.shirtFound?1:0;
-    case "kite": case "rkite": return KITE.best/0.42;
-    case "stars":   return SKYV.lit/CONST.length;
-    case "rstars":  { let v=0; for(const s of CONST) if(starVisible(s)) v++; return v? SKYV.lit/v : 1; }
-    case "find":    return LOOK.nFound/3;
-    case "rfind":   return LOOK.remember/0.75;
+    case "sheets":  return PWASH.through/3;
+    case "shirt":   return PWASH.through/5;
+    case "kite": case "rkite": return PKITE.best/0.40;
+    case "stars":   { let n=0; for(const s2 of DIPPER) if(STARY.lit[s2.id])n++; return n/DIPPER.length; }
+    case "rstars":  { let v=0,n=0; for(const s2 of DIPPER){ if(starSeen(s2,0.78,0.55)){v++; if(STARY.lit[s2.id])n++;} } return v? n/v : 1; }
+    case "find":    return PLOOK.n/3;
+    case "rfind":   return PLOOK.recall/0.75;
     case "colour":  return DRAW.strokes/0.55;
     case "brush":   return WASH.brushed/0.85;
     case "lift":    return EV.lifted/0.72;
@@ -734,7 +746,8 @@ function onDown(x,y){
   const b=id();
   // discoveries first: a touch on something touchable always wins
   if (hitSpots(x,y)) return;
-  if (b==="stars"||b==="wish"||b==="r-stars"){ tapStar(x,y); return; }
+  if (b==="stars"||b==="wish"){ tapStarP(x,y,0.07,0.06); return; }
+  if (b==="r-stars"){ tapStarP(x,y,0.78,0.55); return; }
   if (b==="drawing"||b==="r-drawing"){ crayonDown(x,y); return; }
   if (b.startsWith("f-")){ glassDown(x,y); return; }
 }
@@ -749,6 +762,16 @@ function onKey(k){
   const b=id();
   if (k==="Enter"){
     if (b==="stars"||b==="wish"||b==="r-stars"){
+      const air2 = b==="r-stars"?0.78:0.07, gl2 = b==="r-stars"?0.55:0.06;
+      let bb=null, bdd=1e9;
+      for (const s2 of DIPPER.concat(OUTLIERS)){
+        if (STARY.lit[s2.id] || !starSeen(s2,air2,gl2) || !s2._p) continue;
+        const d2=Math.hypot(s2._p.x-W*0.5, s2._p.y-H*0.5);
+        if (d2<bdd){ bdd=d2; bb=s2; }
+      }
+      if (bb){ tapStarP(bb._p.x, bb._p.y, air2, gl2); return; }
+    }
+    if (false){
       // light the nearest unlit visible anchor
       let best=null,bd=1e9;
       for (const st of CONST){
@@ -766,8 +789,9 @@ function onKey(k){
 function onEnter(bid){
   // per-beat setup
   if (bid==="laundry"){ if (!WASH.sheets.length) buildWash(); }
-  if (bid==="kite" || bid==="r-kite"){ if (!KITE.line) resetKite(); }
-  if (bid==="r-kite"){ KITE.best=0; }
+  if (bid==="kite" || bid==="r-kite" || bid==="climb"){ if (!PKITE.line) resetPKite(); }
+  if (bid==="r-kite"){ PKITE.best=0; }
+
   if (bid==="indoors"){ if (!IN.sheets.length) buildIndoors(); }
   if (bid==="e-stars"){ if (!GRID.length) buildGrid(); }
   if (bid==="drawing"||bid==="r-drawing"||bid==="horizon") buildPaper();
