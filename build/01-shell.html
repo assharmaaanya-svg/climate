@@ -33,7 +33,7 @@
   #spine{ position:relative; z-index:1; pointer-events:none; }
 
   /* ---------- narration ---------- */
-  #cap{ position:fixed; left:50%; bottom:12.5vh; transform:translate(-50%,12px); z-index:6; margin:0;
+  #cap{ position:fixed; left:50%; bottom:15vh; transform:translate(-50%,12px); z-index:6; margin:0;
     width:min(90vw,34ch); text-align:center; font-size:clamp(1.1rem,3.5vw,1.75rem); line-height:1.4;
     letter-spacing:.004em; color:var(--ink); text-shadow:var(--sh); opacity:0; pointer-events:none;
     transition:opacity 1.5s cubic-bezier(.4,0,.2,1), transform 1.5s cubic-bezier(.4,0,.2,1); }
@@ -43,17 +43,21 @@
                 0 0 42px rgba(255,246,226,.75); }
 
   /* ---------- interaction prompt ---------- */
-  #ask{ position:fixed; left:50%; top:8vh; transform:translate(-50%,-6px); z-index:6;
-    font-family:var(--mono); font-size:.66rem; letter-spacing:.2em; text-transform:uppercase;
-    color:var(--ink); text-shadow:var(--sh); opacity:0; pointer-events:none; text-align:center;
-    width:min(92vw,52ch); line-height:1.9; transition:opacity .9s, transform .9s; }
-  #ask.on{ opacity:.88; transform:translate(-50%,0); }
-  #ask.dark{ color:#1d2a36; text-shadow:0 1px 14px rgba(255,255,255,.85); }
+  #ask{ position:fixed; left:50%; bottom:7.6vh; transform:translate(-50%,8px); z-index:6;
+    font-family:var(--mono); font-size:clamp(.72rem,2.1vw,.84rem); letter-spacing:.13em;
+    text-transform:uppercase; color:var(--ink); opacity:0; pointer-events:none; text-align:center;
+    max-width:min(92vw,46ch); line-height:1.6; transition:opacity .9s, transform .9s;
+    background:rgba(8,12,18,.5); border:1px solid rgba(251,250,245,.2); border-radius:999px;
+    padding:.7em 1.5em; -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px);
+    box-shadow:0 10px 40px rgba(0,0,0,.34); }
+  #ask.on{ opacity:1; transform:translate(-50%,0); }
+  #ask.dark{ color:#17222c; background:rgba(255,253,246,.66); border-color:rgba(20,30,40,.2);
+    box-shadow:0 10px 40px rgba(90,60,20,.18); }
   #ask.urge{ animation:urge 2.6s ease-in-out infinite; }
   @keyframes urge{ 0%,100%{ opacity:.88; } 50%{ opacity:.45; } }
 
   /* ---------- gate: held at a beat until you act ---------- */
-  #gate{ position:fixed; left:50%; bottom:5.2vh; transform:translateX(-50%); z-index:6;
+  #gate{ position:fixed; left:50%; bottom:3.1vh; transform:translateX(-50%); z-index:6;
     display:flex; flex-direction:column; align-items:center; gap:.5em;
     font-family:var(--mono); font-size:.6rem; letter-spacing:.18em; text-transform:uppercase;
     color:var(--ink); text-shadow:var(--sh); opacity:0; transition:opacity .8s; pointer-events:none; }
@@ -66,7 +70,7 @@
   @keyframes bob{ 0%,100%{ transform:rotate(45deg) translateY(0); opacity:.5 } 50%{ transform:rotate(45deg) translateY(4px); opacity:1 } }
 
   /* ---------- captions for sound ---------- */
-  #cc{ position:fixed; left:50%; bottom:2.4vh; transform:translateX(-50%); z-index:6; font-family:var(--mono);
+  #cc{ position:fixed; left:50%; bottom:.9vh; transform:translateX(-50%); z-index:6; font-family:var(--mono);
     font-size:.66rem; letter-spacing:.09em; color:var(--ink); opacity:0; transition:opacity .45s;
     text-shadow:var(--sh); pointer-events:none; background:rgba(8,14,22,.34); padding:.34em .8em; border-radius:999px;
     -webkit-backdrop-filter:blur(5px); backdrop-filter:blur(5px); white-space:nowrap; }
@@ -152,6 +156,38 @@
     padding:.6em 1.15em; cursor:pointer; transition:background .25s,border-color .25s; }
   #restart:hover{ background:rgba(251,250,245,.13); border-color:rgba(251,250,245,.7); }
 
+
+  /* ---------- the way in: shown once, before the piece begins ---------- */
+  #intro{ position:fixed; inset:0; z-index:14; display:flex; align-items:center; justify-content:center;
+    padding:4vh 6vw; text-align:center; overflow-y:auto; overscroll-behavior:contain;
+    background:radial-gradient(ellipse at 50% 44%,
+      rgba(10,7,4,.93) 0%, rgba(10,7,4,.90) 45%, rgba(8,6,4,.96) 100%);
+    transition:opacity 1.6s ease, visibility 1.6s; }
+  #intro.off{ opacity:0; visibility:hidden; pointer-events:none; }
+  #intro .in{ width:min(92vw,38rem); margin:auto; }
+  #intro .t{ font-size:clamp(2.4rem,7.2vh,4.4rem); line-height:.9; margin:0; letter-spacing:-.02em;
+    color:#f2e6d2; }
+  #intro .a{ font-style:italic; opacity:.72; margin:.45rem 0 0; font-size:clamp(.85rem,1.6vh,1rem); }
+  #intro .lede{ margin:clamp(1rem,3vh,1.9rem) auto 0; max-width:34ch;
+    font-size:clamp(.9rem,1.85vh,1.04rem); line-height:1.55; opacity:.9; }
+  #intro ul{ list-style:none; margin:clamp(1rem,3vh,1.8rem) auto 0; padding:0; max-width:30ch;
+    text-align:left; display:grid; gap:clamp(.55rem,1.5vh,.9rem); }
+  #intro li{ display:grid; grid-template-columns:1.75rem 1fr; align-items:start; gap:.85rem;
+    font-family:var(--mono); font-size:clamp(.68rem,1.55vh,.76rem); letter-spacing:.05em;
+    line-height:1.6; opacity:.86; }
+  #intro li b{ font-weight:400; color:#ffd9a8; letter-spacing:.14em; text-transform:uppercase;
+    font-size:.86em; }
+  #intro .ic{ width:1.75rem; height:1.75rem; display:grid; place-items:center; border-radius:50%;
+    border:1px solid rgba(255,217,168,.4); color:#ffd9a8; font-size:.86rem; }
+  #begin{ margin-top:clamp(1.2rem,3.4vh,2.3rem); font-family:var(--mono); font-size:.7rem; letter-spacing:.2em;
+    text-transform:uppercase; color:#120c06; background:#f0dfc4; border:0; border-radius:999px;
+    padding:1em 2.2em; cursor:pointer; transition:transform .25s, background .25s;
+    box-shadow:0 14px 40px rgba(0,0,0,.45); }
+  #begin:hover{ background:#fff; transform:translateY(-2px); }
+  #begin:focus-visible{ outline:2px solid #fff; outline-offset:4px; }
+  #intro .fine{ margin-top:clamp(.9rem,2vh,1.4rem); font-family:var(--mono); font-size:.6rem; letter-spacing:.14em;
+    text-transform:uppercase; opacity:.42; }
+
   .sr{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
 
   @media (prefers-reduced-motion: reduce){
@@ -164,6 +200,24 @@
 
 <canvas id="scene" aria-hidden="true"></canvas>
 <div class="noscene"><p>One continuous memory — this artwork is drawn live, and needs a browser with JavaScript.</p></div>
+
+
+<div id="intro" role="dialog" aria-label="How to move through this artwork"><div class="in">
+  <h1 class="t">Bluer</h1>
+  <p class="a">Aanya Sharma</p>
+  <p class="lede">A morning you have had a thousand times, and the small things
+     that stopped happening in it.</p>
+  <ul>
+    <li><span class="ic">✋</span><span><b>Drag</b><br>Everything you can reach moves. Take hold of it
+      and pull — curtains, a kite line, the whole night sky.</span></li>
+    <li><span class="ic">↓</span><span><b>Scroll</b><br>Moves you forward, once the moment in front of
+      you has been finished.</span></li>
+    <li><span class="ic">♪</span><span><b>Sound</b><br>Worth turning on, top right. Captions for it are
+      there too.</span></li>
+  </ul>
+  <button id="begin" autofocus>Open the curtains</button>
+  <p class="fine">about twelve minutes · nothing is timed · stuck? use skip, top right</p>
+</div></div>
 
 <div id="chapter" aria-hidden="true"></div>
 

@@ -59,20 +59,24 @@ const imgReady = im => im && im._ok && im.naturalWidth>0;
 const PLATES = {
   bedroomClosed: {
     clean:"bedroomclosed.png",
-    crop:{ x:0.0, y:0.06, w:1.0, h:0.80 },
-    bands:[ {to:0.14,p:0.02}, {to:0.62,p:0.05}, {to:0.80,p:0.09}, {to:1.0,p:0.16} ]
+    // the same crop and the same band cuts as bedroomOpen, so the two plates
+    // are the same room to the pixel and can be laid straight over each other
+    crop:{ x:0.0, y:0.05, w:1.0, h:0.82 },
+    bands:[ {to:0.13,p:0.02}, {to:0.60,p:0.05}, {to:0.78,p:0.10}, {to:1.0,p:0.18} ]
   },
   bedroomOpen: {
     clean:"bedroomopen.png",
     hazed:"bedroompostpollution.png",
     dissolve:"full",                        // ncc 0.947 — safe to dissolve entirely
     crop:{ x:0.0, y:0.05, w:1.0, h:0.82 },
-    bands:[ {to:0.13,p:0.02}, {to:0.60,p:0.05}, {to:0.78,p:0.10}, {to:1.0,p:0.18} ]
+    bands:[ {to:0.13,p:0.02}, {to:0.60,p:0.05}, {to:0.78,p:0.10}, {to:1.0,p:0.18} ],
+    repair:[ { x:0.549, y:0.243, w:0.036, h:0.062 } ]
   },
   bedroomOpenAlt: {
     clean:"bedroomopenver2.png",
     crop:{ x:0.0, y:0.05, w:1.0, h:0.82 },
-    bands:[ {to:0.13,p:0.02}, {to:0.60,p:0.05}, {to:0.78,p:0.10}, {to:1.0,p:0.18} ]
+    bands:[ {to:0.13,p:0.02}, {to:0.60,p:0.05}, {to:0.78,p:0.10}, {to:1.0,p:0.18} ],
+    repair:[ { x:0.549, y:0.243, w:0.036, h:0.062 } ]
   },
   /* the laundry, in four versions. `sheetBand` marks the rows that will be fed
      through the cloth mesh so the painted washing moves. */
@@ -187,6 +191,16 @@ function sliceBands(def, which){
     if (dx>0){
       g.drawImage(c, dx, 0, 2, bh2, 0, 0, dx, bh2);
       g.drawImage(c, dx+W-2, 0, 2, bh2, dx+W, 0, dx, bh2);
+    }
+
+    // painted elements the code has to take over — the brass window pull has to
+    // be draggable, so the painted one is stretched out of the sky first
+    if (def.repair){
+      for (const r of def.repair){
+        const rx = dx + (r.x-r.w*0.5)*W, ry = (r.y-r.h*0.5)*H - y0;
+        const rw = r.w*W, rh = r.h*H;
+        if (ry+rh > 0 && ry < bh2) patchOut(c, rx, ry, rw, rh);
+      }
     }
 
     // feather the joins with a destination-out ramp

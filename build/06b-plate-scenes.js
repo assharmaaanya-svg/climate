@@ -255,92 +255,76 @@ function setPop(p){ for (const k in p) LITPOP[k] = p[k]; }
    — measured at 0.947 alignment, so the room stays exactly the room and only the
    view outside it dies. That contrast is the whole argument of the piece.
    ========================================================================== */
-const PROOM = {
-  cL:0, cR:0, grab:0,          // how far each curtain is drawn back
-  open:0,                      // eased reveal, follows min(cL,cR)
-  breeze:0, dust:0,
-  latchReach:0, blocked:0
-};
-/* the curtain columns, measured off bedroomclosed.png */
-const CURT = { lx0:0.285, lx1:0.500, rx0:0.500, rx1:0.720, band:1 };
-
 function drawBedroomPlate(t, dt, o){
   o = o||{};
   const air = cl01(o.air===undefined?0:o.air);
-  const closed = getPlate("bedroomClosed");
-  const open   = getPlate("bedroomOpen");
-  if (!closed || !open){ ctx.fillStyle="#3a2a1c"; ctx.fillRect(0,0,W,H); return; }
+  if (!getPlate("bedroomOpen")){ ctx.fillStyle="#2b1b11"; ctx.fillRect(0,0,W,H); return; }
 
-  PROOM.open = lerp(PROOM.open, Math.min(PROOM.cL,PROOM.cR), 0.06);
+  if (o.forceOpen){ PROOM.cL = 1; PROOM.cR = 1; }
+  PROOM.open = lerp(PROOM.open, Math.min(PROOM.cL,PROOM.cR), Math.min(1, dt*3.0));
   const rev = ease.io(cl01(PROOM.open));
 
-  /* ---- the open room underneath, so parting the curtains reveals it ---- */
-  drawPlate("bedroomOpen", { air, a: o.forceOpen ? 1 : Math.max(0.001, rev) });
+  /* the room with the light already in it, and the window with the world in it */
+  drawPlate("bedroomOpen", { air });
 
-  /* ---- the closed room over it, with the curtain columns pulled aside ---- */
-  if (rev < 0.995 && !o.forceOpen){
-    const pl = closed;
-    const band = CURT.band;
-    // all bands except the curtains
-    drawPlate("bedroomClosed", { air:0, skipBand: band, a: 1-rev*0.55 });
-    // the curtain band: the middle warped aside, the rest straight
-    const b = pl.clean[band];
-    const ox = -b.dx + (PCAM.x*b.p*W*0.36);
-    const oy = (PCAM.y*b.p*H*0.22);
-    const w8 = AIR.wind + AIR.gust;
-    // left of the curtains, and right of them, undisturbed
-    const segs = [ [0, CURT.lx0], [CURT.rx1, 1.0] ];
+  /* the same room before any of that, laid over the top, with a hole in it
+     exactly the size of the opening the curtains have actually made. Nothing
+     crossfades through the window: the light arrives through the gap or not at
+     all, and the rest of the room comes up as the whole plate lets go. */
+  curtainGeom(t, rev, air);
+  if (rev < 0.995 && getPlate("bedroomClosed")){
+    const gp = curtainGap();
     ctx.save();
-    ctx.globalAlpha = 1-rev*0.55;
-    for (const sg of segs){
-      const sx = b.dx + sg[0]*W, sw = (sg[1]-sg[0])*W;
-      ctx.drawImage(b.cv, sx, 0, sw+1, b.h, ox+sx, b.y+oy, sw+1, b.h);
-    }
-    // the two panels
-    for (const side of [0,1]){
-      const x0 = side ? CURT.rx0 : CURT.lx0;
-      const x1 = side ? CURT.rx1 : CURT.lx1;
-      const pull = side ? PROOM.cR : PROOM.cL;
-      const sx = b.dx + x0*W, sw = (x1-x0)*W;
-      const EX = 4;
-      const dirn = side ? 1 : -1;
-      const deform = (u,v)=>{
-        // the panel gathers toward its outer edge as it is drawn back
-        const gu = u + dirn*Math.sin(u*PI)*pull*0.34;
-        const sway = Math.sin(t*0.9 + side*2.3 + u*1.4)*W*0.006*(0.25+PROOM.breeze)*w8;
-        return {
-          x: ox + sx - EX + cl01(gu)*(sw+EX*2) + dirn*pull*sw*0.52 + sway*v*v,
-          y: b.y + oy + v*b.h + Math.abs(sway)*0.2*v*v
-        };
-      };
-      warpImage(b.cv, sx-EX, 0, sw+EX*2, b.h, deform, LOW?7:10, LOW?6:8);
-    }
+    ctx.beginPath();
+    ctx.rect(0,0,W,H);
+    if (gp.x1-gp.x0 > 1) ctx.rect(gp.x0, gp.y0, gp.x1-gp.x0, gp.y1-gp.y0);
+    ctx.clip("evenodd");
+    drawPlate("bedroomClosed", { a: 1-rev*rev*0.55-rev*0.45 });
     ctx.restore();
   }
 
-  /* ---- what the light does once it is in the room ---- */
+  /* the cloth itself */
+  drawCurtains(t, dt, { air });
+
+  /* ---- what the light does once it is in the room ----
+     The painting already has the pool of light on the boards, painted better
+     than any quad of mine. All that is added here is what a still image cannot
+     carry: the dust turning over in the beam, and the beam very slightly
+     breathing. Anything with a straight edge was stamping rectangles on the rug
+     and has been taken out. */
   const lit = rev*(1-air*0.55);
   if (lit>0.03){
-    // branch shadows crossing the wall and the floor
-    dapple(t, 0, H*0.05, W, H*0.62, lit*0.26, 0.32);
-    dapple(t, 0, H*0.66, W, H*0.34, lit*0.34, 0.80);
-    // the window's own shape thrown hard onto the boards
-    const wx0 = W*0.315, wx1 = W*0.690, fy = H*0.700;
-    lightPatch({
-      x0: wx0,            y0: fy,
-      x1: wx1,            y1: fy-H*0.004,
-      x2: wx1-W*0.20,     y2: H*1.02,
-      x3: wx0-W*0.26,     y3: H*1.02,
-      col: mixL([255,226,168], [244,238,224], air), a: lit*0.30
-    });
-    // dust turning over in the beam
+    const wx0 = W*0.415, wx1 = W*0.683;
+    const cx = (wx0+wx1)*0.5;
+    // a soft, edgeless warm lift where the light lands, keyed to the painting
     ctx.save();
-    ctx.beginPath();
-    ctx.moveTo(wx0,fy); ctx.lineTo(wx1,fy-H*0.004);
-    ctx.lineTo(wx1-W*0.20,H*1.02); ctx.lineTo(wx0-W*0.26,H*1.02); ctx.closePath();
-    ctx.clip();
-    partRole = lerp(0, 2.3, air);
-    drawParticles(t, 0.35+lit*0.5, { x:(wx0+wx1)/2, y:H*0.30, r:H*1.1 }, true);
+    ctx.globalCompositeOperation = "lighter";
+    const wash = ctx.createRadialGradient(cx, H*0.72, 0, cx, H*0.72, W*0.44);
+    const wc = mixL([255,214,146], [238,232,214], air);
+    wash.addColorStop(0.00, rgba(wc, 0.070*lit*(0.94+0.06*Math.sin(t*0.5))));
+    wash.addColorStop(0.55, rgba(wc, 0.028*lit));
+    wash.addColorStop(1.00, rgba(wc, 0));
+    ctx.fillStyle = wash;
+    ctx.fillRect(0, H*0.30, W, H*0.70);
+    ctx.restore();
+
+    // dust turning over in the beam, faded out at every edge so the shaft has
+    // no boundary of its own
+    ctx.save();
+    offscreen2(()=>{
+      partRole = lerp(0, 2.3, air);
+      drawParticles(t, 0.30+lit*0.45, { x:cx, y:H*0.34, r:H*1.0 }, true);
+      // the mask has to be built on the surface it is used on
+      const beam = tc2.createRadialGradient(cx, H*0.52, 0, cx, H*0.52, W*0.30);
+      beam.addColorStop(0, "rgba(255,255,255,1)");
+      beam.addColorStop(0.6, "rgba(255,255,255,0.55)");
+      beam.addColorStop(1, "rgba(255,255,255,0)");
+      tc2.globalCompositeOperation = "destination-in";
+      tc2.fillStyle = beam;
+      tc2.fillRect(0,0,W,H);
+      tc2.globalCompositeOperation = "source-over";
+    });
+    ctx.drawImage(TMP2, 0, 0);
     ctx.restore();
   }
   PROOM.breeze = lerp(PROOM.breeze, rev*(1-air*0.5), 0.02);
@@ -349,8 +333,8 @@ function drawBedroomPlate(t, dt, o){
   /* ---- the plant answers the breeze, because everything should ---- */
   if (PROOM.breeze>0.02) plantSway(t, PROOM.breeze);
 
-  /* ---- affordance: the curtains say they can be pulled ---- */
-  if (!o.noHint && Math.min(PROOM.cL,PROOM.cR)<0.5) curtainHint(t);
+  /* ---- and the curtains say, unmistakably, that they can be pulled ---- */
+  if (!o.noHint) curtainHelp(t, dt);
 }
 
 /* the potted plant in the painting, given some life */
@@ -363,60 +347,6 @@ function plantSway(t, amt){
   g.addColorStop(1, rgba([180,220,140], 0));
   ctx.fillStyle=g; ctx.beginPath(); ctx.arc(px2,py2,MIN*0.16,0,TAU); ctx.fill();
   ctx.restore();
-}
-
-/* a visual affordance instead of a written instruction: two soft chevrons where
-   your hands would go, breathing, fading the moment you take hold */
-function curtainHint(t){
-  const a = 0.30 + 0.18*Math.sin(t*1.5);
-  const y = H*0.42;
-  for (const side of [0,1]){
-    const x = side ? W*0.640 : W*0.360;
-    const dirn = side ? 1 : -1;
-    const pulled = side ? PROOM.cR : PROOM.cL;
-    const aa = a*(1-cl01(pulled*3));
-    if (aa<0.02) continue;
-    ctx.save();
-    ctx.translate(x + dirn*Math.sin(t*1.5)*W*0.004, y);
-    ctx.strokeStyle=rgba([255,246,224], aa);
-    ctx.lineWidth=Math.max(1.6, MIN*0.0034);
-    ctx.lineCap="round";
-    for (let k=0;k<2;k++){
-      const o2 = dirn*(MIN*0.012 + k*MIN*0.014);
-      ctx.beginPath();
-      ctx.moveTo(o2 - dirn*MIN*0.009, -MIN*0.013);
-      ctx.lineTo(o2, 0);
-      ctx.lineTo(o2 - dirn*MIN*0.009, MIN*0.013);
-      ctx.stroke();
-    }
-    ctx.restore();
-  }
-}
-
-function bedroomInteract(g, t, dt){
-  const wr = { x:W*0.285, w:W*0.435 };
-  if (P.down && P.active){
-    if (!PROOM.grab){
-      PROOM.grab = P.x < W*0.5 ? 1 : 2;
-      cv.className = "grabbing";
-    }
-    if (PROOM.grab===1){
-      const from = W*0.470;
-      PROOM.cL = cl01(Math.max(PROOM.cL*0.90, (from - P.x)/(W*0.235)));
-      if (Math.abs(P.dx)>2 && Math.random()<0.22) sfx.cloth(0.45);
-    } else {
-      const from = W*0.530;
-      PROOM.cR = cl01(Math.max(PROOM.cR*0.90, (P.x - from)/(W*0.235)));
-      if (Math.abs(P.dx)>2 && Math.random()<0.22) sfx.cloth(0.45);
-    }
-  } else {
-    if (PROOM.grab) cv.className = "grabbable";
-    PROOM.grab = 0;
-    // they fall back if you let go too early, so the gesture has to be committed
-    if (PROOM.cL<0.42) PROOM.cL *= 0.988;
-    if (PROOM.cR<0.42) PROOM.cR *= 0.988;
-  }
-  if (g && Math.min(PROOM.cL,PROOM.cR) > 0.55) meet(g);
 }
 
 /* ============================================================================

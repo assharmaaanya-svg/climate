@@ -406,17 +406,26 @@ function render(t, dt){
 
   switch (bid){
     /* -------------------------------- chapter one */
-    case "dark":
-    case "light": {
+    case "dark": {
       setPop({ birds:0.7, butterflies:0.4, dragonflies:0.3, fireflies:0, seeds:0.5 });
-      bedroomInteract(BEATS[T.i].gate, t, dt);
+      bedroomInteract("curtain", t, dt);
       drawBedroomPlate(t, dt, { air:0 });
+      break;
+    }
+    case "light": {
+      // the curtains are open; now the window itself, on its own brass pull
+      setPop({ birds:0.8, butterflies:0.5, dragonflies:0.4, fireflies:0, seeds:0.6 });
+      bedroomInteract(null, t, dt);
+      sashInteract("sash", t, dt);
+      drawBedroomPlate(t, dt, { air:0, noHint:true });
+      drawSashPull(t);
       break;
     }
     case "breathe": {
       setPop({ birds:0.9, butterflies:0.6, dragonflies:0.5, fireflies:0, seeds:0.8 });
       bedroomInteract(null, t, dt);
       drawBedroomPlate(t, dt, { air:0, noHint:true });
+      drawSashPull(t);
       break;
     }
     /* -------------------------------- chapter two */
@@ -644,6 +653,8 @@ function isLight(){
          (b==="horizon" && T.f<0.8) || b==="r-horizon";
 }
 function updText(now, dt){
+  if (introOn){ askEl.classList.remove("on"); capEl.classList.remove("on");
+    gateEl.classList.remove("on"); return; }
   const bid=id(), f=T.f, B=BEATS[T.i];
   const light = isLight();
   capEl.classList.toggle("dark", light);
@@ -714,8 +725,8 @@ function updText(now, dt){
 }
 function gateProgress(g){
   switch(g){
-    case "curtain": case "curtain2": return Math.min(PROOM.cL,PROOM.cR)/0.55;
-    case "sash":    return ROOM.sash/0.45;
+    case "curtain": case "curtain2": return Math.min(PROOM.cL,PROOM.cR)/CTR.need;
+    case "sash":    return PROOM.sash/0.55;
     case "sheets":  return PWASH.through/3;
     case "shirt":   return PWASH.through/5;
     case "kite": case "rkite": return PKITE.best/0.40;
@@ -809,6 +820,7 @@ function onEnter(bid){
    FRAME
    ========================================================================== */
 let last = performance.now(), acc = 0;
+let introOn = false;   // the way-in card is up, and the piece waits
 /* a rolling frame time, so the piece can quietly shed detail on a slow machine
    rather than becoming a slideshow */
 let ftAvg = 16, autoLow = false;
@@ -821,8 +833,15 @@ function frame(now){
   window.__fps = 1000/ftAvg;
   if (W<2||H<2){ fit(); if (W<2||H<2){ requestAnimationFrame(frame); return; } }
 
-  keyDrive(dt);
-  updPointer(dt);
+  if (introOn){
+    // hold everything still behind the card: the first frame the visitor sees
+    // should be the room they are about to be asked to open
+    P.down = false; P.active = false; P.dx = 0; P.dy = 0;
+    window.scrollTo(0,0);
+  } else {
+    keyDrive(dt);
+    updPointer(dt);
+  }
   readTimeline(dt);
   clampScroll();
   updWind(dt);
@@ -869,6 +888,27 @@ function boot(){
   resetKite();
   readTimeline(1/60);
   onEnter(id());
+  /* the way in. It holds the scroll until it is dismissed, so nobody arrives
+     inside the work without having been told how to touch it. */
+  const introEl = document.getElementById("intro");
+  const beginEl = document.getElementById("begin");
+  if (introEl && beginEl){
+    introOn = true;
+    const go = ()=>{
+      if (!introOn) return;
+      introOn = false;
+      introEl.classList.add("off");
+      window.scrollTo(0,0);
+      beatEnter = performance.now();
+      PROOM.idle = 2.4;                 // the hands come up soon, not instantly
+      try{ beginEl.blur(); }catch(_){}
+    };
+    beginEl.addEventListener("click", go);
+    introEl.addEventListener("click", e=>{ if (e.target===introEl) go(); });
+    window.addEventListener("keydown", e=>{
+      if (introOn && (e.key==="Enter" || e.key===" " || e.key==="Escape")){ e.preventDefault(); go(); }
+    });
+  }
   // a little grime is already on the sill when the piece starts. It always was.
   requestAnimationFrame(n=>{ last=n; frame(n); });
 }
@@ -880,6 +920,8 @@ document.getElementById("restart").addEventListener("click", ()=>{
   window.scrollTo(0,0);
   // keep what they found; reset what they did
   ROOM.cL=ROOM.cR=ROOM.sash=ROOM.latch=0; ROOM.latchDone=false;
+  PROOM.cL=PROOM.cR=PROOM.open=PROOM.sash=0; PROOM.nudgeTo=0; PROOM.idle=0; PROOM.demo=0;
+  PROOM.breeze=0; PROOM.grab=0; PROOM.sashGrab=0; PROOM.everMoved=0;
   for (const k in done) delete done[k];
   WASH.passed=0; WASH.shirtFound=false; WASH.walk=0; WASH.brushed=0;
   for (const st of CONST) st.lit=false;
@@ -893,6 +935,19 @@ document.getElementById("restart").addEventListener("click", ()=>{
   buildWash(); buildIndoors(); resetKite();
   titleEl.classList.remove("on"); titleEl.setAttribute("aria-hidden","true");
 });
+
+/* a small window onto the running piece, for driving it under test */
+window.__bluer = {
+  get beat(){ return id(); },
+  get room(){ return PROOM; },
+  get gates(){ return done; },
+  get fps(){ return window.__fps; },
+  get missing(){ return imgFailed.slice(); },
+  sashPos, curtainGap, CTR, CG,
+  intro(){ return introOn; },
+  reset(){ PROOM.cL=PROOM.cR=PROOM.open=PROOM.sash=0; PROOM.nudgeTo=0;
+           PROOM.idle=0; PROOM.demo=0; delete done.curtain; delete done.sash; }
+};
 
 if (document.readyState==="loading") document.addEventListener("DOMContentLoaded", boot);
 else boot();

@@ -329,9 +329,9 @@ function ph(L, fh){ return fh*AP.h*CAM.zoom; }
    ========================================================================= */
 const BEATS = [
   /* ---------------- chapter one: the world came inside ---------------- */
-  { id:"dark",      ch:1, len:1.15, gate:"curtain", ask:"Drag the curtains apart",
+  { id:"dark",      ch:1, len:1.5,  gate:"curtain", ask:"Take hold of a curtain and drag it aside",
     line:"Before you were awake, someone was already up." },
-  { id:"light",     ch:1, len:1.0,  gate:"sash",    ask:"Turn the latch · then lift the window",
+  { id:"light",     ch:1, len:1.4,  gate:"sash",    ask:"Pull the brass ball down — it lifts the window",
     line:"She always opened it first." },
   { id:"breathe",   ch:1, len:1.1,
     line:"And the whole outside came in at once." },
