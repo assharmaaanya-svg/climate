@@ -137,7 +137,8 @@
 
   /* ---------- title, only at the very end ---------- */
   #title{ position:fixed; inset:0; z-index:8; display:flex; flex-direction:column; align-items:center; justify-content:center;
-    text-align:center; padding:8vw; opacity:0; pointer-events:none; transition:opacity 3s ease; }
+    text-align:center; padding:8vw; opacity:0; pointer-events:none; transition:opacity 3.4s ease;
+    background:radial-gradient(ellipse at 50% 46%, rgba(8,12,18,.80) 0%, rgba(8,12,18,.66) 42%, rgba(8,12,18,.34) 78%, rgba(8,12,18,0) 100%); }
   #title.on{ opacity:1; pointer-events:auto; }
   #title .t{ font-size:clamp(3rem,15vw,8rem); line-height:.9; margin:0; letter-spacing:-.015em;
     color:#e9f1f8; text-shadow:0 3px 40px rgba(0,0,0,.4); }
@@ -6878,7 +6879,12 @@ function updText(now, dt){
   for (const L of FIN_LINES){
     if (bid===L.at && f>=L.f) line = L.text;
   }
-  const show = line && ((bid.startsWith("f-")) ? f>=0.28 : (f>0.06 && f<0.62));
+  // the last line holds a long time, then goes out on its own, and only then does
+  // the title come up. They must never share the frame.
+  const titleFrom = 0.74;
+  const lineOut = bid==="f-end" && f>titleFrom-0.06;
+  const show = line && !lineOut &&
+    ((bid.startsWith("f-")) ? f>=0.28 : (f>0.06 && f<0.62));
   const want = show ? line : "";
   if (want!==lastCap){
     lastCap=want;
@@ -6913,7 +6919,7 @@ function updText(now, dt){
   }
 
   /* the title, only after the last line has been up a long while */
-  const endShow = bid==="f-end" && f>0.66;
+  const endShow = bid==="f-end" && f>0.74;
   if (endShow && titleEl.getAttribute("aria-hidden")==="true"){
     titleEl.setAttribute("aria-hidden","false");
     titleEl.classList.add("on");

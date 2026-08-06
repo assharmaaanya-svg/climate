@@ -637,7 +637,12 @@ function updText(now, dt){
   for (const L of FIN_LINES){
     if (bid===L.at && f>=L.f) line = L.text;
   }
-  const show = line && ((bid.startsWith("f-")) ? f>=0.28 : (f>0.06 && f<0.62));
+  // the last line holds a long time, then goes out on its own, and only then does
+  // the title come up. They must never share the frame.
+  const titleFrom = 0.74;
+  const lineOut = bid==="f-end" && f>titleFrom-0.06;
+  const show = line && !lineOut &&
+    ((bid.startsWith("f-")) ? f>=0.28 : (f>0.06 && f<0.62));
   const want = show ? line : "";
   if (want!==lastCap){
     lastCap=want;
@@ -672,7 +677,7 @@ function updText(now, dt){
   }
 
   /* the title, only after the last line has been up a long while */
-  const endShow = bid==="f-end" && f>0.66;
+  const endShow = bid==="f-end" && f>0.74;
   if (endShow && titleEl.getAttribute("aria-hidden")==="true"){
     titleEl.setAttribute("aria-hidden","false");
     titleEl.classList.add("on");
