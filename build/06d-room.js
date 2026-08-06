@@ -121,7 +121,7 @@ function drawCasement(t, dt, o){
   const y0 = WIN.fy0*H, y1 = WIN.fy1*H;
   const sw = ease.io(open);
   // everything but the two leaves stays exactly where it is until the very end
-  const frameA = 1 - sm(open, 0.72, 1.0);
+  const frameA = 1 - sm(open, 0.55, 0.92);
   ctx.save();
   ctx.globalAlpha = frameA;
   ctx.beginPath();
@@ -136,11 +136,12 @@ function drawCasement(t, dt, o){
     const hinge = (side ? WIN.fx1 : WIN.fx0)*W;
     const free  = WIN.mull*W;
     const gy0 = WIN.gy0*H, gy1 = WIN.gy1*H;
-    // foreshortening: the leaf turns toward the room, so its width collapses
-    const k = Math.cos(sw*1.32);
+    // the leaf only cracks open, so it barely turns: a small foreshortening,
+    // not a door swinging back
+    const k = Math.cos(sw*0.46);
     const nw = (free - hinge)*k;
     ctx.save();
-    ctx.globalAlpha = 1 - sm(open, 0.74, 0.98);
+    ctx.globalAlpha = 1 - sm(open, 0.58, 0.94);
     ctx.beginPath();
     ctx.rect(Math.min(hinge, hinge+nw), gy0, Math.abs(nw), gy1-gy0);
     ctx.clip();
@@ -307,9 +308,21 @@ const WIRE_CUT = [                       // measured off the sheet's alpha
   { x:501, y:180, w: 66, h:70 }
 ];
 const WIREBIRDS = [];
+
+/* A bird on a wire is almost always completely still. What makes it read as a
+   bird is not continuous movement — it is long stillness broken by one movement
+   that is over before you finish noticing it. Anything that eases smoothly and
+   endlessly reads as a puppet, which is what these were: a slow sinusoidal bob,
+   a slow squash to turn around, a slow drift along the wire.
+
+   So every bird here does nothing at all for seconds at a time, then makes one
+   sharp discrete action lasting a fifth of a second, then does nothing again.
+   Turning round happens instantly, hidden inside a wing-flutter, because that
+   is how it happens — a bird does not narrow to nothing and widen the other
+   way. */
+const BIRD_ACTS = ["flick","flick","flick","shuffle","preen","flutter","bob","bob"];
 function buildWireBirds(){
   WIREBIRDS.length = 0;
-  // four on the near wire, three further along the far one
   const spots = [
     { u:0.075, w:0 }, { u:0.150, w:0 }, { u:0.215, w:0 }, { u:0.268, w:0 },
     { u:0.660, w:1 }, { u:0.755, w:1 }, { u:0.830, w:1 }
@@ -321,10 +334,10 @@ function buildWireBirds(){
       u: s.u, wire: s.w,
       scale: 0.62 + hash(i*5.1)*0.30,
       flip: hash(i*9.7) > 0.62 ? -1 : 1,
-      // each one on its own clock, so they never move together
-      ph: hash(i*3.3)*TAU, rate: 0.55 + hash(i*7.7)*0.75,
-      hop: 0, hopT: 2 + hash(i*11.3)*7,
-      turn: 0, gone: 0, goneT: 0, flyPh: 0
+      act: null, actT: 0, actD: 0, dir: 1,
+      wait: 0.8 + hash(i*3.3)*5.5,          // each one keeps its own counsel
+      calm: 0.7 + hash(i*7.7)*0.9,          // some are fidgety, some are not
+      gone: 0, goneT: 0, flyPh: hash(i*2.2)*TAU
     });
   }
 }
@@ -332,31 +345,63 @@ function updWireBirds(dt, t, o){
   const startled = o.startle;
   for (let i=0;i<WIREBIRDS.length;i++){
     const b = WIREBIRDS[i];
-    b.hopT -= dt*b.rate;
-    if (b.hopT <= 0){
-      b.hopT = 2.2 + hash(t*0.37 + i*4.4)*7.5;
-      // a small shuffle along the wire, a bob, or a look the other way
-      const r = hash(t*1.7 + i*2.9);
-      if (r < 0.42) b.hop = 1;
-      else if (r < 0.78){ b.hop = 0.55; b.u += (hash(t+i)*2-1)*0.010; }
-      else b.turn = 1;
-    }
-    b.hop = Math.max(0, b.hop - dt*2.1);
-    b.turn = Math.max(0, b.turn - dt*0.9);
-    if (b.turn > 0.995) b.flip = -b.flip;
-    b.u = cl(b.u, 0.03, 0.94);
 
-    // the window opening sends them off the wire, a beat apart
+    if (b.gone <= 0 && b.goneT <= 0){
+      if (b.act){
+        b.actT += dt;
+        if (b.actT >= b.actD){
+          b.act = null;
+          // long, uneven gaps. Startled birds fidget; settled ones sit.
+          b.wait = (1.6 + Math.random()*7.0) / b.calm;
+        }
+      } else {
+        b.wait -= dt;
+        if (b.wait <= 0){
+          b.act = BIRD_ACTS[(Math.random()*BIRD_ACTS.length)|0];
+          b.actT = 0;
+          b.dir = Math.random() < 0.5 ? -1 : 1;
+          b.actD = b.act==="preen" ? 0.34 + Math.random()*0.30
+                 : b.act==="shuffle" ? 0.24
+                 : b.act==="flutter" ? 0.22
+                 : 0.14 + Math.random()*0.06;
+          if (b.act==="shuffle") b.u = cl(b.u + b.dir*0.011, 0.035, 0.935);
+          // turning round is instant, and hidden inside the flutter
+          if (b.act==="flutter" && Math.random()<0.55) b.turnAt = 0.5; else b.turnAt = -1;
+        }
+      }
+    }
+
+    // the window opening puts them off the wire, one at a time, not as a block
     if (startled && !b.gone && b.goneT<=0){
-      if (hash(i*13.1) < startled*0.85){ b.goneT = 0.10 + hash(i*17.3)*0.85; }
+      if (hash(i*13.1) < startled*0.85) b.goneT = 0.10 + hash(i*17.3)*0.95;
     }
     if (b.goneT > 0){
       b.goneT -= dt;
-      if (b.goneT <= 0){ b.gone = 0.0001; if (soundOn) sfx.flap(); }
+      if (b.goneT <= 0){ b.gone = 0.0001; b.act = null; if (soundOn) sfx.flap(); }
     }
-    if (b.gone > 0) b.gone = Math.min(1, b.gone + dt*0.42);
-    b.flyPh += dt*11;
+    if (b.gone > 0) b.gone = Math.min(1, b.gone + dt*0.40);
+    b.flyPh += dt*13;
   }
+}
+/* the pose an action puts a bird in, at the instant it is in */
+function birdPose(b){
+  const p = { dx:0, dy:0, rot:0, sy:1, sx:1 };
+  if (!b.act) return p;
+  const k = cl01(b.actT/b.actD);
+  const snap = k < 0.35 ? ease.o3(k/0.35) : 1 - ease.io((k-0.35)/0.65);  // out fast, back slow
+  switch (b.act){
+    case "flick":   p.rot = b.dir*0.13*snap; p.dx = b.dir*0.05*snap; break;
+    case "bob":     p.dy = -0.16*snap; p.rot = -0.05*snap; break;
+    case "preen":   p.rot = b.dir*0.30*snap; p.dy = 0.07*snap; p.sy = 1-0.10*snap; break;
+    case "shuffle": p.dx = b.dir*0.30*Math.sin(k*PI); p.dy = -0.20*Math.sin(k*PI); break;
+    case "flutter": {
+      const f = Math.sin(k*PI);
+      p.dy = -0.26*f; p.sy = 1 + 0.16*f; p.sx = 1 - 0.06*f; p.rot = b.dir*0.08*f;
+      if (b.turnAt>0 && k>=b.turnAt){ b.flip = -b.flip; b.turnAt = -1; }
+      break;
+    }
+  }
+  return p;
 }
 function drawWireBirds(t, o){
   const im = IMG["birdsonthedistanceinbedroom.png"];
@@ -370,40 +415,35 @@ function drawWireBirds(t, o){
   const bx = cb.x - cw.x, by = cb.y - cw.y;
 
   ctx.save();
-  // they are on the far side of the glass
   ctx.beginPath();
   ctx.rect(gx0, gy0, gx1-gx0, gy1-gy0);
   ctx.clip();
 
   for (const b of WIREBIRDS){
     const c = b.cut;
-    // distant, so small: the sheet is drawn at a fraction of the window
     const dw = (gx1-gx0) * 0.052 * b.scale;
     const dh = dw * (c.h/c.w);
     const wy = WIN.wireY[b.wire]*H;
-    let x = gx0 + (gx1-gx0)*b.u + bx;
-    let y = wy + cw.y + by - dh*0.90;           // feet on the wire
-    let a = vis;
+    const ps = birdPose(b);
+    let x = gx0 + (gx1-gx0)*b.u + bx + ps.dx*dw;
+    let y = wy + cw.y + by - dh*0.90 + ps.dy*dh;
+    let a = vis, rot = ps.rot, sy = ps.sy, sx = ps.sx;
 
     if (b.gone > 0){
-      // away over the rooftops, rising and shrinking as it goes
       const g2 = ease.o(b.gone);
       x += (b.flip>0 ? 1 : -1) * (gx1-gx0) * 0.55 * g2;
-      y -= (gy1-gy0) * 0.42 * g2 * g2 + Math.sin(b.flyPh)*dh*0.18*(1-g2);
+      y -= (gy1-gy0) * 0.42 * g2 * g2 + Math.sin(b.flyPh)*dh*0.22*(1-g2*0.6);
+      sy = 1 + Math.sin(b.flyPh)*0.20*(1-g2*0.5);          // wingbeats
+      rot = (b.flip>0?-1:1) * 0.26 * g2;
       a *= 1 - sm(b.gone, 0.55, 1.0);
       if (a < 0.01) continue;
-    } else {
-      y -= b.hop * dh * 0.16;                   // the bob
-      x += Math.sin(t*0.7 + b.ph) * dw*0.04;    // the wire, moving a little
     }
 
     ctx.save();
     ctx.globalAlpha = a;
     ctx.translate(x, y + dh*0.5);
-    // a turn is read as the sprite narrowing and coming back the other way
-    const tw = b.turn>0 ? Math.cos(b.turn*PI) : 1;
-    ctx.scale(b.flip * (b.gone>0 ? 1 : Math.max(0.16, Math.abs(tw))), 1);
-    if (b.gone > 0) ctx.rotate((b.flip>0?-1:1) * 0.22 * ease.o(b.gone));
+    ctx.rotate(rot);
+    ctx.scale(b.flip*sx, sy);
     ctx.drawImage(im, c.x, c.y, c.w, c.h, -dw*0.5, -dh*0.5, dw, dh);
     ctx.restore();
   }
@@ -430,15 +470,15 @@ function roomSound(dt, t, rev){
 
   if (!soundOn) return;
   // through glass, then through nothing
-  const near   = 0.16 + 0.34*rev + 0.86*sash;      // how loud
-  const bright = 0.10 + 0.24*rev + 0.66*sash;      // how much high end survives
-  const rate   = (0.22 + 0.30*rev + 0.95*sash);    // chirps a second
+  const near   = 0.14 + 0.26*rev + 1.55*sash;      // how loud
+  const bright = 0.08 + 0.20*rev + 0.82*sash;      // how much high end survives
+  const rate   = (0.20 + 0.26*rev + 1.35*sash);    // chirps a second
   RSND.chirp -= dt*rate;
   if (RSND.chirp <= 0){
     RSND.chirp = 0.5 + Math.random()*2.4;
     sfx.bird(near, bright);
     // birds answer each other, so sometimes a second one follows
-    if (Math.random() < 0.30*(0.4+sash)) RSND.chirp = 0.16 + Math.random()*0.22;
+    if (Math.random() < 0.34*(0.4+sash*1.6)) RSND.chirp = 0.14 + Math.random()*0.20;
   }
 }
 

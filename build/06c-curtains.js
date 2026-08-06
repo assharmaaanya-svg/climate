@@ -542,7 +542,7 @@ function curtainHelp(t, dt){
     ctx.textAlign = "center"; ctx.textBaseline = "middle";
     const msg = PROOM.everMoved ? "keep pulling" : "drag the curtains apart";
     // direct, and in the place where the hands already are
-    const yy = y + MIN*0.085;
+    const yy = y + MIN*0.098;   // under the hands, clear of the narration below
     ctx.shadowColor = "rgba(8,4,0,0.9)"; ctx.shadowBlur = MIN*0.03;
     ctx.fillStyle = rgba([255,246,228], 0.80+0.20*pulse);
     ctx.fillText(msg, W*0.5, yy);

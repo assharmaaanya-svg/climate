@@ -33,7 +33,7 @@
   #spine{ position:relative; z-index:1; pointer-events:none; }
 
   /* ---------- narration ---------- */
-  #cap{ position:fixed; left:50%; bottom:15vh; transform:translate(-50%,12px); z-index:6; margin:0;
+  #cap{ position:fixed; left:50%; bottom:19vh; transform:translate(-50%,12px); z-index:6; margin:0;
     width:min(90vw,34ch); text-align:center; font-size:clamp(1.1rem,3.5vw,1.75rem); line-height:1.4;
     letter-spacing:.004em; color:var(--ink); text-shadow:var(--sh); opacity:0; pointer-events:none;
     transition:opacity 1.5s cubic-bezier(.4,0,.2,1), transform 1.5s cubic-bezier(.4,0,.2,1); }
@@ -173,7 +173,10 @@
   #intro .prize{ margin:0 0 clamp(.9rem,2.6vh,1.6rem); font-family:var(--mono);
     font-size:clamp(.6rem,1.4vh,.7rem); letter-spacing:.34em; text-transform:uppercase;
     color:#ffd9a8; opacity:.75; }
-  #begin{ margin-top:clamp(1.2rem,3.4vh,2.3rem); font-family:var(--mono); font-size:.7rem; letter-spacing:.2em;
+  #intro .how{ margin:clamp(1.1rem,3vh,1.9rem) auto 0; font-family:var(--mono);
+    font-size:clamp(.72rem,1.7vh,.82rem); letter-spacing:.14em; text-transform:uppercase;
+    color:#ffe6c4; opacity:.95; }
+  #begin{ margin-top:clamp(1rem,2.6vh,1.7rem); font-family:var(--mono); font-size:.7rem; letter-spacing:.2em;
     text-transform:uppercase; color:#120c06; background:#f0dfc4; border:0; border-radius:999px;
     padding:1em 2.2em; cursor:pointer; transition:transform .25s, background .25s;
     box-shadow:0 14px 40px rgba(0,0,0,.45); }
@@ -181,6 +184,21 @@
   #begin:focus-visible{ outline:2px solid #fff; outline-offset:4px; }
   #intro .fine{ margin-top:clamp(.9rem,2vh,1.4rem); font-family:var(--mono); font-size:.6rem; letter-spacing:.14em;
     text-transform:uppercase; opacity:.42; }
+
+  /* ---------- the scroll arrow: small, quiet, and always there ---------- */
+  #sdown{ position:fixed; left:50%; bottom:1.5vh; transform:translateX(-50%); z-index:5;
+    display:flex; flex-direction:column; align-items:center; gap:.35em;
+    font-family:var(--mono); font-size:.5rem; letter-spacing:.24em; text-transform:uppercase;
+    color:var(--ink); text-shadow:var(--sh); opacity:0; transition:opacity 1s;
+    pointer-events:none; }
+  #sdown.on{ opacity:.34; }
+  #sdown.dark{ color:#1d2a36; text-shadow:0 1px 12px rgba(255,255,255,.85); }
+  #sdown i{ width:7px; height:7px; border-right:1.4px solid currentColor;
+    border-bottom:1.4px solid currentColor; transform:rotate(45deg);
+    animation:sbob 2.6s ease-in-out infinite; }
+  @keyframes sbob{ 0%,100%{ transform:rotate(45deg) translate(0,0); opacity:.55 }
+                   50%{ transform:rotate(45deg) translate(2px,2px); opacity:1 } }
+  @media (prefers-reduced-motion: reduce){ #sdown i{ animation:none; } }
 
   .sr{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
 
@@ -202,6 +220,7 @@
   <p class="a">Aanya Sharma</p>
   <p class="lede">A morning you have had a thousand times, and the small things
      that stopped happening in it.</p>
+  <p class="how">Scroll to move through it.</p>
   <button id="begin" autofocus>Begin</button>
   <p class="fine">sound and captions, top right</p>
 </div></div>
@@ -218,6 +237,7 @@
 <div id="ask" aria-live="polite"></div>
 <div id="gate" aria-hidden="true"><span id="gateTxt"></span><span class="bar"><i id="gateBar"></i></span><span class="chev"></span></div>
 <div id="cc" aria-hidden="true"></div>
+<div id="sdown" aria-hidden="true"><span>scroll</span><i></i></div>
 
 <div id="aq" role="status" aria-hidden="true">
   <div class="row">
@@ -956,7 +976,10 @@ const PLATES = {
     bands:[ {to:0.16,p:0.015}, {to:0.62,p:0.04}, {to:0.80,p:0.09}, {to:1.0,p:0.17} ]
   },
   roomOpen: {
-    clean:"widnowopennocrtains.png",
+    // the casement cracked open, not flung wide — measured against roomShut, the
+    // two differ by 4/255 outside the window and 14/255 inside it, which is to
+    // say they are the same room and only the window moved
+    clean:"actualwidnowslightlyopenedwithnocurtains.jpg",
     crop:{ x:0.0, y:0.045, w:1.0, h:0.830 },
     bands:[ {to:0.16,p:0.015}, {to:0.62,p:0.04}, {to:0.80,p:0.09}, {to:1.0,p:0.17} ]
   },
@@ -1027,7 +1050,8 @@ const PLATES = {
 /* preload everything the piece will need, in rough order of appearance */
 function preloadPlates(){
   const order = ["bedroomwithnobulbandcurtainsandbirdsandadifferentwindowframe.png",
-    "widnowopennocrtains.png","bulb latch png transparent.png","birdsonthedistanceinbedroom.png",
+    "actualwidnowslightlyopenedwithnocurtains.jpg",
+    "bulb latch png transparent.png","birdsonthedistanceinbedroom.png",
     "bedroomclosed.png","bedroomopen.png","bedroompostpollution.png",
     "moresheets.png","moresheetspolluted.png","sheetswithmother.png","sheetspollutedwithmother.png",
     "childflykite.png","childflykiteevening.png","childflykite night.png","pollutedkitefly.png",
@@ -5700,7 +5724,7 @@ function curtainHelp(t, dt){
     ctx.textAlign = "center"; ctx.textBaseline = "middle";
     const msg = PROOM.everMoved ? "keep pulling" : "drag the curtains apart";
     // direct, and in the place where the hands already are
-    const yy = y + MIN*0.085;
+    const yy = y + MIN*0.098;   // under the hands, clear of the narration below
     ctx.shadowColor = "rgba(8,4,0,0.9)"; ctx.shadowBlur = MIN*0.03;
     ctx.fillStyle = rgba([255,246,228], 0.80+0.20*pulse);
     ctx.fillText(msg, W*0.5, yy);
@@ -5835,7 +5859,7 @@ function drawCasement(t, dt, o){
   const y0 = WIN.fy0*H, y1 = WIN.fy1*H;
   const sw = ease.io(open);
   // everything but the two leaves stays exactly where it is until the very end
-  const frameA = 1 - sm(open, 0.72, 1.0);
+  const frameA = 1 - sm(open, 0.55, 0.92);
   ctx.save();
   ctx.globalAlpha = frameA;
   ctx.beginPath();
@@ -5850,11 +5874,12 @@ function drawCasement(t, dt, o){
     const hinge = (side ? WIN.fx1 : WIN.fx0)*W;
     const free  = WIN.mull*W;
     const gy0 = WIN.gy0*H, gy1 = WIN.gy1*H;
-    // foreshortening: the leaf turns toward the room, so its width collapses
-    const k = Math.cos(sw*1.32);
+    // the leaf only cracks open, so it barely turns: a small foreshortening,
+    // not a door swinging back
+    const k = Math.cos(sw*0.46);
     const nw = (free - hinge)*k;
     ctx.save();
-    ctx.globalAlpha = 1 - sm(open, 0.74, 0.98);
+    ctx.globalAlpha = 1 - sm(open, 0.58, 0.94);
     ctx.beginPath();
     ctx.rect(Math.min(hinge, hinge+nw), gy0, Math.abs(nw), gy1-gy0);
     ctx.clip();
@@ -6021,9 +6046,21 @@ const WIRE_CUT = [                       // measured off the sheet's alpha
   { x:501, y:180, w: 66, h:70 }
 ];
 const WIREBIRDS = [];
+
+/* A bird on a wire is almost always completely still. What makes it read as a
+   bird is not continuous movement — it is long stillness broken by one movement
+   that is over before you finish noticing it. Anything that eases smoothly and
+   endlessly reads as a puppet, which is what these were: a slow sinusoidal bob,
+   a slow squash to turn around, a slow drift along the wire.
+
+   So every bird here does nothing at all for seconds at a time, then makes one
+   sharp discrete action lasting a fifth of a second, then does nothing again.
+   Turning round happens instantly, hidden inside a wing-flutter, because that
+   is how it happens — a bird does not narrow to nothing and widen the other
+   way. */
+const BIRD_ACTS = ["flick","flick","flick","shuffle","preen","flutter","bob","bob"];
 function buildWireBirds(){
   WIREBIRDS.length = 0;
-  // four on the near wire, three further along the far one
   const spots = [
     { u:0.075, w:0 }, { u:0.150, w:0 }, { u:0.215, w:0 }, { u:0.268, w:0 },
     { u:0.660, w:1 }, { u:0.755, w:1 }, { u:0.830, w:1 }
@@ -6035,10 +6072,10 @@ function buildWireBirds(){
       u: s.u, wire: s.w,
       scale: 0.62 + hash(i*5.1)*0.30,
       flip: hash(i*9.7) > 0.62 ? -1 : 1,
-      // each one on its own clock, so they never move together
-      ph: hash(i*3.3)*TAU, rate: 0.55 + hash(i*7.7)*0.75,
-      hop: 0, hopT: 2 + hash(i*11.3)*7,
-      turn: 0, gone: 0, goneT: 0, flyPh: 0
+      act: null, actT: 0, actD: 0, dir: 1,
+      wait: 0.8 + hash(i*3.3)*5.5,          // each one keeps its own counsel
+      calm: 0.7 + hash(i*7.7)*0.9,          // some are fidgety, some are not
+      gone: 0, goneT: 0, flyPh: hash(i*2.2)*TAU
     });
   }
 }
@@ -6046,31 +6083,63 @@ function updWireBirds(dt, t, o){
   const startled = o.startle;
   for (let i=0;i<WIREBIRDS.length;i++){
     const b = WIREBIRDS[i];
-    b.hopT -= dt*b.rate;
-    if (b.hopT <= 0){
-      b.hopT = 2.2 + hash(t*0.37 + i*4.4)*7.5;
-      // a small shuffle along the wire, a bob, or a look the other way
-      const r = hash(t*1.7 + i*2.9);
-      if (r < 0.42) b.hop = 1;
-      else if (r < 0.78){ b.hop = 0.55; b.u += (hash(t+i)*2-1)*0.010; }
-      else b.turn = 1;
-    }
-    b.hop = Math.max(0, b.hop - dt*2.1);
-    b.turn = Math.max(0, b.turn - dt*0.9);
-    if (b.turn > 0.995) b.flip = -b.flip;
-    b.u = cl(b.u, 0.03, 0.94);
 
-    // the window opening sends them off the wire, a beat apart
+    if (b.gone <= 0 && b.goneT <= 0){
+      if (b.act){
+        b.actT += dt;
+        if (b.actT >= b.actD){
+          b.act = null;
+          // long, uneven gaps. Startled birds fidget; settled ones sit.
+          b.wait = (1.6 + Math.random()*7.0) / b.calm;
+        }
+      } else {
+        b.wait -= dt;
+        if (b.wait <= 0){
+          b.act = BIRD_ACTS[(Math.random()*BIRD_ACTS.length)|0];
+          b.actT = 0;
+          b.dir = Math.random() < 0.5 ? -1 : 1;
+          b.actD = b.act==="preen" ? 0.34 + Math.random()*0.30
+                 : b.act==="shuffle" ? 0.24
+                 : b.act==="flutter" ? 0.22
+                 : 0.14 + Math.random()*0.06;
+          if (b.act==="shuffle") b.u = cl(b.u + b.dir*0.011, 0.035, 0.935);
+          // turning round is instant, and hidden inside the flutter
+          if (b.act==="flutter" && Math.random()<0.55) b.turnAt = 0.5; else b.turnAt = -1;
+        }
+      }
+    }
+
+    // the window opening puts them off the wire, one at a time, not as a block
     if (startled && !b.gone && b.goneT<=0){
-      if (hash(i*13.1) < startled*0.85){ b.goneT = 0.10 + hash(i*17.3)*0.85; }
+      if (hash(i*13.1) < startled*0.85) b.goneT = 0.10 + hash(i*17.3)*0.95;
     }
     if (b.goneT > 0){
       b.goneT -= dt;
-      if (b.goneT <= 0){ b.gone = 0.0001; if (soundOn) sfx.flap(); }
+      if (b.goneT <= 0){ b.gone = 0.0001; b.act = null; if (soundOn) sfx.flap(); }
     }
-    if (b.gone > 0) b.gone = Math.min(1, b.gone + dt*0.42);
-    b.flyPh += dt*11;
+    if (b.gone > 0) b.gone = Math.min(1, b.gone + dt*0.40);
+    b.flyPh += dt*13;
   }
+}
+/* the pose an action puts a bird in, at the instant it is in */
+function birdPose(b){
+  const p = { dx:0, dy:0, rot:0, sy:1, sx:1 };
+  if (!b.act) return p;
+  const k = cl01(b.actT/b.actD);
+  const snap = k < 0.35 ? ease.o3(k/0.35) : 1 - ease.io((k-0.35)/0.65);  // out fast, back slow
+  switch (b.act){
+    case "flick":   p.rot = b.dir*0.13*snap; p.dx = b.dir*0.05*snap; break;
+    case "bob":     p.dy = -0.16*snap; p.rot = -0.05*snap; break;
+    case "preen":   p.rot = b.dir*0.30*snap; p.dy = 0.07*snap; p.sy = 1-0.10*snap; break;
+    case "shuffle": p.dx = b.dir*0.30*Math.sin(k*PI); p.dy = -0.20*Math.sin(k*PI); break;
+    case "flutter": {
+      const f = Math.sin(k*PI);
+      p.dy = -0.26*f; p.sy = 1 + 0.16*f; p.sx = 1 - 0.06*f; p.rot = b.dir*0.08*f;
+      if (b.turnAt>0 && k>=b.turnAt){ b.flip = -b.flip; b.turnAt = -1; }
+      break;
+    }
+  }
+  return p;
 }
 function drawWireBirds(t, o){
   const im = IMG["birdsonthedistanceinbedroom.png"];
@@ -6084,40 +6153,35 @@ function drawWireBirds(t, o){
   const bx = cb.x - cw.x, by = cb.y - cw.y;
 
   ctx.save();
-  // they are on the far side of the glass
   ctx.beginPath();
   ctx.rect(gx0, gy0, gx1-gx0, gy1-gy0);
   ctx.clip();
 
   for (const b of WIREBIRDS){
     const c = b.cut;
-    // distant, so small: the sheet is drawn at a fraction of the window
     const dw = (gx1-gx0) * 0.052 * b.scale;
     const dh = dw * (c.h/c.w);
     const wy = WIN.wireY[b.wire]*H;
-    let x = gx0 + (gx1-gx0)*b.u + bx;
-    let y = wy + cw.y + by - dh*0.90;           // feet on the wire
-    let a = vis;
+    const ps = birdPose(b);
+    let x = gx0 + (gx1-gx0)*b.u + bx + ps.dx*dw;
+    let y = wy + cw.y + by - dh*0.90 + ps.dy*dh;
+    let a = vis, rot = ps.rot, sy = ps.sy, sx = ps.sx;
 
     if (b.gone > 0){
-      // away over the rooftops, rising and shrinking as it goes
       const g2 = ease.o(b.gone);
       x += (b.flip>0 ? 1 : -1) * (gx1-gx0) * 0.55 * g2;
-      y -= (gy1-gy0) * 0.42 * g2 * g2 + Math.sin(b.flyPh)*dh*0.18*(1-g2);
+      y -= (gy1-gy0) * 0.42 * g2 * g2 + Math.sin(b.flyPh)*dh*0.22*(1-g2*0.6);
+      sy = 1 + Math.sin(b.flyPh)*0.20*(1-g2*0.5);          // wingbeats
+      rot = (b.flip>0?-1:1) * 0.26 * g2;
       a *= 1 - sm(b.gone, 0.55, 1.0);
       if (a < 0.01) continue;
-    } else {
-      y -= b.hop * dh * 0.16;                   // the bob
-      x += Math.sin(t*0.7 + b.ph) * dw*0.04;    // the wire, moving a little
     }
 
     ctx.save();
     ctx.globalAlpha = a;
     ctx.translate(x, y + dh*0.5);
-    // a turn is read as the sprite narrowing and coming back the other way
-    const tw = b.turn>0 ? Math.cos(b.turn*PI) : 1;
-    ctx.scale(b.flip * (b.gone>0 ? 1 : Math.max(0.16, Math.abs(tw))), 1);
-    if (b.gone > 0) ctx.rotate((b.flip>0?-1:1) * 0.22 * ease.o(b.gone));
+    ctx.rotate(rot);
+    ctx.scale(b.flip*sx, sy);
     ctx.drawImage(im, c.x, c.y, c.w, c.h, -dw*0.5, -dh*0.5, dw, dh);
     ctx.restore();
   }
@@ -6144,15 +6208,15 @@ function roomSound(dt, t, rev){
 
   if (!soundOn) return;
   // through glass, then through nothing
-  const near   = 0.16 + 0.34*rev + 0.86*sash;      // how loud
-  const bright = 0.10 + 0.24*rev + 0.66*sash;      // how much high end survives
-  const rate   = (0.22 + 0.30*rev + 0.95*sash);    // chirps a second
+  const near   = 0.14 + 0.26*rev + 1.55*sash;      // how loud
+  const bright = 0.08 + 0.20*rev + 0.82*sash;      // how much high end survives
+  const rate   = (0.20 + 0.26*rev + 1.35*sash);    // chirps a second
   RSND.chirp -= dt*rate;
   if (RSND.chirp <= 0){
     RSND.chirp = 0.5 + Math.random()*2.4;
     sfx.bird(near, bright);
     // birds answer each other, so sometimes a second one follows
-    if (Math.random() < 0.30*(0.4+sash)) RSND.chirp = 0.16 + Math.random()*0.22;
+    if (Math.random() < 0.34*(0.4+sash*1.6)) RSND.chirp = 0.14 + Math.random()*0.20;
   }
 }
 
@@ -10270,6 +10334,7 @@ function render(t, dt){
 const capEl=document.getElementById("cap"), askEl=document.getElementById("ask"),
       gateEl=document.getElementById("gate"), gateTxt=document.getElementById("gateTxt"),
       gateBar=document.getElementById("gateBar"), chEl=document.getElementById("chapter"),
+      sdownEl=document.getElementById("sdown"),
       titleEl=document.getElementById("title"), ctlEl=document.querySelector(".ctl");
 
 const FIN_LINES = [
@@ -10287,7 +10352,7 @@ function isLight(){
 }
 function updText(now, dt){
   if (introOn){ askEl.classList.remove("on"); capEl.classList.remove("on");
-    gateEl.classList.remove("on"); return; }
+    gateEl.classList.remove("on"); sdownEl.classList.remove("on"); return; }
   const bid=id(), f=T.f, B=BEATS[T.i];
   const light = isLight();
   capEl.classList.toggle("dark", light);
@@ -10318,10 +10383,19 @@ function updText(now, dt){
      the visitor is clearly getting on with it */
   const g = B.gate;
   const needed = g && !gateMet(g);
-  const askTxt = needed ? (B.ask||"") : "";
+  // the canvas says it where the hands are; the pill would only repeat it, and
+  // two copies of the same sentence in one frame is how they end up colliding
+  const onCanvas = (bid==="dark") && PROOM.demo > 0.25;
+  const askTxt = (needed && !onCanvas) ? (B.ask||"") : "";
   askEl.textContent = askTxt;
   const busy = P.down || tSinceAct < 1.4;
   askEl.classList.toggle("on", !!askTxt && (T.push>0.05 || !busy || (now-beatEnter)<3600));
+
+  /* the scroll arrow: small, and there the whole way, because scrolling is the
+     one thing the visitor has to know and the only thing the card tells them */
+  const moreToGo = T.p < TOTAL-0.35 && bid!=="f-end";
+  sdownEl.classList.toggle("on", moreToGo && !introOn);
+  sdownEl.classList.toggle("dark", light);
   askEl.classList.toggle("urge", T.push>0.3);
 
   /* the gate marker */
@@ -10579,6 +10653,7 @@ window.__bluer = {
   get fps(){ return window.__fps; },
   get missing(){ return imgFailed.slice(); },
   cordBall, curtainGap, CTR, CG, WIN,
+  get birds(){ return WIREBIRDS; },
   intro(){ return introOn; },
   reset(){ PROOM.cL=PROOM.cR=PROOM.open=PROOM.sash=0; PROOM.nudgeTo=0;
            PROOM.idle=0; PROOM.demo=0; CORD.swing=0; CORD.swingV=0;

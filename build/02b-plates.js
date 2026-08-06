@@ -84,7 +84,10 @@ const PLATES = {
     bands:[ {to:0.16,p:0.015}, {to:0.62,p:0.04}, {to:0.80,p:0.09}, {to:1.0,p:0.17} ]
   },
   roomOpen: {
-    clean:"widnowopennocrtains.png",
+    // the casement cracked open, not flung wide — measured against roomShut, the
+    // two differ by 4/255 outside the window and 14/255 inside it, which is to
+    // say they are the same room and only the window moved
+    clean:"actualwidnowslightlyopenedwithnocurtains.jpg",
     crop:{ x:0.0, y:0.045, w:1.0, h:0.830 },
     bands:[ {to:0.16,p:0.015}, {to:0.62,p:0.04}, {to:0.80,p:0.09}, {to:1.0,p:0.17} ]
   },
@@ -155,7 +158,8 @@ const PLATES = {
 /* preload everything the piece will need, in rough order of appearance */
 function preloadPlates(){
   const order = ["bedroomwithnobulbandcurtainsandbirdsandadifferentwindowframe.png",
-    "widnowopennocrtains.png","bulb latch png transparent.png","birdsonthedistanceinbedroom.png",
+    "actualwidnowslightlyopenedwithnocurtains.jpg",
+    "bulb latch png transparent.png","birdsonthedistanceinbedroom.png",
     "bedroomclosed.png","bedroomopen.png","bedroompostpollution.png",
     "moresheets.png","moresheetspolluted.png","sheetswithmother.png","sheetspollutedwithmother.png",
     "childflykite.png","childflykiteevening.png","childflykite night.png","pollutedkitefly.png",

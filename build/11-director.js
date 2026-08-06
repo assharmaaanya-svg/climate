@@ -636,6 +636,7 @@ function render(t, dt){
 const capEl=document.getElementById("cap"), askEl=document.getElementById("ask"),
       gateEl=document.getElementById("gate"), gateTxt=document.getElementById("gateTxt"),
       gateBar=document.getElementById("gateBar"), chEl=document.getElementById("chapter"),
+      sdownEl=document.getElementById("sdown"),
       titleEl=document.getElementById("title"), ctlEl=document.querySelector(".ctl");
 
 const FIN_LINES = [
@@ -653,7 +654,7 @@ function isLight(){
 }
 function updText(now, dt){
   if (introOn){ askEl.classList.remove("on"); capEl.classList.remove("on");
-    gateEl.classList.remove("on"); return; }
+    gateEl.classList.remove("on"); sdownEl.classList.remove("on"); return; }
   const bid=id(), f=T.f, B=BEATS[T.i];
   const light = isLight();
   capEl.classList.toggle("dark", light);
@@ -684,10 +685,19 @@ function updText(now, dt){
      the visitor is clearly getting on with it */
   const g = B.gate;
   const needed = g && !gateMet(g);
-  const askTxt = needed ? (B.ask||"") : "";
+  // the canvas says it where the hands are; the pill would only repeat it, and
+  // two copies of the same sentence in one frame is how they end up colliding
+  const onCanvas = (bid==="dark") && PROOM.demo > 0.25;
+  const askTxt = (needed && !onCanvas) ? (B.ask||"") : "";
   askEl.textContent = askTxt;
   const busy = P.down || tSinceAct < 1.4;
   askEl.classList.toggle("on", !!askTxt && (T.push>0.05 || !busy || (now-beatEnter)<3600));
+
+  /* the scroll arrow: small, and there the whole way, because scrolling is the
+     one thing the visitor has to know and the only thing the card tells them */
+  const moreToGo = T.p < TOTAL-0.35 && bid!=="f-end";
+  sdownEl.classList.toggle("on", moreToGo && !introOn);
+  sdownEl.classList.toggle("dark", light);
   askEl.classList.toggle("urge", T.push>0.3);
 
   /* the gate marker */
@@ -945,6 +955,7 @@ window.__bluer = {
   get fps(){ return window.__fps; },
   get missing(){ return imgFailed.slice(); },
   cordBall, curtainGap, CTR, CG, WIN,
+  get birds(){ return WIREBIRDS; },
   intro(){ return introOn; },
   reset(){ PROOM.cL=PROOM.cR=PROOM.open=PROOM.sash=0; PROOM.nudgeTo=0;
            PROOM.idle=0; PROOM.demo=0; CORD.swing=0; CORD.swingV=0;
