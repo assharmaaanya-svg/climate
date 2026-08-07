@@ -6907,103 +6907,72 @@ function drawSheetsScene(t, dt, o){
 }
 
 /* ------------------------------------------------------------- the mother
-   Two sprites doing two different jobs.
+   She is a person standing behind a sheet, not a piece of washing. Everything
+   she is made of used to go through the same cloth mesh as the sheets, which is
+   why she looked tangled in them: her skirt rippled on the sheet's wave, at the
+   sheet's frequency, and moved when the visitor dragged. A skirt does move, but
+   it moves because she is standing in a field in the evening — not because
+   somebody pulled the line she is behind.
 
-   THE SHADOW is her upper body thrown onto the sheet she is pegging. It was cut
-   straight out of that shadow, so its own box is where it belongs and how big
-   it is — no decision to make. It is drawn with multiply, which is both the
-   right blend for a shadow and the reason her sprite needs no keying: she is a
-   silhouette painted on solid white, and white under multiply leaves the
-   backdrop exactly as it was.
-
-   THE SKIRT is not part of that shadow. It is her, below the hem, in the open
-   air — which is why it is smaller than the shadow above it. A shadow cast on
-   cloth a foot behind someone is bigger than the person casting it, so a skirt
-   drawn at the shadow's width would be a giant's. It hangs from just under the
-   sheet's hem, gathered at the waist and free below, and it goes through the
-   same cloth mesh as everything else on this line.
+   So nothing of her is warped now. Her shadow is drawn straight, and her skirt
+   swings from her waist as one piece, on its own slow clock, with a shear
+   rather than a ripple. Two sprites, two plain draws, and she keeps still.
 */
-function drawMother(t, dt, rect, c, air, sheetBoxIn){
+function drawMother(t, dt, rect, c, air, sheetBox){
   const torso = IMG[SHEETS.torso.img], skirt = IMG[SHEETS.skirt.img];
   const a = SHEETS.momFade;
+  if (a < 0.01) return;
   const tb = SHEETS.torso.box;
-  const sheetBox = sheetBoxIn;
   const hemY = sheetBox[1] + sheetBox[3];          // where her sheet ends
+  const midX = tb[0] + tb[2]*0.5;
 
-  /* Her sprite stops at her hips — above the sheet's hem — so on its own she
-     reads as a woman cut in half by a straight line. The skirt closes that, and
-     it does two jobs at once because it is in two places at once:
+  // her own breeze: slow, small, and nothing to do with the drag
+  const swing = Math.sin(t*0.62) * 0.020 + Math.sin(t*0.41 + 1.3) * 0.012;
 
-       ABOVE THE HEM it is still her shadow on the cloth, so it is drawn with
-       multiply like the rest of her, starting at her waist and clipped to the
-       sheet. That is what joins her back together.
-       BELOW THE HEM it is her, in the open air, and so it is drawn plainly —
-       and smaller, because a shadow cast on cloth a foot behind someone is
-       larger than the person casting it.
-  */
-  if (imgReady(skirt)){
-    const sk = SHEETS.skirt.box;
-    const aspect = (sk[3]*skirt.naturalHeight) / (sk[2]*skirt.naturalWidth);
-    const midX = tb[0] + tb[2]*0.5;
-    const waistY = tb[1] + tb[3]*0.955;
-
-    // [1] the shadow half — her width, meeting her waist, stopped at the hem
-    const shW = tb[2]*0.92;
-    const shH = shW * aspect * (rect.w/rect.h);
-    const shX = midX - shW*0.5;
-    ctx.save();
-    ctx.beginPath();
-    ctx.rect(rect.x + (shX-shW)*rect.w, rect.y + waistY*rect.h,
-             shW*3*rect.w, (hemY-waistY)*rect.h);
-    ctx.clip();
-    ctx.globalCompositeOperation = "multiply";
-    drawCloth(skirt, [0,0,1,1], {
-      t, c: { ph:c.ph+1.9, rate:c.rate*0.68, slack:1.30, swing:c.swing },
-      x: rect.x + shX*rect.w - sk[0]*(shW/sk[2])*rect.w,
-      y: rect.y + waistY*rect.h - sk[1]*(shH/sk[3])*rect.h,
-      w: (shW/sk[2])*rect.w, h: (shH/sk[3])*rect.h,
-      give: 0.85, wave1: 2.6, wave2: 1.9, pin: 0.22, alpha: a*0.78
-    });
-    ctx.restore();
-
-    /* [2] Her actual skirt, below the hem. The size is not guessed: it is taken
-       off momwithonesheetsprite.png, which is this exact sheet with her really
-       behind it. There the skirt is 0.96 of the sheet's width and hangs 0.44 of
-       the sheet's height below its hem — far more than the small thing I had
-       assumed. About a third of it is hidden behind the cloth, so it is drawn
-       taller than it shows and clipped at the hem. */
-    const sheetW = sheetBox[2], sheetH = sheetBox[3];
-    const skW = sheetW * 0.96;
-    const skH = sheetH * 0.62;                     // 0.44 shows, the rest is behind
-    const skX = midX - skW*0.5;
-    ctx.save();
-    ctx.beginPath();
-    ctx.rect(rect.x + (skX-skW)*rect.w, rect.y + hemY*rect.h,
-             skW*3*rect.w, (1-hemY)*rect.h);
-    ctx.clip();
-    drawCloth(skirt, [0,0,1,1], {
-      t, c: { ph:c.ph+1.9, rate:c.rate*0.68, slack:1.30, swing:c.swing },
-      x: rect.x + skX*rect.w - sk[0]*(skW/sk[2])*rect.w,
-      y: rect.y + (hemY - skH*0.28)*rect.h - sk[1]*(skH/sk[3])*rect.h,
-      w: (skW/sk[2])*rect.w, h: (skH/sk[3])*rect.h,
-      give: 0.85, wave1: 2.6, wave2: 1.9, pin: 0.22, alpha: a*0.90, dim: 0.30
-    });
-    ctx.restore();
-  }
-
-  /* the shadow on the sheet */
-  if (!imgReady(torso)) return;
+  /* the shadow on the cloth. Multiply is both the right blend for a shadow and
+     the reason her sprite needs no keying — she is a silhouette painted on
+     solid white, and white under multiply leaves the backdrop as it was. */
   ctx.save();
   ctx.globalCompositeOperation = "multiply";
   ctx.globalAlpha = a*0.78;
-  const sway = (c.swing||0) * 0.05;
-  ctx.translate(rect.x + (tb[0]+tb[2]*0.5)*rect.w, rect.y + (tb[1]+tb[3])*rect.h);
-  ctx.rotate(Math.sin(t*0.6 + c.ph)*0.006*(0.4+sway*6));
-  ctx.drawImage(torso,
-    tb[0]*torso.naturalWidth, tb[1]*torso.naturalHeight,
-    tb[2]*torso.naturalWidth, tb[3]*torso.naturalHeight,
-    -tb[2]*rect.w*0.5, -tb[3]*rect.h, tb[2]*rect.w, tb[3]*rect.h);
+  if (imgReady(torso)){
+    ctx.drawImage(torso,
+      tb[0]*torso.naturalWidth, tb[1]*torso.naturalHeight,
+      tb[2]*torso.naturalWidth, tb[3]*torso.naturalHeight,
+      rect.x + tb[0]*rect.w, rect.y + tb[1]*rect.h,
+      tb[2]*rect.w, tb[3]*rect.h);
+  }
   ctx.restore();
+
+  /* her skirt, below the hem. Its size is taken off momwithonesheetsprite.png —
+     that is this same sheet with her really behind it, and there the skirt is
+     most of the sheet's width and hangs about four tenths of the sheet's height
+     below the hem. It swings from the waist as one piece: a shear, easing to
+     nothing at the top, so the waist stays put and only the hem travels. */
+  if (imgReady(skirt)){
+    const sk = SHEETS.skirt.box;
+    const skW = sheetBox[2]*0.90, skH = sheetBox[3]*0.60;
+    const topY = hemY - skH*0.30;                  // the rest is behind the sheet
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(rect.x + (midX-skW)*rect.w, rect.y + hemY*rect.h,
+             skW*3*rect.w, (1.2-hemY)*rect.h);
+    ctx.clip();
+    ctx.globalAlpha = a*0.94;
+    // shear about the waist: x is displaced in proportion to depth down the skirt
+    ctx.translate(rect.x + midX*rect.w, rect.y + topY*rect.h);
+    ctx.transform(1, 0, swing*1.6, 1, 0, 0);
+    ctx.drawImage(skirt,
+      sk[0]*skirt.naturalWidth, sk[1]*skirt.naturalHeight,
+      sk[2]*skirt.naturalWidth, sk[3]*skirt.naturalHeight,
+      -skW*0.5*rect.w, 0, skW*rect.w, skH*rect.h);
+    // the evening is behind her, so the skirt is in its own shade
+    ctx.globalCompositeOperation = "source-atop";
+    ctx.globalAlpha = a*0.26;
+    ctx.fillStyle = rgba([64,34,10], 1);
+    ctx.fillRect(-skW*0.5*rect.w, 0, skW*rect.w, skH*rect.h);
+    ctx.restore();
+  }
 }
 /* ============================================================================
    PLATE SCENES
