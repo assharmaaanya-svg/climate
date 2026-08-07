@@ -110,10 +110,9 @@ const RUS  = { buf:null, src:null, gain:null, filt:null, state:"idle" };
 const RUS2 = { buf:null, src:null, gain:null, filt:null, state:"idle" };
 const HUM  = { buf:null, src:null, gain:null, filt:null, state:"idle" };
 
-/* `names` may be a list: the first that decodes wins. The open-air layer is
-   offered as .m4a first because that is the recording the piece wants, and AAC
-   is not decodable everywhere — where it is not, the .wav cut from the other
-   field recording takes its place and nobody hears a gap. */
+/* `names` may be a list: the first that decodes wins. Everything ships as
+   16-bit PCM wav now, which every browser decodes, so the list is really only
+   insurance for a layer whose recording has not been added yet. */
 function loadOne(layer, names){
   if (layer.state !== "idle" || !AC) return;
   layer.state = "loading";
@@ -143,20 +142,22 @@ function loadOne(layer, names){
 }
 function loadAmbience(){
   loadOne(AMB, "amb-garden.wav");
-  if (OPEN_LAYER) loadOne(AMB2, ["851672__gl1tchgreenz__46-seconds-of-nature.m4a", "amb-open.wav"]);
-  loadOne(RUS,  "sheetsrustlingsuperquietely.wav");
-  loadOne(RUS2, "sheetsrustlingnicely.wav");
-  loadOne(HUM,  "womanhumming.wav");
+  if (OPEN_LAYER) loadOne(AMB2, "amb-open.wav");
+  loadOne(RUS,  "line-cloth.wav");
+  loadOne(RUS2, "line-gust.wav");
+  loadOne(HUM,  "line-hum.wav");
 }
 function startOne(layer){
   if (!AC || !layer.buf || layer.src) return;
   const s = AC.createBufferSource();
   s.buffer = layer.buf; s.loop = true;
-  // loop inside the recording, away from its own head and tail, so the seam
-  // never lands on a fade
-  if (layer.buf.duration > 6){ s.loopStart = 1.2; s.loopEnd = layer.buf.duration - 1.2; }
+  /* The whole buffer, head to tail. Every recording here was cut to length
+     beforehand with its own tail folded back over its head under an equal-power
+     crossfade, so the seam is already inaudible — trimming a second off each end
+     at playback, which is what this used to do, would cut the fade in half and
+     put the click back. */
   s.connect(layer.filt);
-  s.start(0, (s.loopStart||0) + Math.random()*Math.max(0, layer.buf.duration-6));
+  s.start(0, Math.random() * layer.buf.duration);   // never in step with the others
   layer.src = s;
 }
 /* `v` is how loud, `open` is how little is in the way */

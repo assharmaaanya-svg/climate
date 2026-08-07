@@ -4,32 +4,39 @@
 
 ## Artwork
 
-Every painting, sheet, silhouette and sprite in `assets/` is original work by Aanya Sharma.
+Every painting, sheet, silhouette, skirt and sprite in `assets/` is original work by Aanya Sharma.
 
 ## Sound
 
-Almost everything you hear is synthesised live in the browser — the wind, the room tone,
-the traffic bed, the pad, the crickets, the latch and the hinge. The only recordings are
-the outdoor ambiences, taken from [Freesound](https://freesound.org/) under
-**Creative Commons 0** (public domain dedication, no attribution required — credited here
-anyway):
+Almost everything you hear is synthesised live in the browser — the wind bed, the room tone,
+the traffic bed, the pad, the crickets, the latch and the hinge.
 
-| Sound | Author | Freesound ID | Used as |
+Six recordings are used. Four are the artist's own; two are outdoor ambiences from
+[Freesound](https://freesound.org/) under **Creative Commons 0** (public domain dedication —
+no attribution required, credited here anyway).
+
+| Built file | Source | Author | Licence |
 | --- | --- | --- | --- |
-| Maasai camp nature sounds, Africa | selcukartut | [504694](https://freesound.org/s/504694/) | `assets/amb-garden.wav`, `assets/amb-open.wav` — two disjoint 22.05 kHz mono loops cut from the same 82 s recording, crossfaded at the seam so the loop point is inaudible |
-| 46 seconds of nature | gl1tchgreenz | [851672](https://freesound.org/s/851672/) | the open-window layer, played from the original `.m4a` where the browser can decode AAC; `amb-open.wav` stands in where it cannot |
+| `assets/amb-garden.wav` | Maasai camp nature sounds, Africa — [#504694](https://freesound.org/s/504694/) | selcukartut | CC0 |
+| `assets/amb-open.wav` | Birds songs, blackcap and oak jay — [#734530](https://freesound.org/s/734530/) | sachajulien | CC0 |
+| `assets/line-cloth.wav` | `sheetsrustlingsuperquietely.wav` | Aanya Sharma | — |
+| `assets/line-gust.wav` | `sheetsrustlingnicely.wav` | Aanya Sharma | — |
+| `assets/line-hum.wav` | `womanhumming.wav` | Aanya Sharma | — |
 
-The washing-line layers (`sheetsrustlingsuperquietely.wav`, `sheetsrustlingnicely.wav`,
-`womanhumming.wav`) are the artist's own recordings.
+Each built file is a purpose-cut loop: decoded, downmixed to mono, resampled to 22.05 kHz,
+cut to a chosen window, and then had its own tail folded back over its head under an
+equal-power crossfade so the loop point is inaudible. They are deliberately different
+lengths (36 s, 30 s, 9 s, 5.7 s, 16.5 s) so the combination does not come back into phase.
+
+The masters are kept at the repository root; `assets/` holds only the built loops.
 
 ### Not used
 
-Two earlier ambience recordings were removed because their licences were not verified:
-
-- `natureambeicnewithbirdschirping.wav`
-- `841639__vhio__ambrurl-idle-countryside-road-with-chirping-birds-and-a-rooster-makarewa-new-zealand (1).wav`
-
-Nothing in the built piece references them.
+- `851672__gl1tchgreenz__46-seconds-of-nature.wav` — a fine recording, but the Maasai take
+  is flatter and makes a better always-there bed, and the blackcap/jay take has far more
+  actual birdsong for the moment the window opens. Kept at the root in case it is wanted.
+- `natureambeicnewithbirdschirping.wav` and the `841639__vhio__…` countryside recording were
+  removed because their licences were not verified. Nothing references them.
 
 ## Data
 

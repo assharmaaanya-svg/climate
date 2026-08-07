@@ -168,7 +168,7 @@ function preloadPlates(){
     "bulb latch png transparent.png","birdsonthedistanceinbedroom.png",
     "sheetsscencefor5ssheetsandmom.png","sheet1.png","sheet2.png","sheet3.png","sheet4.png","sheet5.png",
     "sheetsss6.png","sheetsss7.png","sheetsss8.png","sheetsss9.png",
-    "momwithonesheetsprite.png","momsskirt.png",
+    "momshadowsillhoutecroppedbutnotperfectly.png","momsskirt.png","gust of wind.png",
     "basketforbedroom.png","childrenstoyforbedroom.png","childrenstoyforbedroom2.png",
     "childrenstoyforbedroom3.png","childrensbedroomtoy4.png",
     "bedroomclosed.png","bedroomopen.png","bedroompostpollution.png",

@@ -982,6 +982,9 @@ window.__bluer = {
                     g1: AMB.gain ? +AMB.gain.gain.value.toFixed(3) : null,
                     g2: AMB2.gain ? +AMB2.gain.gain.value.toFixed(3) : null,
                     playing: !!AMB.src, playing2: !!AMB2.src }; },
+  line(){ const f = L => ({ state:L.state, name:L.name||null, playing:!!L.src,
+                            g: L.gain ? +L.gain.gain.value.toFixed(4) : null });
+          return { cloth:f(RUS), gust:f(RUS2), hum:f(HUM) }; },
   cordBall, curtainGap, CTR, CG, WIN,
   get birds(){ return WIREBIRDS; },
   get sheets(){ return SHEETS; },
