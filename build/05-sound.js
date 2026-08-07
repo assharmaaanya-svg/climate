@@ -87,6 +87,14 @@ function initAudio(){
     }
     HUM.filt.frequency.value = 2200;      // she is behind a sheet, some way off
 
+    /* the field: open wind off the water, and a child somewhere in it */
+    KWIND.gain = AC.createGain(); KWIND.gain.gain.value = 0;
+    KWIND.filt = AC.createBiquadFilter(); KWIND.filt.type = "lowpass";
+    KWIND.filt.frequency.value = 5200; KWIND.filt.Q.value = 0.4;
+    KWIND.filt.connect(KWIND.gain); KWIND.gain.connect(master);
+    LAUGH.gain = AC.createGain(); LAUGH.gain.gain.value = 1;
+    LAUGH.gain.connect(master);
+
     loadAmbience();
     return true;
   } catch(e){ return false; }
@@ -109,6 +117,9 @@ const AMB2 = { buf:null, src:null, gain:null, filt:null, state:"idle" };
 const RUS  = { buf:null, src:null, gain:null, filt:null, state:"idle" };
 const RUS2 = { buf:null, src:null, gain:null, filt:null, state:"idle" };
 const HUM  = { buf:null, src:null, gain:null, filt:null, state:"idle" };
+/* the field: open wind off the water, and him */
+const KWIND = { buf:null, src:null, gain:null, filt:null, state:"idle" };
+const LAUGH = { buf:null, gain:null, state:"idle", next: 6 };
 
 /* `names` may be a list: the first that decodes wins. Everything ships as
    16-bit PCM wav now, which every browser decodes, so the list is really only
@@ -146,8 +157,30 @@ function loadAmbience(){
   loadOne(RUS,  "line-cloth.wav");
   loadOne(RUS2, "line-gust.wav");
   loadOne(HUM,  "line-hum.wav");
+  loadOne(KWIND, "kite-wind.wav");
+  loadOne(LAUGH, "kite-laugh.wav");
+}
+/* A one-shot, not a layer. The laugh is four seconds of a child and there is no
+   honest way to loop that — looped laughter is a horror-film cue. So it is
+   played whole, occasionally, on its own gain node, faded up over the first
+   second so it arrives the way a sound arrives across a field: you are hearing
+   it before you notice it started. */
+function fireLaugh(vol){
+  if (!AC || !soundOn || LAUGH.state !== "ready" || !LAUGH.gain) return;
+  const s = AC.createBufferSource();
+  s.buffer = LAUGH.buf;
+  const g = AC.createGain();
+  const now = AC.currentTime, d = LAUGH.buf.duration;
+  g.gain.setValueAtTime(0.0001, now);
+  g.gain.exponentialRampToValueAtTime(Math.max(0.0002, vol), now + 1.05);
+  g.gain.setValueAtTime(Math.max(0.0002, vol), now + Math.max(1.1, d-1.5));
+  g.gain.exponentialRampToValueAtTime(0.0001, now + d);
+  s.connect(g); g.connect(LAUGH.gain);
+  s.start(now);
+  s.stop(now + d + 0.05);
 }
 function startOne(layer){
+  if (layer === LAUGH) return;          // a one-shot has nothing to start
   if (!AC || !layer.buf || layer.src) return;
   const s = AC.createBufferSource();
   s.buffer = layer.buf; s.loop = true;
@@ -192,11 +225,33 @@ function lineSound(v, wind, mom){
   envGain(RUS.gain,  v*0.34, 0.6);
   envGain(RUS2.gain, v*0.42*w*w, 0.35);
   RUS2.filt.frequency.setTargetAtTime(3200 + 4200*w, AC.currentTime, 0.4);
-  /* her humming ducks under a gust rather than fighting it, and goes when she
-     does. It is quiet on purpose — loud enough to be company, not a presence —
-     and it comes up over a second and a half so that touching her feels like
-     noticing something that was already going on. */
-  envGain(HUM.gain, v*0.085*cl01(mom)*(1 - w*0.45), 1.5);
+  /* Her humming ducks under a gust rather than fighting it, and goes when she
+     does. At 0.085 it was under the ambience bed and nobody could hear it at
+     all; the bed runs around 0.7. At 0.34 she is plainly there and still well
+     under the birds — company, not an announcement. It comes up over a second
+     and a half, so touching her feels like noticing something that was already
+     going on, and it leaves over four, so it is gone before you are sure. */
+  envGain(HUM.gain, v*0.34*cl01(mom)*(1 - w*0.35), mom > 0.02 ? 1.5 : 4.0);
+}
+
+/* The kite field. `v` is how loud, `night` is how far the evening has gone, and
+   `joy` is a nudge — a laugh is more likely just after the visitor has done
+   something with the kite than on any fixed clock. */
+const KITEQ = { t: 0 };
+function kiteSound(dt, v, night, joy){
+  KITEQ.t = 0.3;
+  if (!AC || !soundOn || !KWIND.gain) return;
+  if (KWIND.state === "ready" && !KWIND.src) startOne(KWIND);
+  envGain(KWIND.gain, v*0.46, 0.8);
+  /* the wind off the water loses its top as the light goes — colder, further */
+  KWIND.filt.frequency.setTargetAtTime(5200 - night*2100, AC.currentTime, 1.4);
+  /* him: rare, faint, and never on a beat you could predict. He goes quiet as
+     it gets dark, because by then he has been out here a long time. */
+  LAUGH.next -= dt * (1 + joy*2.2);
+  if (LAUGH.next <= 0){
+    LAUGH.next = 15 + Math.random()*16;
+    fireLaugh(v * (0.055 + Math.random()*0.045) * (1 - night*0.55));
+  }
 }
 
 function updSound(dt, t){
@@ -220,6 +275,8 @@ function updSound(dt, t){
      they go, rather than following the visitor into the next room */
   if (LINEQ.t > 0){ LINEQ.t -= dt; }
   else if (RUS.gain){ for (const L of [RUS, RUS2, HUM]) envGain(L.gain, 0, 0.9); }
+  if (KITEQ.t > 0){ KITEQ.t -= dt; }
+  else if (KWIND.gain){ envGain(KWIND.gain, 0, 1.1); }
 }
 
 /* ------------------------------------------------------------------ one-shots */

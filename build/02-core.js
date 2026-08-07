@@ -340,7 +340,7 @@ const BEATS = [
     line:"Sheets that had been in the sun all morning." },
   { id:"shirt",     ch:2, len:1.0,  gate:"shirt",   ask:"",
     line:"" },
-  { id:"kite",      ch:2, len:1.5,  gate:"kite",    ask:"Hold and pull to climb · release to let it run",
+  { id:"kite",      ch:2, len:1.6,  gate:"kite",    ask:"Hold to bring it down · let go and it climbs",
     line:"You put it up into all of that." },
   { id:"climb",     ch:2, len:1.25,
     line:"" },

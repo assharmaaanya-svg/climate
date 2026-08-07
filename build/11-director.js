@@ -449,16 +449,17 @@ function render(t, dt){
       break;
     }
     case "kite": {
-      setPop({ birds:1.0, butterflies:0.7, dragonflies:0.8, fireflies:0, seeds:0.9 });
-      drawKitePlate(t, dt, { plate:"kiteDay", air:0 });
-      if (PKITE.best>0.40) meet("kite");
+      // the chapter opens in the evening. There is no morning any more: the
+      // morning was one more picture to get through before the thing this
+      // chapter is actually about.
+      setPop({ birds:0.8, butterflies:0.35, dragonflies:0.6, fireflies:sm(f,0.55,1.0), seeds:0.8 });
+      drawKiteSky(t, dt, { night: sm(f, 0.55, 1.0)*0.22, air:0, gate:"kite" });
       break;
     }
     case "climb": {
-      // the sky travels from afternoon to night inside one shot: the evening
-      // plate dissolves toward its own night twin as the kite climbs
-      setPop({ birds:0.5, butterflies:0.1, dragonflies:0.5, fireflies:sm(f,0.35,0.9), seeds:0.5 });
-      drawKitePlate(t, dt, { plate:"kiteEvening", air: sm(f, 0.10, 0.95) });
+      // and the evening becomes night while you are standing in it
+      setPop({ birds:0.35, butterflies:0.05, dragonflies:0.35, fireflies:sm(f,0.15,0.8), seeds:0.4 });
+      drawKiteSky(t, dt, { night: lerp(0.22, 1, sm(f, 0.02, 0.88)), air:0 });
       break;
     }
     case "stars": {
@@ -758,7 +759,8 @@ function gateProgress(g){
     case "sash":    return PROOM.sash/0.55;
     case "sheets":  return 1;
     case "shirt":   return PWASH.through/5;
-    case "kite": case "rkite": return PKITE.best/0.40;
+    case "kite":  return KSKY.best/0.52;
+    case "rkite": return PKITE.best/0.40;
     case "stars":   { let n=0; for(const s2 of DIPPER) if(STARY.lit[s2.id])n++; return n/DIPPER.length; }
     case "rstars":  { let v=0,n=0; for(const s2 of DIPPER){ if(starSeen(s2,0.78,0.55)){v++; if(STARY.lit[s2.id])n++;} } return v? n/v : 1; }
     case "find":    return PLOOK.n/3;
@@ -829,7 +831,8 @@ function onKey(k){
 function onEnter(bid){
   // per-beat setup
   if (bid==="laundry"){ if (!WASH.sheets.length) buildWash(); }
-  if (bid==="kite" || bid==="r-kite" || bid==="climb"){ if (!PKITE.line) resetPKite(); }
+  if (bid==="kite"){ resetKiteSky(); }
+  if (bid==="r-kite"){ if (!PKITE.line) resetPKite(); }
   if (bid==="r-kite"){ PKITE.best=0; }
 
   if (bid==="indoors"){ if (!IN.sheets.length) buildIndoors(); }
@@ -988,6 +991,9 @@ window.__bluer = {
   cordBall, curtainGap, CTR, CG, WIN,
   get birds(){ return WIREBIRDS; },
   get sheets(){ return SHEETS; },
+  get kite(){ return KSKY; },
+  kiteAudio(){ return { wind:KWIND.state, windG: KWIND.gain? +KWIND.gain.gain.value.toFixed(4):null,
+                        playing:!!KWIND.src, laugh:LAUGH.state, next:+LAUGH.next.toFixed(1) }; },
   get wash(){ return PWASH; },
   get f(){ return T.f; },
   intro(){ return introOn; },

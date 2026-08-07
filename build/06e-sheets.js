@@ -72,9 +72,15 @@ const SHEETS = {
   built: false, cloth: [], wind: 0.20, skLag: 0.16,
   gust: 0, gustT: 1.5, gustD: 0, gustA: 0, gustP: 0,
   momGone: 0, momFade: 1,
-  /* she hums while she works, but only once you have touched her. It is not
+  /* She hums while she works, but only once you have touched her. It is not
      something the piece announces — the halo the exploring visitor already gets
-     on touchable things is the only invitation there is. */
+     on touchable things is the only invitation there is.
+
+     It does not stay, either. Touching her sets this to 1 and it walks back down
+     to nothing over about half a minute, so what you get is a verse and then the
+     garden again — which is how you actually hear somebody humming while they
+     work, rather than a loop that has been switched on. Touch her again and it
+     comes back. */
   hum: 0
 };
 /* close enough that two or three fill the frame, so you go between them
@@ -264,12 +270,16 @@ function drawSheetsScene(t, dt, o){
          rect.y + (sb[1] + sb[3]*0.62)*rect.h,
          MIN*0.15,
          ()=>{
-           SHEETS.hum = SHEETS.hum > 0.5 ? 0 : 1;
-           ripple(rect.x + (sb[0]+sb[2]*0.5)*rect.w,
-                  rect.y + (sb[1]+sb[3]*0.62)*rect.h, [255,236,198], MIN*0.16);
+           SHEETS.hum = SHEETS.hum > 0.35 ? 0 : 1.18;   // a little over 1: it
+           ripple(rect.x + (sb[0]+sb[2]*0.5)*rect.w,    // holds full before it
+                  rect.y + (sb[1]+sb[3]*0.62)*rect.h,   // starts to go
+                  [255,236,198], MIN*0.16);
            curiosity += 0.3;
          }, false);
   }
+  /* she runs down slowly: a few seconds at full, then most of half a minute
+     coming apart. Nothing restarts her but another touch. */
+  if (SHEETS.hum > 0) SHEETS.hum = Math.max(0, SHEETS.hum - dt/34);
 
   /* You are outdoors here and nothing is between you and it, so the ambience
      opens all the way — and the cloth comes in on top. Her humming does not,

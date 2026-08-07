@@ -140,6 +140,22 @@ const PLATES = {
     crop:{ x:0.0, y:0.0, w:1.0, h:0.88 },
     bands:[ {to:0.42,p:0.015}, {to:0.60,p:0.04}, {to:0.70,p:0.08}, {to:0.82,p:0.17}, {to:1.0,p:0.38} ]
   },
+  /* The field, empty. Two paintings of the same place at two times of day,
+     framed identically, so the evening can dissolve into the night without a
+     cut and the child and his kite can be put back on top as things that move. */
+  kiteSky: {
+    clean:"eveningkite.png",
+    hazed:"night kite sky.png",
+    dissolve:"full",
+    crop:{x:0, y:0.02, w:1, h:0.90},
+    /* The near band is cut at 0.87 rather than the usual 0.78 because this one
+       has a job beyond parallax: the boy is drawn between it and the rest, and
+       where it starts is where the grass swallows his legs. In the painting that
+       happens at his ankles, and 0.87 — with the band's own soft top edge above
+       it — is where the tall grass actually begins in this frame. Cut higher and
+       he loses his legs to a field he is supposed to be standing in. */
+    bands:[{to:0.46,p:0.012},{to:0.64,p:0.035},{to:0.87,p:0.085},{to:1.0,p:0.24}]
+  },
   /* the kite, in four lights */
   kiteDay:     { clean:"childflykite.png",         hazed:"pollutedkitefly.png", dissolve:"sky",
                  crop:{x:0,y:0,w:1,h:0.88},
@@ -169,6 +185,7 @@ function preloadPlates(){
     "sheetsscencefor5ssheetsandmom.png","sheet1.png","sheet2.png","sheet3.png","sheet4.png","sheet5.png",
     "sheetsss6.png","sheetsss7.png","sheetsss8.png","sheetsss9.png",
     "momshadowsillhoutecroppedbutnotperfectly.png","momsskirt.png",
+    "eveningkite.png","night kite sky.png","child, kite .png","kite image.png",
     "basketforbedroom.png","childrenstoyforbedroom.png","childrenstoyforbedroom2.png",
     "childrenstoyforbedroom3.png","childrensbedroomtoy4.png",
     "bedroomclosed.png","bedroomopen.png","bedroompostpollution.png",
@@ -304,9 +321,13 @@ function drawPlate(name, o){
   const dy0 = Math.cos(PCAM.drift*0.045)*H*0.004*dr;
   const alpha = o.a===undefined?1:o.a;
   const skipBand = o.skipBand;
+  /* draw one band and nothing else, so a sprite can be put behind the
+     foreground: plate without its near band, sprite, then the near band on top */
+  const onlyBand = o.onlyBand;
 
   for (let i=0;i<pl.clean.length;i++){
     if (skipBand===i) continue;
+    if (onlyBand!==undefined && onlyBand!==i) continue;
     const b = pl.clean[i];
     const ox = -b.dx + (camx*b.p*W*0.36) + dx0*b.p*6;
     const oy = (camy*b.p*H*0.22) + dy0*b.p*6;

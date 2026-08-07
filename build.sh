@@ -13,6 +13,7 @@ cat build/01-shell.html \
     build/06c-curtains.js \
     build/06d-room.js \
     build/06e-sheets.js \
+    build/06f-kite.js \
     build/06b-plate-scenes.js \
     build/07-scenes-b.js \
     build/08-scenes-c.js \
