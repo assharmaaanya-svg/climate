@@ -97,6 +97,12 @@ const PLATES = {
     bands:[ {to:0.13,p:0.02}, {to:0.60,p:0.05}, {to:0.78,p:0.10}, {to:1.0,p:0.18} ],
     repair:[ { x:0.549, y:0.243, w:0.036, h:0.062 } ]
   },
+  /* the washing line, painted with its pins and nothing hanging on them */
+  lineScene: {
+    clean:"sheetsscenewithnosheets.png",
+    crop:{ x:0.0, y:0.0, w:1.0, h:1.0 },
+    bands:[ {to:0.30,p:0.012}, {to:0.62,p:0.035}, {to:0.80,p:0.09}, {to:1.0,p:0.20} ]
+  },
   /* the laundry, in four versions. `sheetBand` marks the rows that will be fed
      through the cloth mesh so the painted washing moves. */
   laundry: {
@@ -160,6 +166,8 @@ function preloadPlates(){
   const order = ["updatedbedroomwithnotoys.jpg",
     "updatedbedroomwithwindowslightlyopenwithnotoys.jpg",
     "bulb latch png transparent.png","birdsonthedistanceinbedroom.png",
+    "sheetsscenewithnosheets.png","sheet1.png","sheet2.png","sheet3.png","sheet4.png","sheet5.png",
+    "momshadowsillhoutecroppedbutnotperfectly.png","momsskirt.png",
     "basketforbedroom.png","childrenstoyforbedroom.png","childrenstoyforbedroom2.png",
     "childrenstoyforbedroom3.png","childrensbedroomtoy4.png",
     "bedroomclosed.png","bedroomopen.png","bedroompostpollution.png",

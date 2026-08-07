@@ -430,6 +430,15 @@ function render(t, dt){
     /* -------------------------------- chapter two */
     case "laundry":
     case "shirt": {
+      // the washing line, built from the painted scene and the sheet sprites
+      if (getPlate("lineScene")){
+        setPop({ birds:0.9, butterflies:0.8, dragonflies:0.8, fireflies:0, seeds:0.9 });
+        drawSheetsScene(t, dt, { air: PWASH.progress*0.30 });
+        // she is there the first time and not the second
+        SHEETS.seen = Math.max(SHEETS.seen, 1);
+        SHEETS.momFade = lerp(SHEETS.momFade, SHEETS.momGone ? 0 : 1, Math.min(1, dt*0.8));
+        break;
+      }
       // the paintings are the world here; walking between the sheets is what
       // makes the air change, so the visitor causes it rather than watching it
       setPop({ birds:0.9, butterflies:0.8, dragonflies:0.8, fireflies:0, seeds:0.9 });
@@ -481,6 +490,16 @@ function render(t, dt){
     /* -------------------------------- chapter three */
     case "r-laundry": {
       setPop({ birds:0.15, butterflies:0.05, dragonflies:0.1, fireflies:0, seeds:0.3 });
+      // the same line, years later. She is not on it, and nothing says so.
+      SHEETS.momGone = 1;
+      SHEETS.momFade = lerp(SHEETS.momFade, 0, Math.min(1, dt*0.9));
+      if (getPlate("lineScene")){
+        drawSheetsScene(t, dt, { air: 0.55 + PWASH.progress*0.35 });
+        WASH.dust = 0.55;
+        washInteract("brush", dt);
+        updLens(dt, done["brush"]);
+        break;
+      }
       drawLaundryPlate(t, dt, { air: 0.55 + PWASH.progress*0.35, mother:true, paintedMother:true });
       PWASH.motherOn = lerp(PWASH.motherOn, 0.45, 0.02);
       WASH.dust = 0.55;
@@ -964,6 +983,8 @@ window.__bluer = {
                     playing: !!AMB.src, playing2: !!AMB2.src }; },
   cordBall, curtainGap, CTR, CG, WIN,
   get birds(){ return WIREBIRDS; },
+  get sheets(){ return SHEETS; },
+  get wash(){ return PWASH; },
   intro(){ return introOn; },
   reset(){ PROOM.cL=PROOM.cR=PROOM.open=PROOM.sash=0; PROOM.nudgeTo=0;
            PROOM.idle=0; PROOM.demo=0; CORD.swing=0; CORD.swingV=0;
