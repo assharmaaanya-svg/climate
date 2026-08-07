@@ -74,6 +74,19 @@ function initAudio(){
       AMB2.filt.frequency.value = 1800; AMB2.filt.Q.value = 0.4;
       AMB2.filt.connect(AMB2.gain); AMB2.gain.connect(master);
     }
+    /* The line. Two recordings of the same cloth, one almost still and one
+       properly moving, layered rather than crossfaded — a gust brings the
+       second one up underneath the first, which is what a gust actually does.
+       And her humming, kept deliberately low: it should be something the
+       visitor notices they have been hearing, not something that arrives. */
+    for (const L of [RUS, RUS2, HUM]){
+      L.gain = AC.createGain(); L.gain.gain.value = 0;
+      L.filt = AC.createBiquadFilter(); L.filt.type = "lowpass";
+      L.filt.frequency.value = 6000; L.filt.Q.value = 0.4;
+      L.filt.connect(L.gain); L.gain.connect(master);
+    }
+    HUM.filt.frequency.value = 2200;      // she is behind a sheet, some way off
+
     loadAmbience();
     return true;
   } catch(e){ return false; }
@@ -91,29 +104,49 @@ function envGain(g, to, tc){ if(!AC) return; g.gain.setTargetAtTime(to, AC.curre
 const OPEN_LAYER = true;
 const AMB = { buf:null, src:null, gain:null, filt:null, state:"idle", vol:0, open:0 };
 const AMB2 = { buf:null, src:null, gain:null, filt:null, state:"idle" };
-function loadOne(layer, name){
+/* the washing line has its own three: the cloth as it is most of the time, the
+   cloth in a gust, and her, humming while she works */
+const RUS  = { buf:null, src:null, gain:null, filt:null, state:"idle" };
+const RUS2 = { buf:null, src:null, gain:null, filt:null, state:"idle" };
+const HUM  = { buf:null, src:null, gain:null, filt:null, state:"idle" };
+
+/* `names` may be a list: the first that decodes wins. The open-air layer is
+   offered as .m4a first because that is the recording the piece wants, and AAC
+   is not decodable everywhere — where it is not, the .wav cut from the other
+   field recording takes its place and nobody hears a gap. */
+function loadOne(layer, names){
   if (layer.state !== "idle" || !AC) return;
   layer.state = "loading";
-  const src = (window.__ASSETS && window.__ASSETS[name]) || (ASSET_DIR + encodeURIComponent(name));
+  const list = [].concat(names);
   /* XHR, not fetch. fetch() refuses a file:// URL outright, and this is opened
      as a local file at least as often as it is served — which is exactly why
      the room was silent. XHR still reaches a local file in most browsers, and
      where the assets are embedded as data URIs it never has to reach at all. */
-  const done = a => AC.decodeAudioData(a)
-        .then(b => { layer.buf = b; layer.state = "ready"; startOne(layer); })
-        .catch(() => { layer.state = "failed"; });
-  try {
-    const xhr = new XMLHttpRequest();
-    xhr.open("GET", src, true);
-    xhr.responseType = "arraybuffer";
-    xhr.onload  = () => (xhr.response ? done(xhr.response) : (layer.state = "failed"));
-    xhr.onerror = () => { layer.state = "failed"; };
-    xhr.send();
-  } catch(e){ layer.state = "failed"; }          // the piece still works without it
+  const attempt = k => {
+    if (k >= list.length){ layer.state = "failed"; return; }
+    const next = () => attempt(k+1);
+    const name = list[k];
+    const src = (window.__ASSETS && window.__ASSETS[name]) || (ASSET_DIR + encodeURIComponent(name));
+    const done = a => AC.decodeAudioData(a)
+          .then(b => { layer.buf = b; layer.state = "ready"; layer.name = name; startOne(layer); })
+          .catch(next);
+    try {
+      const xhr = new XMLHttpRequest();
+      xhr.open("GET", src, true);
+      xhr.responseType = "arraybuffer";
+      xhr.onload  = () => (xhr.response ? done(xhr.response) : next());
+      xhr.onerror = next;
+      xhr.send();
+    } catch(e){ next(); }        // the piece still works without any of them
+  };
+  attempt(0);
 }
 function loadAmbience(){
   loadOne(AMB, "amb-garden.wav");
-  if (OPEN_LAYER) loadOne(AMB2, "amb-open.wav");
+  if (OPEN_LAYER) loadOne(AMB2, ["851672__gl1tchgreenz__46-seconds-of-nature.m4a", "amb-open.wav"]);
+  loadOne(RUS,  "sheetsrustlingsuperquietely.wav");
+  loadOne(RUS2, "sheetsrustlingnicely.wav");
+  loadOne(HUM,  "womanhumming.wav");
 }
 function startOne(layer){
   if (!AC || !layer.buf || layer.src) return;
@@ -143,6 +176,24 @@ function ambience(v, open){
   }
 }
 
+/* The washing line. `v` is how loud the scene is, `wind` is the line's own gust
+   value, and `mom` is how much of her is still there. */
+const LINEQ = { t: 0 };
+function lineSound(v, wind, mom){
+  LINEQ.t = 0.3;                    // updSound fades the line out when this lapses
+  if (!AC || !soundOn || !RUS.gain) return;
+  for (const L of [RUS, RUS2, HUM]) if (L.state === "ready" && !L.src) startOne(L);
+  const w = cl01((wind - 0.10) / 0.85);
+  /* the quiet cloth is always there once you are at the line; the moving cloth
+     arrives on top of it as the gust builds, and leaves with it */
+  envGain(RUS.gain,  v*0.34, 0.6);
+  envGain(RUS2.gain, v*0.42*w*w, 0.35);
+  RUS2.filt.frequency.setTargetAtTime(3200 + 4200*w, AC.currentTime, 0.4);
+  /* her humming ducks under a gust rather than fighting it, and goes when she
+     does. It is quiet on purpose — loud enough to be company, not a presence. */
+  envGain(HUM.gain, v*0.085*cl01(mom)*(1 - w*0.45), 1.1);
+}
+
 function updSound(dt, t){
   updCC(dt);
   if (!AC || !soundOn) return;
@@ -160,6 +211,10 @@ function updSound(dt, t){
   // filters close as the air thickens — the world gets duller, not louder
   BED.wind.f.frequency.setTargetAtTime(520 - h*230, AC.currentTime, 1.0);
   BED.leaves.f.frequency.setTargetAtTime(2600 - h*1200 - MUFFLE*1400, AC.currentTime, 0.8);
+  /* the line's own layers belong to one chapter; when it stops asking for them
+     they go, rather than following the visitor into the next room */
+  if (LINEQ.t > 0){ LINEQ.t -= dt; }
+  else if (RUS.gain){ for (const L of [RUS, RUS2, HUM]) envGain(L.gain, 0, 0.9); }
 }
 
 /* ------------------------------------------------------------------ one-shots */

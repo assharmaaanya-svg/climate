@@ -756,7 +756,7 @@ function gateProgress(g){
   switch(g){
     case "curtain": case "curtain2": return Math.min(PROOM.cL,PROOM.cR)/CTR.need;
     case "sash":    return PROOM.sash/0.55;
-    case "sheets":  return cl01(SHEETS.passed/5);
+    case "sheets":  return 1;
     case "shirt":   return PWASH.through/5;
     case "kite": case "rkite": return PKITE.best/0.40;
     case "stars":   { let n=0; for(const s2 of DIPPER) if(STARY.lit[s2.id])n++; return n/DIPPER.length; }
@@ -955,7 +955,6 @@ document.getElementById("restart").addEventListener("click", ()=>{
   PROOM.cL=PROOM.cR=PROOM.open=PROOM.sash=0; PROOM.nudgeTo=0; PROOM.idle=0; PROOM.demo=0;
   PROOM.breeze=0; PROOM.grab=0; PROOM.sashGrab=0; PROOM.everMoved=0;
   CORD.swing=0; CORD.swingV=0; CORD.grab=0; buildWireBirds(); buildToys();
-  SHEETS.walk=0; SHEETS.vel=0; SHEETS.far=0; SHEETS.passed=0;
   SHEETS.momGone=0; SHEETS.momFade=1; SHEETS.everGrabbed=0; buildSheets();
   for (const k in done) delete done[k];
   WASH.passed=0; WASH.shirtFound=false; WASH.walk=0; WASH.brushed=0;

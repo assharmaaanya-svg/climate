@@ -288,6 +288,12 @@
     <a href="https://www.unicef.org/media/123156/file/Childhood_Air_Pollution_Key_Messages_2022.pdf" target="_blank" rel="noopener">UNICEF — childhood air pollution</a> ·
     <a href="https://www.airnow.gov/sites/default/files/2018-09/air-quality-and-outdoor-activity-guidance-2014.pdf" target="_blank" rel="noopener">US EPA AirNow — school outdoor activity guidance</a>
   </p>
+  <p class="fine">Every painting in this work is by Aanya Sharma. Everything you hear is synthesised in the browser
+    except the field recordings, which are used under Creative&nbsp;Commons&nbsp;0 from
+    <a href="https://freesound.org/" target="_blank" rel="noopener">Freesound</a>:
+    <em>Maasai camp nature sounds, Africa</em> by <strong>selcukartut</strong> (#504694) ·
+    <em>46 seconds of nature</em> by <strong>gl1tchgreenz</strong> (#851672).
+  </p>
 </div></div>
 
 <div id="title" aria-hidden="true">
@@ -1065,7 +1071,7 @@ function preloadPlates(){
     "bulb latch png transparent.png","birdsonthedistanceinbedroom.png",
     "sheetsscencefor5ssheetsandmom.png","sheet1.png","sheet2.png","sheet3.png","sheet4.png","sheet5.png",
     "sheetsss6.png","sheetsss7.png","sheetsss8.png","sheetsss9.png",
-    "momshadowsillhoutecroppedbutnotperfectly.png","momsskirt.png",
+    "momwithonesheetsprite.png","momsskirt.png",
     "basketforbedroom.png","childrenstoyforbedroom.png","childrenstoyforbedroom2.png",
     "childrenstoyforbedroom3.png","childrensbedroomtoy4.png",
     "bedroomclosed.png","bedroomopen.png","bedroompostpollution.png",
@@ -4100,6 +4106,19 @@ function initAudio(){
       AMB2.filt.frequency.value = 1800; AMB2.filt.Q.value = 0.4;
       AMB2.filt.connect(AMB2.gain); AMB2.gain.connect(master);
     }
+    /* The line. Two recordings of the same cloth, one almost still and one
+       properly moving, layered rather than crossfaded — a gust brings the
+       second one up underneath the first, which is what a gust actually does.
+       And her humming, kept deliberately low: it should be something the
+       visitor notices they have been hearing, not something that arrives. */
+    for (const L of [RUS, RUS2, HUM]){
+      L.gain = AC.createGain(); L.gain.gain.value = 0;
+      L.filt = AC.createBiquadFilter(); L.filt.type = "lowpass";
+      L.filt.frequency.value = 6000; L.filt.Q.value = 0.4;
+      L.filt.connect(L.gain); L.gain.connect(master);
+    }
+    HUM.filt.frequency.value = 2200;      // she is behind a sheet, some way off
+
     loadAmbience();
     return true;
   } catch(e){ return false; }
@@ -4117,29 +4136,49 @@ function envGain(g, to, tc){ if(!AC) return; g.gain.setTargetAtTime(to, AC.curre
 const OPEN_LAYER = true;
 const AMB = { buf:null, src:null, gain:null, filt:null, state:"idle", vol:0, open:0 };
 const AMB2 = { buf:null, src:null, gain:null, filt:null, state:"idle" };
-function loadOne(layer, name){
+/* the washing line has its own three: the cloth as it is most of the time, the
+   cloth in a gust, and her, humming while she works */
+const RUS  = { buf:null, src:null, gain:null, filt:null, state:"idle" };
+const RUS2 = { buf:null, src:null, gain:null, filt:null, state:"idle" };
+const HUM  = { buf:null, src:null, gain:null, filt:null, state:"idle" };
+
+/* `names` may be a list: the first that decodes wins. The open-air layer is
+   offered as .m4a first because that is the recording the piece wants, and AAC
+   is not decodable everywhere — where it is not, the .wav cut from the other
+   field recording takes its place and nobody hears a gap. */
+function loadOne(layer, names){
   if (layer.state !== "idle" || !AC) return;
   layer.state = "loading";
-  const src = (window.__ASSETS && window.__ASSETS[name]) || (ASSET_DIR + encodeURIComponent(name));
+  const list = [].concat(names);
   /* XHR, not fetch. fetch() refuses a file:// URL outright, and this is opened
      as a local file at least as often as it is served — which is exactly why
      the room was silent. XHR still reaches a local file in most browsers, and
      where the assets are embedded as data URIs it never has to reach at all. */
-  const done = a => AC.decodeAudioData(a)
-        .then(b => { layer.buf = b; layer.state = "ready"; startOne(layer); })
-        .catch(() => { layer.state = "failed"; });
-  try {
-    const xhr = new XMLHttpRequest();
-    xhr.open("GET", src, true);
-    xhr.responseType = "arraybuffer";
-    xhr.onload  = () => (xhr.response ? done(xhr.response) : (layer.state = "failed"));
-    xhr.onerror = () => { layer.state = "failed"; };
-    xhr.send();
-  } catch(e){ layer.state = "failed"; }          // the piece still works without it
+  const attempt = k => {
+    if (k >= list.length){ layer.state = "failed"; return; }
+    const next = () => attempt(k+1);
+    const name = list[k];
+    const src = (window.__ASSETS && window.__ASSETS[name]) || (ASSET_DIR + encodeURIComponent(name));
+    const done = a => AC.decodeAudioData(a)
+          .then(b => { layer.buf = b; layer.state = "ready"; layer.name = name; startOne(layer); })
+          .catch(next);
+    try {
+      const xhr = new XMLHttpRequest();
+      xhr.open("GET", src, true);
+      xhr.responseType = "arraybuffer";
+      xhr.onload  = () => (xhr.response ? done(xhr.response) : next());
+      xhr.onerror = next;
+      xhr.send();
+    } catch(e){ next(); }        // the piece still works without any of them
+  };
+  attempt(0);
 }
 function loadAmbience(){
   loadOne(AMB, "amb-garden.wav");
-  if (OPEN_LAYER) loadOne(AMB2, "amb-open.wav");
+  if (OPEN_LAYER) loadOne(AMB2, ["851672__gl1tchgreenz__46-seconds-of-nature.m4a", "amb-open.wav"]);
+  loadOne(RUS,  "sheetsrustlingsuperquietely.wav");
+  loadOne(RUS2, "sheetsrustlingnicely.wav");
+  loadOne(HUM,  "womanhumming.wav");
 }
 function startOne(layer){
   if (!AC || !layer.buf || layer.src) return;
@@ -4169,6 +4208,24 @@ function ambience(v, open){
   }
 }
 
+/* The washing line. `v` is how loud the scene is, `wind` is the line's own gust
+   value, and `mom` is how much of her is still there. */
+const LINEQ = { t: 0 };
+function lineSound(v, wind, mom){
+  LINEQ.t = 0.3;                    // updSound fades the line out when this lapses
+  if (!AC || !soundOn || !RUS.gain) return;
+  for (const L of [RUS, RUS2, HUM]) if (L.state === "ready" && !L.src) startOne(L);
+  const w = cl01((wind - 0.10) / 0.85);
+  /* the quiet cloth is always there once you are at the line; the moving cloth
+     arrives on top of it as the gust builds, and leaves with it */
+  envGain(RUS.gain,  v*0.34, 0.6);
+  envGain(RUS2.gain, v*0.42*w*w, 0.35);
+  RUS2.filt.frequency.setTargetAtTime(3200 + 4200*w, AC.currentTime, 0.4);
+  /* her humming ducks under a gust rather than fighting it, and goes when she
+     does. It is quiet on purpose — loud enough to be company, not a presence. */
+  envGain(HUM.gain, v*0.085*cl01(mom)*(1 - w*0.45), 1.1);
+}
+
 function updSound(dt, t){
   updCC(dt);
   if (!AC || !soundOn) return;
@@ -4186,6 +4243,10 @@ function updSound(dt, t){
   // filters close as the air thickens — the world gets duller, not louder
   BED.wind.f.frequency.setTargetAtTime(520 - h*230, AC.currentTime, 1.0);
   BED.leaves.f.frequency.setTargetAtTime(2600 - h*1200 - MUFFLE*1400, AC.currentTime, 0.8);
+  /* the line's own layers belong to one chapter; when it stops asking for them
+     they go, rather than following the visitor into the next room */
+  if (LINEQ.t > 0){ LINEQ.t -= dt; }
+  else if (RUS.gain){ for (const L of [RUS, RUS2, HUM]) envGain(L.gain, 0, 0.9); }
 }
 
 /* ------------------------------------------------------------------ one-shots */
@@ -6702,32 +6763,40 @@ const SHEETS = {
     { img:"sheet2.png",    box:[0.1976,0.1528,0.1577,0.4074] },
     { img:"sheet3.png",    box:[0.3917,0.1640,0.1958,0.4573] },
     { img:"sheet4.png",    box:[0.6014,0.1663,0.1924,0.4042] },
-    { img:"sheet5.png",    box:[0.8232,0.1505,0.1525,0.5000] },
-    { img:"sheetsss6.png", box:[0.0486,0.1339,0.1580,0.3880] },
-    { img:"sheetsss7.png", box:[0.3160,0.1640,0.1198,0.4296] },
-    { img:"sheetsss8.png", box:[0.4878,0.1709,0.2361,0.4388] },
-    { img:"sheetsss9.png", box:[0.7865,0.1547,0.1597,0.4134] }
+    { img:"sheet5.png",    box:[0.8232,0.1505,0.1525,0.5000] }
   ],
-  torso: { img:"momshadowsillhoutecroppedbutnotperfectly.png", box:[0.3934,0.1644,0.1924,0.4444] },
-  skirt: { img:"momsskirt.png", box:[0.2305,0.2477,0.5269,0.5764] },
+  /* The third sheet, but with her already behind it. This is one painted sprite,
+     not a silhouette composited onto a sheet, so her scale, her height on the
+     cloth and how far her arms reach up to the line are the painter's and not
+     mine. It comes from the same composite as the five sheets — its sheet
+     starts at x 0.3882 where sheet 3 starts at 0.3917 — so drawn at the frame's
+     own rect it lands on the same pins. */
+  momSheet: { img:"momwithonesheetsprite.png", box:[0.3882,0.1709,0.2253,0.4457] },
+  skirt:    { img:"momsskirt.png",             box:[0.2305,0.2477,0.5269,0.5764] },
+  /* and how her real skirt sits under that sheet, measured off the same sprite:
+     97% of the sheet's width, a little over half its height, five thousandths of
+     the sheet's width left of its centre, with the top seventh of the skirt
+     behind the hem where her waist is. */
+  sk: { w:0.970, h:0.535, dx:-0.038, tuck:0.148 },
   momAt: 2,                      // she is behind the third one
   /* how far down the line you have walked. It is dragged, it carries its own
      momentum, and it can be walked back. */
   walk: 0, vel: 0, far: 0, grabbed: 0, everGrabbed: 0, hint: 0, passed: 0,
-  built: false, cloth: [], wind: 0.20,
+  built: false, cloth: [], wind: 0.20, skLag: 0.16,
   gust: 0, gustT: 1.5, gustD: 0, gustA: 0, gustP: 0,
   momGone: 0, momFade: 1
 };
 /* close enough that two or three fill the frame, so you go between them
    rather than past them — which is what pushing through washing is */
-const SHEET_GAP = 0.255;
-const SHEET_END = SHEET_GAP*8;   // where the last one is
+/* They hang where they were cut. Each sprite still carries the position it had
+   in the composite it came from, so drawn at the frame's own rect all five land
+   on the painted pins and nothing here has to know where a pin is. */
 
 function buildSheets(){
   SHEETS.cloth.length = 0;
   for (let i=0;i<SHEETS.src.length;i++){
     SHEETS.cloth.push({
-      u: 0.30 + i*SHEET_GAP,       // its place on the line
+
       ph: hash(i*4.7)*TAU,         // its own place in the wind
       rate: 0.86 + hash(i*9.1)*0.32,
       slack: 0.80 + hash(i*2.3)*0.45,
@@ -6830,10 +6899,10 @@ function drawCloth(img, box, o){
 }
 
 /* ---------------------------------------------------------------- the scene
-   One painting, held still, and nine sheets travelling past it. Walking down a
-   line does not move the field or the hills — it moves you past the washing —
-   so the background stays where it is and only the cloth streams. That also
-   means there is no second painting to arrive at, and no seam to hide.
+   One painting, five sheets, hung where they were painted. The line is one
+   view: there is nowhere to travel to and nothing to pull yourself along, and
+   the chapter is better for it — you stand in front of the washing and the wind
+   moves it, which is all this moment ever was.
    ========================================================================== */
 function drawSheetsScene(t, dt, o){
   o = o||{};
@@ -6842,137 +6911,107 @@ function drawSheetsScene(t, dt, o){
   if (!SHEETS.built) buildSheets();
   updSheetWind(dt, t);
 
-  /* You take hold of the washing and pull yourself along it. The velocity is
-     what is dragged, not the position, so the line has weight: it takes a
-     moment to get going and it coasts when you let go. */
-  if (P.down && P.active){
-    if (!SHEETS.grabbed){ SHEETS.grabbed = 1; SHEETS.everGrabbed = 1; }
-    cv.className = "grabbing";
-    SHEETS.vel += (-P.dx/W)*2.6;
-  } else {
-    SHEETS.grabbed = 0;
-    cv.className = "grabbable";
-  }
-  SHEETS.vel *= Math.pow(0.00025, dt);
-  SHEETS.walk = cl(SHEETS.walk + SHEETS.vel*dt*8, -0.10, SHEET_END + 0.55);
-  SHEETS.far = Math.max(SHEETS.far, SHEETS.walk);
-
-  /* She finishes and goes in while you are further down the line. The trigger
-     is not "you went far enough" on its own — that fired while she was still in
-     shot and she dissolved in front of the visitor, which is a special effect
-     rather than an absence. It is "you went past her AND you have come back",
-     by which point her sheet has been off the side of the frame for a while.
-     Nothing is seen to happen. */
-  if (SHEETS.far > SHEETS.cloth[SHEETS.momAt].u + 1.6 && SHEETS.walk < SHEETS.far - 1.2)
-    SHEETS.momGone = 1;
-  SHEETS.momFade = lerp(SHEETS.momFade, SHEETS.momGone ? 0 : 1, Math.min(1, dt*0.8));
-
   drawPlate("lineScene", { air });
 
   const cam = roomCam(0.05);
+  const rect = { x: cam.x, y: cam.y, w: W, h: H };
+
   for (let i=0;i<SHEETS.src.length;i++){
     const s = SHEETS.src[i], c = SHEETS.cloth[i];
-    const img = IMG[s.img];
-    if (!imgReady(img)) continue;
+    const opt = { t, c, x:rect.x, y:rect.y, w:rect.w, h:rect.h,
+                  give: 1, wave1: 5.2, wave2: 3.4, pin: 1, alpha: 1 };
 
-    // where it is now, and whether any of it is on screen
-    const u = c.u - SHEETS.walk;
-    const bw = s.box[2]*c.scale, bh = s.box[3]*c.scale;
-    const fx = u - bw*0.5;
-    if (fx > 1.10 || fx + bw < -0.10) continue;
+    if (i !== SHEETS.momAt){ drawCloth(IMG[s.img], s.box, opt); continue; }
 
-    // hung from the line, which sags
-    const fy = lineY(u) - s.box[1];
-    const rect = { x: cam.x + (fx - s.box[0])*W, y: cam.y + fy*H, w: W*(bw/s.box[2]), h: H*(bh/s.box[3]) };
-
-    drawCloth(img, s.box, {
-      t, c, x:rect.x, y:rect.y, w:rect.w, h:rect.h,
-      give: 1, wave1: 5.2, wave2: 3.4, pin: 1, alpha: 1
-    });
-
-    if (i === SHEETS.momAt && SHEETS.momFade > 0.01) drawMother(t, dt, rect, c, air, s.box);
-
-    // one more of them behind you
-    if (!c.seen && u < 0.42){ c.seen = 1; SHEETS.passed++; sfx.cloth(0.40); }
+    /* Her sheet. The skirt goes down first so the sheet's own hem covers her
+       waist — which is the whole reason the waist never has to be drawn, and why
+       there is no seam to hide between the two sprites. Then the bare sheet
+       underneath, so that when she leaves there is a sheet still hanging where
+       she was rather than a hole in the line. */
+    const a = SHEETS.momFade;
+    if (a > 0.01) drawSkirt(t, rect, a);
+    if (a < 0.995) drawCloth(IMG[s.img], s.box, opt);
+    if (a > 0.005){
+      opt.alpha = a;
+      drawCloth(IMG[SHEETS.momSheet.img], SHEETS.momSheet.box, opt);
+    }
   }
 
-  // the invitation: before anyone takes hold, the line breathes a little
-  if (!SHEETS.everGrabbed){
-    SHEETS.hint += dt;
-    SHEETS.vel += Math.sin(SHEETS.hint*0.55)*dt*0.16;
-  }
+  SHEETS.momFade = lerp(SHEETS.momFade, SHEETS.momGone ? 0 : 1, Math.min(1, dt*0.8));
 
-  // going down the line and coming back is the whole of it
-  if (o.gate && SHEETS.passed >= 5) meet(o.gate);
+  /* You are outdoors here and nothing is between you and it, so the ambience
+     opens all the way — and the cloth and her humming come in on top. */
+  ambience(0.72 - air*0.22, 1);
+  lineSound(0.9 - air*0.3, SHEETS.wind, SHEETS.momFade);
+
+  if (o.gate) meet(o.gate);
 }
 
-/* ------------------------------------------------------------- the mother
-   She is a person standing behind a sheet, not a piece of washing. Everything
-   she is made of used to go through the same cloth mesh as the sheets, which is
-   why she looked tangled in them: her skirt rippled on the sheet's wave, at the
-   sheet's frequency, and moved when the visitor dragged. A skirt does move, but
-   it moves because she is standing in a field in the evening — not because
-   somebody pulled the line she is behind.
+/* ------------------------------------------------------------------ her skirt
+   She used to be assembled here: a silhouette sprite laid on top of a sheet
+   sprite, at a size and a height I had chosen. That is what was wrong with her
+   proportions — I was rebuilding a figure the painter had already painted.
 
-   So nothing of her is warped now. Her shadow is drawn straight, and her skirt
-   swings from her waist as one piece, on its own slow clock, with a shear
-   rather than a ripple. Two sprites, two plain draws, and she keeps still.
-*/
-function drawMother(t, dt, rect, c, air, sheetBox){
-  const torso = IMG[SHEETS.torso.img], skirt = IMG[SHEETS.skirt.img];
-  const a = SHEETS.momFade;
-  if (a < 0.01) return;
-  const tb = SHEETS.torso.box;
-  const hemY = sheetBox[1] + sheetBox[3];          // where her sheet ends
-  const midX = tb[0] + tb[2]*0.5;
+   She is not assembled any more. Her sheet is one sprite with her shadow
+   already on it, so her scale, where her head falls on the cloth and how far
+   her arms reach are the painting's. The only thing drawn separately is the
+   part of her that is not shadow: her real skirt, hanging below the hem, which
+   has to move like cloth in the same wind.
 
-  // her own breeze: slow, small, and nothing to do with the drag
-  const swing = Math.sin(t*0.62) * 0.020 + Math.sin(t*0.41 + 1.3) * 0.012;
+   All the numbers below were measured off that sprite. The skirt there is 124
+   painted pixels wide against a 130-pixel sheet and drops 88 against its 193 —
+   which is where 0.970 and 0.535 come from — and it sits five pixels left of the
+   sheet's centre because she is standing a little to the left behind it.
 
-  /* the shadow on the cloth. Multiply is both the right blend for a shadow and
-     the reason her sprite needs no keying — she is a silhouette painted on
-     solid white, and white under multiply leaves the backdrop as it was. */
+   It swings as one piece from the waist. A shear about the waist line moves
+   every point by an amount proportional to its distance below her — the hem
+   travels furthest, the waist not at all — which is what a gathered skirt does,
+   and unlike the banded version it has no seams in it. The lag between hem and
+   waist lives in the wind driving it, not in the geometry. */
+function drawSkirt(t, rect, a){
+  const skirt = IMG[SHEETS.skirt.img];
+  if (!imgReady(skirt) || a < 0.01) return;
+  const sb = SHEETS.momSheet.box, sk = SHEETS.skirt.box, K = SHEETS.sk;
+
+  const w  = sb[2]*K.w, h = sb[3]*K.h;
+  const cx = sb[0] + sb[2]*0.5 + sb[2]*K.dx;     // her centre, not the sheet's
+  const hem = sb[1] + sb[3];
+  const top = hem - h*K.tuck;                    // the waist, behind the cloth
+
+  /* Her own weather. It is the line's wind, reaching her a moment late and
+     smoothed by how much more a skirt weighs than a sheet, plus three slow
+     frequencies that never come back into phase — so it drifts rather than
+     loops. */
+  const g = SHEETS.wind;
+  SHEETS.skLag  += (g - SHEETS.skLag) * 0.03;
+  const drive = 0.42 + SHEETS.skLag*1.35;
+  const swing = (Math.sin(t*0.47)*0.023 + Math.sin(t*0.79 + 1.3)*0.013
+               + Math.sin(t*1.23 + 0.4)*0.007) * drive;
+  const lift  = (Math.sin(t*0.61 + 2.1)*0.5 + 0.5) * SHEETS.skLag * 0.06;
+  /* cloth pushed sideways is also being lifted and filled, so it widens as it
+     swings and shortens by as much as it gains — the hem rises on the wind */
+  const flare = 1 + Math.abs(swing)*1.5 + lift*0.5;
+
+  const dw = w*rect.w, dh = h*rect.h;
+  const iw = skirt.naturalWidth, ih = skirt.naturalHeight;
+  const sx = sk[0]*iw, sy = sk[1]*ih, sw = sk[2]*iw, sh = sk[3]*ih;
+
   ctx.save();
-  ctx.globalCompositeOperation = "multiply";
-  ctx.globalAlpha = a*0.78;
-  if (imgReady(torso)){
-    ctx.drawImage(torso,
-      tb[0]*torso.naturalWidth, tb[1]*torso.naturalHeight,
-      tb[2]*torso.naturalWidth, tb[3]*torso.naturalHeight,
-      rect.x + tb[0]*rect.w, rect.y + tb[1]*rect.h,
-      tb[2]*rect.w, tb[3]*rect.h);
-  }
+  ctx.globalAlpha = a;
+  ctx.translate(rect.x + cx*rect.w, rect.y + top*rect.h);
+  ctx.transform(1, 0, swing*1.9, 1, 0, 0);       // shear about the waist
+  ctx.rotate(swing*0.28);                        // and a little pendulum with it
+  ctx.scale(flare, 1 - lift*0.30);
+  /* The sprite stops at her waist, and the sheet's hem does not hold still: it
+     lifts on the wind, and where it lifts past the waist you were seeing the
+     straight top edge of a cut-out against the sky. So a couple of rows of the
+     waist are stretched upward first, into the space behind the cloth. It is
+     almost never seen; when a gust does show a sliver of it, a sliver of skirt
+     is what it looks like. */
+  const ext = dh*0.24;
+  ctx.drawImage(skirt, sx, sy + ih*0.006, sw, ih*0.004, -dw*0.5, -ext, dw, ext + 1);
+  ctx.drawImage(skirt, sx, sy, sw, sh, -dw*0.5, 0, dw, dh);
   ctx.restore();
-
-  /* her skirt, below the hem. Its size is taken off momwithonesheetsprite.png —
-     that is this same sheet with her really behind it, and there the skirt is
-     most of the sheet's width and hangs about four tenths of the sheet's height
-     below the hem. It swings from the waist as one piece: a shear, easing to
-     nothing at the top, so the waist stays put and only the hem travels. */
-  if (imgReady(skirt)){
-    const sk = SHEETS.skirt.box;
-    const skW = sheetBox[2]*0.90, skH = sheetBox[3]*0.60;
-    const topY = hemY - skH*0.30;                  // the rest is behind the sheet
-    ctx.save();
-    ctx.beginPath();
-    ctx.rect(rect.x + (midX-skW)*rect.w, rect.y + hemY*rect.h,
-             skW*3*rect.w, (1.2-hemY)*rect.h);
-    ctx.clip();
-    ctx.globalAlpha = a*0.94;
-    // shear about the waist: x is displaced in proportion to depth down the skirt
-    ctx.translate(rect.x + midX*rect.w, rect.y + topY*rect.h);
-    ctx.transform(1, 0, swing*1.6, 1, 0, 0);
-    ctx.drawImage(skirt,
-      sk[0]*skirt.naturalWidth, sk[1]*skirt.naturalHeight,
-      sk[2]*skirt.naturalWidth, sk[3]*skirt.naturalHeight,
-      -skW*0.5*rect.w, 0, skW*rect.w, skH*rect.h);
-    // the evening is behind her, so the skirt is in its own shade
-    ctx.globalCompositeOperation = "source-atop";
-    ctx.globalAlpha = a*0.26;
-    ctx.fillStyle = rgba([64,34,10], 1);
-    ctx.fillRect(-skW*0.5*rect.w, 0, skW*rect.w, skH*rect.h);
-    ctx.restore();
-  }
 }
 /* ============================================================================
    PLATE SCENES
@@ -11066,7 +11105,7 @@ function gateProgress(g){
   switch(g){
     case "curtain": case "curtain2": return Math.min(PROOM.cL,PROOM.cR)/CTR.need;
     case "sash":    return PROOM.sash/0.55;
-    case "sheets":  return cl01(SHEETS.passed/5);
+    case "sheets":  return 1;
     case "shirt":   return PWASH.through/5;
     case "kite": case "rkite": return PKITE.best/0.40;
     case "stars":   { let n=0; for(const s2 of DIPPER) if(STARY.lit[s2.id])n++; return n/DIPPER.length; }
@@ -11265,7 +11304,6 @@ document.getElementById("restart").addEventListener("click", ()=>{
   PROOM.cL=PROOM.cR=PROOM.open=PROOM.sash=0; PROOM.nudgeTo=0; PROOM.idle=0; PROOM.demo=0;
   PROOM.breeze=0; PROOM.grab=0; PROOM.sashGrab=0; PROOM.everMoved=0;
   CORD.swing=0; CORD.swingV=0; CORD.grab=0; buildWireBirds(); buildToys();
-  SHEETS.walk=0; SHEETS.vel=0; SHEETS.far=0; SHEETS.passed=0;
   SHEETS.momGone=0; SHEETS.momFade=1; SHEETS.everGrabbed=0; buildSheets();
   for (const k in done) delete done[k];
   WASH.passed=0; WASH.shirtFound=false; WASH.walk=0; WASH.brushed=0;
