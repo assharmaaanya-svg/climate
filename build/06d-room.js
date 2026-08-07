@@ -42,6 +42,40 @@ const WIN = {
   wireY: [0.372, 0.398]        // the utility lines the birds sit on
 };
 
+/* ------------------------------------------------------------ LIGHTING SPRITES
+   source-atop composites where the DESTINATION is opaque. On its own little
+   buffer that means "only where the sprite is", which is what it is for. On the
+   main canvas the destination is the whole opaque room, so it means "the entire
+   rectangle" — and every sprite lit that way comes out as a black box with a
+   toy inside it. Sprites get their own buffer, cached per size and per light
+   level, and the room only ever receives the finished thing. */
+const TINTED = Object.create(null);
+function litSprite(img, key, w, h, dark, warm){
+  const q = Math.round(dark*24) + "|" + (w|0) + "x" + (h|0) + "|" + Math.round((warm||0)*12);
+  let e = TINTED[key];
+  if (e && e.q === q) return e.cv;
+  const cv2 = (e && e.cv) || document.createElement("canvas");
+  const cw = Math.max(1, Math.ceil(w)), ch = Math.max(1, Math.ceil(h));
+  if (cv2.width !== cw || cv2.height !== ch){ cv2.width = cw; cv2.height = ch; }
+  const g = cv2.getContext("2d");
+  g.clearRect(0,0,cw,ch);
+  g.globalCompositeOperation = "source-over";
+  g.drawImage(img, 0, 0, cw, ch);
+  if (warm > 0){
+    g.globalCompositeOperation = "multiply";
+    g.fillStyle = rgba([255,196,126], warm);
+    g.fillRect(0,0,cw,ch);
+  }
+  if (dark > 0.002){
+    g.globalCompositeOperation = "source-atop";   // here it means what it says
+    g.fillStyle = rgba([12,6,1], dark);
+    g.fillRect(0,0,cw,ch);
+  }
+  g.globalCompositeOperation = "source-over";
+  TINTED[key] = { q, cv: cv2 };
+  return cv2;
+}
+
 /* ---------------------------------------------------------------- THE CAMERA
    drawPlate offsets every band by the pointer camera and a slow involuntary
    drift. Anything drawn on top has to take the same offset at its own depth, or
@@ -476,15 +510,9 @@ function drawTapedDrawing(t, rev, air){
   ctx.save();
   ctx.translate(cx, cy);
   ctx.rotate(Math.sin(t*0.5)*0.004*(0.3+PROOM.breeze*2.2));
-  ctx.drawImage(PAPER, -w/2, -h/2, w, h);
   // the room's own light, on it — the same warm lamp everything else is under,
   // otherwise it reads as a sticker rather than a piece of paper on a wall
-  ctx.globalCompositeOperation = "multiply";
-  ctx.fillStyle = rgba([255,196,126], 0.52);
-  ctx.fillRect(-w/2, -h/2, w, h);
-  ctx.globalCompositeOperation = "source-atop";
-  ctx.fillStyle = rgba([10,5,1], 1-lit);
-  ctx.fillRect(-w/2, -h/2, w, h);
+  ctx.drawImage(litSprite(PAPER, "paper", w, h, 1-lit, 0.52), -w/2, -h/2, w, h);
   ctx.restore();
 }
 
@@ -514,10 +542,10 @@ function floorScale(y){ return 0.70 + 0.55*floorDepth(y); }
 
 function buildToys(){
   TOYS.length = 0;
-  const rest = [ {x:0.115,y:0.905}, {x:0.318,y:0.960}, {x:0.815,y:0.900}, {x:0.885,y:0.955} ];
+  const rest = [ {x:0.128,y:0.892}, {x:0.300,y:0.948}, {x:0.828,y:0.888}, {x:0.892,y:0.940} ];
   for (let i=0;i<TOY_SRC.length;i++){
     TOYS.push({ src:TOY_SRC[i], x:rest[i].x, y:rest[i].y,
-                w:0.088 + hash(i*6.1)*0.016, rot:(hash(i*2.7)-0.5)*0.16,
+                w:0.057 + hash(i*6.1)*0.011, rot:(hash(i*2.7)-0.5)*0.16,
                 held:0, settle:0, vy:0, seen:0 });
   }
 }
@@ -546,11 +574,7 @@ function drawOneToy(tt, t, lit){
               r.w*(0.34+lift*0.16), r.h*0.075*(1+lift*0.5), 0, 0, TAU);
   ctx.fill();
   ctx.restore();
-  ctx.drawImage(r.im, -r.w*0.5, -r.h, r.w, r.h);
-  // the room's light, on it
-  ctx.globalCompositeOperation = "source-atop";
-  ctx.fillStyle = rgba([12,6,1], 1-lit);
-  ctx.fillRect(-r.w*0.5, -r.h, r.w, r.h);
+  ctx.drawImage(litSprite(r.im, tt.src, r.w, r.h, 1-lit, 0), -r.w*0.5, -r.h, r.w, r.h);
   ctx.restore();
 }
 /* The basket arrived as a flattened export: the transparency checkerboard its
