@@ -259,6 +259,9 @@ function drawKiteSky(t, dt, o){
   drawPlate("kiteSky", { air: night, onlyBand: FRONT });
 
   kiteSound(dt, 0.85 - air*0.25, night, KSKY.joy);
+  /* the day handing over. The crickets start while there is still light in the
+     sky, which is what actually happens, and the afternoon's birds go with it. */
+  nightSound(0.85 - air*0.25, night*0.85);
   cv.className = P.down ? "grabbing" : "grabbable";
   if (o.gate && KSKY.best > 0.52) meet(o.gate);
 }

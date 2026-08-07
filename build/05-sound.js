@@ -95,6 +95,15 @@ function initAudio(){
     LAUGH.gain = AC.createGain(); LAUGH.gain.gain.value = 1;
     LAUGH.gain.connect(master);
 
+    /* the night */
+    for (const L of [CRICK, NBIRD]){
+      L.gain = AC.createGain(); L.gain.gain.value = 0;
+      L.filt = AC.createBiquadFilter(); L.filt.type = "lowpass";
+      L.filt.frequency.value = 9000; L.filt.Q.value = 0.4;
+      L.filt.connect(L.gain); L.gain.connect(master);
+    }
+    NBIRD.filt.frequency.value = 4200;    // he is calling from the far treeline
+
     loadAmbience();
     return true;
   } catch(e){ return false; }
@@ -120,6 +129,10 @@ const HUM  = { buf:null, src:null, gain:null, filt:null, state:"idle" };
 /* the field: open wind off the water, and him */
 const KWIND = { buf:null, src:null, gain:null, filt:null, state:"idle" };
 const LAUGH = { buf:null, gain:null, state:"idle", next: 6 };
+/* after dark. The birds that sang all afternoon are not out here now — what is
+   out here is insects, and one bird that only calls at night. */
+const CRICK = { buf:null, src:null, gain:null, filt:null, state:"idle" };
+const NBIRD = { buf:null, src:null, gain:null, filt:null, state:"idle" };
 
 /* `names` may be a list: the first that decodes wins. Everything ships as
    16-bit PCM wav now, which every browser decodes, so the list is really only
@@ -159,6 +172,8 @@ function loadAmbience(){
   loadOne(HUM,  "line-hum.wav");
   loadOne(KWIND, "kite-wind.wav");
   loadOne(LAUGH, "kite-laugh.wav");
+  loadOne(CRICK, "night-crickets.wav");
+  loadOne(NBIRD, "night-birds.wav");
 }
 /* A one-shot, not a layer. The laugh is four seconds of a child and there is no
    honest way to loop that — looped laughter is a horror-film cue. So it is
@@ -254,6 +269,26 @@ function kiteSound(dt, v, night, joy){
   }
 }
 
+/* After dark. The daytime ambience is not lowered here so much as taken away:
+   whatever the last scene left it at, the night pushes it down, because the
+   birds that were in it stopped hours ago. What comes up instead is insects,
+   which are everywhere and even, and one whip-poor-will a long way off.
+
+   `deep` is how far into the night it is — the crickets arrive first, at dusk,
+   and he does not start calling until it is properly dark. */
+const NIGHTQ = { t: 0 };
+function nightSound(v, deep){
+  NIGHTQ.t = 0.3;
+  if (!AC || !soundOn || !CRICK.gain) return;
+  for (const L of [CRICK, NBIRD]) if (L.state === "ready" && !L.src) startOne(L);
+  const d = cl01(deep);
+  envGain(CRICK.gain, v*0.40*(0.35 + d*0.65), 1.6);
+  envGain(NBIRD.gain, v*0.30*cl01((d-0.30)/0.70), 2.4);
+  /* and the day goes. Slowly — a bird chorus that stops dead is a cut. */
+  if (AMB.gain)  envGain(AMB.gain,  0.030*(1-d), 3.2);
+  if (AMB2.gain) envGain(AMB2.gain, 0.006*(1-d), 3.2);
+}
+
 function updSound(dt, t){
   updCC(dt);
   if (!AC || !soundOn) return;
@@ -277,6 +312,8 @@ function updSound(dt, t){
   else if (RUS.gain){ for (const L of [RUS, RUS2, HUM]) envGain(L.gain, 0, 0.9); }
   if (KITEQ.t > 0){ KITEQ.t -= dt; }
   else if (KWIND.gain){ envGain(KWIND.gain, 0, 1.1); }
+  if (NIGHTQ.t > 0){ NIGHTQ.t -= dt; }
+  else if (CRICK.gain){ for (const L of [CRICK, NBIRD]) envGain(L.gain, 0, 2.0); }
 }
 
 /* ------------------------------------------------------------------ one-shots */

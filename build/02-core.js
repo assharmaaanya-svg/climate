@@ -344,7 +344,7 @@ const BEATS = [
     line:"You put it up into all of that." },
   { id:"climb",     ch:2, len:1.25,
     line:"" },
-  { id:"stars",     ch:2, len:1.55, gate:"stars",   ask:"Drag the sky · tap the bright stars to trace the shape",
+  { id:"stars",     ch:2, len:1.55, gate:"stars",   ask:"Tap a star to learn about it",
     line:"There were so many it was hard to look at one." },
   { id:"wish",      ch:2, len:0.95,
     line:"" },

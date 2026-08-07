@@ -11,7 +11,7 @@ Every painting, sheet, silhouette, skirt and sprite in `assets/` is original wor
 Almost everything you hear is synthesised live in the browser — the wind bed, the room tone,
 the traffic bed, the pad, the crickets, the latch and the hinge.
 
-Seven recordings are used. Three are the artist's own; four are from
+Nine recordings are used. Three are the artist's own; six are from
 [Freesound](https://freesound.org/) under **Creative Commons 0** (public domain dedication —
 no attribution required, credited here anyway).
 
@@ -24,6 +24,8 @@ no attribution required, credited here anyway).
 | `assets/line-hum.wav` | `womanhumming.wav` | Aanya Sharma | — |
 | `assets/kite-wind.wav` | Kite, seaside — [#60661](https://freesound.org/s/60661/) | heigh hoo | CC0 |
 | `assets/kite-laugh.wav` | Boy or young child laughing — [#365632](https://freesound.org/s/365632/) | obxjohn | CC0 |
+| `assets/night-crickets.wav` | Crickets chirping at night — [#383275](https://freesound.org/s/383275/) | (account deleted) | CC0 |
+| `assets/night-birds.wav` | Whip-poor-wills at night — [#572768](https://freesound.org/s/572768/) | mycompasstv | CC0 |
 
 The humming is the one layer that does not simply play: it is silent until the visitor
 touches the mother on the line, and then it runs down on its own over about half a minute —
@@ -33,7 +35,8 @@ piece says so.
 Each built file is a purpose-cut loop: decoded, downmixed to mono, resampled to 22.05 kHz,
 cut to a chosen window, and then had its own tail folded back over its head under an
 equal-power crossfade so the loop point is inaudible. They are deliberately different
-lengths (36 s, 30 s, 9 s, 5.7 s, 16.5 s, 26 s) so the combination does not come back into phase.
+lengths (36 s, 30 s, 9 s, 5.7 s, 16.5 s, 26 s, 20.4 s, 20.2 s) so the combination does not come
+back into phase.
 
 The laugh is the exception: four seconds of a child cannot be looped — looped laughter is a
 horror-film cue — so it is played whole, occasionally, on its own envelope, faded up over its
@@ -48,6 +51,13 @@ The masters are kept at the repository root; `assets/` holds only the built loop
   actual birdsong for the moment the window opens. Kept at the root in case it is wanted.
 - `natureambeicnewithbirdschirping.wav` and the `841639__vhio__…` countryside recording were
   removed because their licences were not verified. Nothing references them.
+
+## The star cards
+
+Tapping any of the five named stars opens a card: what the star is in one line, then what it
+has meant to people. Magnitudes and distances are V-band figures from the Hipparcos and Gaia
+catalogues, rounded. The little chart on each card is generated from the same coordinates the
+sky itself is drawn from, so it is the constellation the visitor is actually looking at.
 
 ## Data
 

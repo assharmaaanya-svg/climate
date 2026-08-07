@@ -466,11 +466,13 @@ function render(t, dt){
       setPop({ birds:0, butterflies:0, dragonflies:0, fireflies:1.0, seeds:0.2 });
       starsInteractP("stars", dt, { air:0.06, glow:0.06 });
       drawStarsPlate(t, dt, { air:0.06, glow:0.06 });
+      nightSound(0.95, 1);
       break;
     }
     case "wish": {
       setPop({ birds:0, butterflies:0, dragonflies:0, fireflies:0.9, seeds:0.2 });
       starsInteractP(null, dt, { air:0.08, glow:0.07 });
+      nightSound(0.95, 1);
       drawStarsPlate(t, dt, { air:0.08, glow:0.07 });
       break;
     }
@@ -535,6 +537,8 @@ function render(t, dt){
       // the fireflies are simply not here any more, and nothing says so
       setPop({ birds:0, butterflies:0, dragonflies:0, fireflies:0, seeds:0.05 });
       starsInteractP("rstars", dt, { air:0.78, glow:0.55 });
+      /* years later the insects are thinner too, and he has stopped calling */
+      nightSound(0.55, 0.30);
       drawStarsPlate(t, dt, { air:0.78, glow:0.55 });
       if (false){ starsInteract("rstars", dt); drawStars(t, dt, {}); }
       // the gaps where the shape used to close
@@ -760,6 +764,7 @@ function gateProgress(g){
     case "sheets":  return 1;
     case "shirt":   return PWASH.through/5;
     case "kite":  return KSKY.best/0.52;
+    case "stars": { let n=0; for (const id of ["mizar","alkaid","megrez","alrischa","polaris"]) if (STARY.lit[id]) n++; return n/3; }
     case "rkite": return PKITE.best/0.40;
     case "stars":   { let n=0; for(const s2 of DIPPER) if(STARY.lit[s2.id])n++; return n/DIPPER.length; }
     case "rstars":  { let v=0,n=0; for(const s2 of DIPPER){ if(starSeen(s2,0.78,0.55)){v++; if(STARY.lit[s2.id])n++;} } return v? n/v : 1; }
@@ -839,6 +844,7 @@ function onEnter(bid){
   if (bid==="e-stars"){ if (!GRID.length) buildGrid(); }
   if (bid==="drawing"||bid==="r-drawing"||bid==="horizon") buildPaper();
   if (bid!=="stopped" && bid!=="named") hideAQ();
+  if (bid!=="stars" && bid!=="wish" && bid!=="r-stars") hideStarStory();
   if (!bid.startsWith("e-")) { showCard(null); }
   if (bid!=="e-ledger") hideLedger();
   // the cursor tells you what kind of place you are in
@@ -992,6 +998,12 @@ window.__bluer = {
   get birds(){ return WIREBIRDS; },
   get sheets(){ return SHEETS; },
   get kite(){ return KSKY; },
+  get dipper(){ return DIPPER; },
+  get ap(){ return AP; },
+  get stary(){ return STARY; },
+  get outliers(){ return OUTLIERS; },
+  nightAudio(){ const f=L=>({state:L.state,playing:!!L.src,g:L.gain?+L.gain.gain.value.toFixed(4):null});
+                return { crickets:f(CRICK), nightbird:f(NBIRD) }; },
   kiteAudio(){ return { wind:KWIND.state, windG: KWIND.gain? +KWIND.gain.gain.value.toFixed(4):null,
                         playing:!!KWIND.src, laugh:LAUGH.state, next:+LAUGH.next.toFixed(1) }; },
   get wash(){ return PWASH; },

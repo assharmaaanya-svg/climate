@@ -51,6 +51,10 @@
     padding:.7em 1.5em; -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px);
     box-shadow:0 10px 40px rgba(0,0,0,.34); }
   #ask.on{ opacity:1; transform:translate(-50%,0); }
+  /* a star card is a thing to read; the narration and the prompt get out of its
+     way rather than being read over the top of it */
+  body.reading #cap, body.reading #ask, body.reading #gate{
+    opacity:0 !important; transition:opacity .45s; }
   #ask.dark{ color:#17222c; background:rgba(255,253,246,.66); border-color:rgba(20,30,40,.2);
     box-shadow:0 10px 40px rgba(90,60,20,.18); }
   #ask.urge{ animation:urge 2.6s ease-in-out infinite; }
@@ -294,7 +298,9 @@
     <em>Maasai camp nature sounds, Africa</em> by <strong>selcukartut</strong> (#504694) ·
     <em>Birds songs — blackcap and oak jay</em> by <strong>sachajulien</strong> (#734530) ·
     <em>Kite, seaside</em> by <strong>heigh hoo</strong> (#60661) ·
-    <em>Boy or young child laughing</em> by <strong>obxjohn</strong> (#365632).
+    <em>Boy or young child laughing</em> by <strong>obxjohn</strong> (#365632) ·
+    <em>Crickets chirping at night</em> (#383275) ·
+    <em>Whip-poor-wills at night</em> by <strong>mycompasstv</strong> (#572768).
   </p>
 </div></div>
 

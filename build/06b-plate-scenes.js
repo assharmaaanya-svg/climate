@@ -292,6 +292,14 @@ const OUTLIERS = [
 /* bowl, then handle */
 const DIP_LINKS = [[0,1],[1,2],[2,3],[3,0],[3,4],[4,5],[5,6]];
 
+/* THE FIVE. These are the only stars with anything to open, so they are the
+   only ones drawn as something you would think to touch and the only ones the
+   hit test will accept. The other four of the Dipper are still there — the
+   shape needs them — but they are sky, not buttons: no ring, no swollen glow,
+   and a tap near one does nothing at all. A star that lights up under your
+   finger and then has nothing to say is worse than a star that ignores you. */
+const hasCard = s => !!(s && STAR_CARD[s.id]);
+
 const STARY = {
   lit:Object.create(null),        // id -> true once traced
   told:Object.create(null),       // id -> true once its story has been read
@@ -300,14 +308,76 @@ const STARY = {
   wish:0, shoot:null, shootT:7,
   story:null, storyT:0
 };
-/* Each is one to three sentences: what people did with it, and what it costs to
-   lose it. Never an astronomy lesson. */
+/* ---------------------------------------------------------------- the cards
+   Each named star opens a card. The shape is the same every time: what it is in
+   one sentence, then what it has meant to people, then the numbers — because a
+   card that only tells you a feeling is a poster, and this is a piece about
+   something measurable.
+
+   The figures are real: magnitudes are V-band, distances are from Hipparcos and
+   Gaia parallaxes, rounded.
+
+   Nothing here mentions what the air is doing to any of it. This chapter is the
+   sky as it was, and a card that ended every time on what has been lost would
+   spend the ending three chapters early. The loss gets said once, later, by the
+   same sky with most of it missing.
+
+   Mizar and Alcor share one card, because separating them would be the one
+   mistake that ruins the pair — the point of Mizar is Alcor. */
+const STAR_CARD = {
+  mizar: {
+    name: "Mizar & Alcor",
+    sub: "a naked-eye double",
+    bayer: "\u03b6 & 80 Ursae Majoris",
+    where: "Ursa Major \u00b7 the handle\u2019s bend",
+    lede: "Two stars in the handle of the Big Dipper, famous for having been used as a test of eyesight.",
+    body: "They sit about a fifth of a moon\u2019s width apart, close to the limit of what an unaided eye can separate. Persian astronomers wrote about the pair in the tenth century, and for centuries afterwards seeing both was used as a test of sight \u2014 one that needed no lens, no instrument and no money, and meant the same thing everywhere on Earth.",
+    facts: [["Magnitude", "2.23 \u00b7 3.99"], ["Apart", "11.8 arcminutes"], ["Distance", "83 light years"]]
+  },
+  alkaid: {
+    name: "Alkaid",
+    sub: null,
+    bayer: "\u03b7 Ursae Majoris",
+    where: "Ursa Major \u00b7 the handle\u2019s tip",
+    lede: "The star at the very end of the Big Dipper\u2019s handle, long used in navigation.",
+    body: "For most of human history the Dipper it ends was working equipment: swinging around the pole, it gave people the hour, the season and the way to north. In the nineteenth-century United States the same shape was carried in song \u2014 \u201cFollow the Drinking Gourd\u201d gave escaping enslaved people a direction to hold to with no map and no compass.",
+    facts: [["Magnitude", "1.86"], ["Distance", "104 light years"], ["Surface", "17,000 K"]]
+  },
+  megrez: {
+    name: "Megrez",
+    sub: null,
+    bayer: "\u03b4 Ursae Majoris",
+    where: "Ursa Major \u00b7 handle meets bowl",
+    lede: "The faintest star of the Big Dipper, and usually the first of the seven to disappear in hazy or light-polluted skies.",
+    body: "It sits at the hinge where the handle meets the bowl, so it is the star the whole shape is built on \u2014 take it away and the Dipper comes apart into a bowl and a handle that no longer meet. At magnitude 3.3 it is over four times fainter than Alkaid at the far end, and the last of the seven most people learn to pick out.",
+    facts: [["Magnitude", "3.31"], ["Vs Alkaid", "4\u00d7 fainter"], ["Distance", "58 light years"]]
+  },
+  alrischa: {
+    name: "Alrischa",
+    sub: null,
+    bayer: "\u03b1 Piscium",
+    where: "Pisces \u00b7 the knot",
+    lede: "The alpha star of Pisces, whose name means \u201cthe cord\u201d \u2014 the knot tying the constellation\u2019s two fish together.",
+    body: "Babylonian tablets already had two fish and a cord here more than two thousand years ago, and the arrangement survived through Greek, Arabic and Latin astronomy into the charts still in use today. Naming the sky is one of the oldest things people have done together \u2014 every culture that could see stars did it, and no two did it the same way.",
+    facts: [["Magnitude", "3.82"], ["Distance", "151 light years"], ["Orbit", "a pair, 700 years"]]
+  },
+  polaris: {
+    name: "Polaris",
+    sub: "the North Star",
+    bayer: "\u03b1 Ursae Minoris",
+    where: "Ursa Minor \u00b7 over the pole",
+    lede: "The star almost directly above Earth\u2019s north pole, used for centuries by travellers and sailors to find north.",
+    body: "It sits within three quarters of a degree of the celestial pole, so while the whole sky turns it barely moves. That made it the most useful star in the northern hemisphere: it gives direction without a compass, and because its height above the horizon equals your latitude, it gave sailors their position too.",
+    facts: [["Magnitude", "1.98"], ["Off true north", "0.7 degrees"], ["Distance", "about 450 ly"]]
+  }
+};
+/* the older one-line version, still used by anything that only wants a whisper */
 const STAR_STORY = {
-  "mizar":    "For centuries, people used these two stars as a test of their eyesight. Seeing both meant your eyes were sharp enough to travel safely at night. Today, millions of people couldn't see either, even with perfect vision.",
-  "alkaid":   "The last star in the handle of the Big Dipper. Travellers and sailors learned to find it long before maps fit in a pocket. It helped people find their way home.",
-  "megrez":   "The faintest star of the Big Dipper. It was often the first to disappear when the sky became hazy. Many people never noticed it was gone.",
-  "alrischa": "Its name means “the cord.” For thousands of years, people imagined it tying two fish together across the sky. Every culture looked up and found different stories in the same stars.",
-  "polaris":  "For over a thousand years, Polaris guided travellers, sailors and explorers across deserts and oceans. It stayed almost perfectly still while the rest of the sky turned around it."
+  "mizar":    STAR_CARD.mizar.lede,
+  "alkaid":   STAR_CARD.alkaid.lede,
+  "megrez":   STAR_CARD.megrez.lede,
+  "alrischa": STAR_CARD.alrischa.lede,
+  "polaris":  STAR_CARD.polaris.lede
 };
 
 /* how faint a star can be and still show, given the air and the town's light */
@@ -320,6 +390,13 @@ function starScreen(s){
 
 function drawStarsPlate(t, dt, o){
   o = o||{};
+  /* The aperture is the whole frame here — a plate scene fills it. Without this
+     AP is whatever the last morph left behind, and since the named stars are
+     positioned as fractions of AP, they were all being drawn at (0,0): the sky
+     looked right because the painting carries stars of its own, and the five
+     that were supposed to be touchable were stacked in the top-left corner,
+     invisible against the dark, and could not be tapped at all. */
+  apFull();
   const air = cl01(o.air===undefined?0:o.air);
   const glow = o.glow===undefined?0.06:o.glow;
   const which = air>0.5 ? "starsHazed" : "stars";
@@ -365,16 +442,19 @@ function drawStarsPlate(t, dt, o){
     if (!starSeen(s, air, glow)) continue;
     const p = starScreen(s);
     if (p.x < AP.x-20 || p.x > AP.x+AP.w+20) continue;
+    const named = hasCard(s);
     const above = cl01((s.b-floor)*3.2);
     const tw = 0.68 + 0.32*Math.sin(t*(1.3+s.b*2.2) + s.x*30);
-    const a = above*tw;
-    const r = MIN*(0.0016 + s.b*0.0026);
-    const lit2 = !!STARY.lit[s.id];
-    const near = P.active && Math.hypot(P.x-p.x, P.y-p.y) < MIN*0.05;
-    if (near && s.name) STARY.hover = s;
+    /* the four unnamed Dipper stars are held well back: they hold the shape
+       together and they do not ask to be touched */
+    const a = above*tw*(named ? 1 : 0.46);
+    const r = MIN*(named ? 0.0022 + s.b*0.0034 : 0.0011 + s.b*0.0013);
+    const lit2 = named && !!STARY.lit[s.id];
+    const near = named && P.active && Math.hypot(P.x-p.x, P.y-p.y) < MIN*0.05;
+    if (near) STARY.hover = s;
 
     // a touchable star wears a ring, so nobody has to be told it is touchable
-    if (s.name && !STARY.told[s.id]){
+    if (named && !STARY.told[s.id]){
       const pulse = 0.5+0.5*Math.sin(t*1.5 + s.x*20);
       ctx.strokeStyle = rgba([190,214,255], (near?0.55:0.16+0.10*pulse)*(1-air*0.4));
       ctx.lineWidth = 1;
@@ -382,10 +462,11 @@ function drawStarsPlate(t, dt, o){
     }
     ctx.save();
     ctx.globalCompositeOperation="lighter";
-    const g2 = ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,r*(lit2?13:8));
-    g2.addColorStop(0, rgba(lit2?[255,232,178]:[226,238,255], a*0.5));
+    const halo = r * (lit2 ? 13 : named ? 9 : 4.5);
+    const g2 = ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,halo);
+    g2.addColorStop(0, rgba(lit2?[255,232,178]:[226,238,255], a*(named?0.5:0.28)));
     g2.addColorStop(1, rgba([200,220,255], 0));
-    ctx.fillStyle=g2; ctx.beginPath(); ctx.arc(p.x,p.y,r*(lit2?13:8),0,TAU); ctx.fill();
+    ctx.fillStyle=g2; ctx.beginPath(); ctx.arc(p.x,p.y,halo,0,TAU); ctx.fill();
     ctx.restore();
     ctx.fillStyle = rgba(lit2?[255,240,200]:[240,246,255], a);
     ctx.beginPath(); ctx.arc(p.x,p.y,r,0,TAU); ctx.fill();
@@ -433,17 +514,27 @@ function starsInteractP(g, dt, o){
   STARY.pan = (STARY.pan + STARY.panV*dt*7 + 1)%1;
   if (STARY.storyT>0){ STARY.storyT -= dt; if (STARY.storyT<=0) hideStarStory(); }
 
+  /* the gate is three of the five opened — enough to have understood that the
+     stars are things you can ask about, and forgiving enough not to demand all
+     five from someone who only wanted to look */
   let lit=0, seen=0;
-  for (const s of DIPPER){ if (STARY.lit[s.id]) lit++; if (starSeen(s,air,glow)) seen++; }
-  if (g && seen>0 && lit>=seen) meet(g);
+  for (const s of DIPPER.concat(OUTLIERS)){
+    if (!hasCard(s)) continue;
+    if (STARY.lit[s.id]) lit++;
+    if (starSeen(s,air,glow)) seen++;
+  }
+  if (g && lit >= Math.min(3, seen) && seen > 0) meet(g);
 }
 function tapStarP(x,y,air,glow){
   const all = DIPPER.concat(OUTLIERS);
-  let best=null, bd=MIN*0.055;
+  /* A star is three pixels across and a fingertip is forty. The target is the
+     area around it, and a named star gets a larger one than an unnamed one,
+     because a named star has something to open. */
+  let best=null, bd=MIN*0.075;
   for (const s of all){
-    if (!starSeen(s,air,glow) || !s._p) continue;
+    if (!hasCard(s) || !starSeen(s,air,glow) || !s._p) continue;
     const d = Math.hypot(s._p.x-x, s._p.y-y);
-    if (d<bd){ bd=d; best=s; }
+    if (d < MIN*0.095 && d < bd){ bd=d; best=s; }
   }
   if (best){
     if (!STARY.lit[best.id]){
@@ -451,12 +542,13 @@ function tapStarP(x,y,air,glow){
       sfx.chime(pick([784,880,988,1175,1319]));
       ripple(best._p.x, best._p.y, [255,236,186], MIN*0.07);
     }
-    if (best.name && STAR_STORY[best.id]){
-      showStarStory(best.name, STAR_STORY[best.id]);
+    if (STAR_CARD[best.id]){
+      showStarStory(best.id);
       if (!STARY.told[best.id]){ STARY.told[best.id]=true; if(!FOUND["star-"+best.id]){FOUND["star-"+best.id]=true; foundN++;} }
     }
     return true;
   }
+  hideStarStory();                 // a tap on empty sky puts the card away
   if (STARY.shoot && Math.hypot(STARY.shoot.x-x, STARY.shoot.y-y) < MIN*0.14){
     STARY.wish=1; STARY.shoot=null; STARY.shootT=rnd(9,18);
     sfx.wish(); whisper("You always wished for the same thing, and never told anyone.");
@@ -465,33 +557,239 @@ function tapStarP(x,y,air,glow){
   return false;
 }
 
-/* the story panel — quiet, and it holds long enough to be read */
+/* ---------------------------------------------------------------- the panel
+   The card is HTML, not canvas. Canvas is the wrong tool for a paragraph: no
+   real text layout, no selection, no screen reader, and every glyph has to be
+   re-rasterised every frame for text that is not moving.
+
+   The chart in the corner is drawn from DIPPER and OUTLIERS — the same arrays
+   the sky itself is drawn from — so it is not an illustration of the
+   constellation, it is the constellation the visitor is looking at, with the
+   star they just touched marked on it. Nothing to keep in sync.
+   ========================================================================== */
 const stEl = document.createElement("div");
-stEl.id="starstory";
-stEl.setAttribute("aria-live","polite");
-stEl.style.cssText = "position:fixed;left:50%;bottom:8vh;transform:translate(-50%,10px);z-index:8;"+
-  "width:min(88vw,34rem);opacity:0;transition:opacity 1.1s,transform 1.1s;pointer-events:none;"+
-  "background:rgba(8,12,26,.62);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);"+
-  "border:1px solid rgba(190,214,255,.18);border-radius:14px;padding:1.05rem 1.25rem;"+
-  "box-shadow:0 24px 70px rgba(0,0,0,.45);";
-stEl.innerHTML = '<div class="nm"></div><p class="bd"></p>';
+stEl.id = "starcard";
+stEl.setAttribute("role", "dialog");
+stEl.setAttribute("aria-live", "polite");
+stEl.setAttribute("aria-hidden", "true");
+stEl.innerHTML =
+  '<button class="x" aria-label="Close">×</button>' +
+  '<div class="hd">' +
+    '<svg class="chart" viewBox="0 0 100 62" aria-hidden="true"></svg>' +
+    '<div class="ttl">' +
+      '<p class="whr"></p>' +
+      '<h2 class="nm"></h2>' +
+      '<p class="bay"></p>' +
+    '</div>' +
+  '</div>' +
+  '<p class="lede"></p>' +
+  '<div class="body"></div>' +
+  '<dl class="facts"></dl>' +
+  '<p class="src">Magnitudes and distances: Hipparcos and Gaia. Sky brightness: ' +
+    '<a href="https://www.science.org/doi/10.1126/sciadv.1600377" target="_blank" rel="noopener">Falchi et&nbsp;al. 2016</a>.</p>';
 document.body.appendChild(stEl);
 {
   const st = document.createElement("style");
-  st.textContent = "#starstory .nm{font-family:var(--mono);font-size:.6rem;letter-spacing:.24em;"+
-    "text-transform:uppercase;color:#cfe0ff;opacity:.72;margin-bottom:.5rem}"+
-    "#starstory .bd{margin:0;font-size:clamp(.88rem,2.5vw,1.0rem);line-height:1.62;color:#eef4ff;opacity:.95}";
+  st.textContent = `
+  /* WHERE THE CARD SITS, AND WHY IT IS NOT NEGOTIABLE.
+     Every named star lands in the top half of the frame — the lowest of them,
+     Alrischa, reaches 51.5% and no further, because a star's y is s.y*AP.h*0.92
+     and the largest s.y in the list is 0.560. So the card lives strictly below
+     56% of the height, and to one side. That is not a layout preference: a card
+     over a star eats the tap meant for it, and tapping one star while another's
+     card is open has to work. It sat across the bottom centre at first and
+     swallowed Megrez; docked to the side it swallowed Alrischa. Below the stars
+     and to one side, it swallows nothing, and the constellation stays in view
+     while you read about it — which is the whole point of reading about it. */
+  #starcard{
+    position:fixed; z-index:14; bottom:3vh; max-height:45vh; width:min(94vw,32rem);
+    overflow-y:auto; transform:translateY(16px) scale(.985);
+    opacity:0; pointer-events:none; visibility:hidden;
+    transition:opacity .55s cubic-bezier(.2,.7,.3,1), transform .55s cubic-bezier(.2,.7,.3,1),
+               visibility 0s linear .55s;
+    padding:1.25rem 1.5rem 1.05rem;
+    color:#e8eeff;
+    /* a piece of night sky with a little depth in it, not a grey box */
+    background:
+      radial-gradient(120% 90% at 12% 0%, rgba(96,132,216,.20), transparent 62%),
+      radial-gradient(80% 70% at 96% 8%, rgba(184,150,255,.13), transparent 60%),
+      linear-gradient(168deg, rgba(13,19,42,.93), rgba(7,10,24,.95));
+    border:1px solid rgba(150,180,255,.20);
+    border-radius:18px;
+    -webkit-backdrop-filter:blur(20px) saturate(1.2); backdrop-filter:blur(20px) saturate(1.2);
+    box-shadow:0 32px 90px rgba(0,0,0,.6), 0 2px 0 rgba(190,214,255,.10) inset,
+               0 0 90px rgba(70,110,200,.13);
+  }
+  #starcard.dockL{ left:1.9rem; right:auto; }
+  #starcard.dockR{ right:1.9rem; left:auto; }
+  #starcard.on{ opacity:1; transform:translateY(0) scale(1); pointer-events:auto;
+                visibility:visible; transition-delay:0s,0s,0s; }
+  /* going from one star straight to another: the card stays put and its
+     contents change under a short dip, rather than the text jump-cutting */
+  #starcard.swap .hd, #starcard.swap .lede,
+  #starcard.swap .body, #starcard.swap .facts{ opacity:0; transform:translateY(5px); }
+  #starcard .hd, #starcard .lede, #starcard .body, #starcard .facts{
+    transition:opacity .34s ease, transform .34s ease; }
+  /* a hairline of light along the top edge, like the rim of a lens */
+  #starcard::before{ content:""; position:absolute; left:14%; right:14%; top:0; height:1px;
+    background:linear-gradient(90deg,transparent,rgba(198,220,255,.62),transparent); }
+
+  #starcard .x{ position:absolute; top:.75rem; right:.85rem; width:30px; height:30px;
+    display:grid; place-items:center; font:400 20px/1 var(--mono); color:#9fb4e0;
+    background:rgba(255,255,255,.05); border:1px solid rgba(160,190,255,.18);
+    border-radius:50%; cursor:pointer; transition:background .22s,color .22s,border-color .22s; }
+  #starcard .x:hover{ background:rgba(255,255,255,.14); color:#fff; border-color:rgba(190,214,255,.5); }
+  #starcard .x:focus-visible{ outline:2px solid #cfe0ff; outline-offset:2px; }
+
+  #starcard .hd{ display:flex; gap:1.15rem; align-items:flex-start; padding-right:2.4rem; }
+  #starcard .chart{ flex:none; width:106px; height:66px; overflow:visible; }
+  #starcard .ttl{ min-width:0; padding-top:.1rem; }
+  #starcard .whr{ margin:0 0 .34rem; font-family:var(--mono); font-size:.575rem; letter-spacing:.2em;
+    text-transform:uppercase; color:#9db6e8; line-height:1.5; }
+  #starcard h2.nm{ margin:0; font-size:clamp(1.5rem,4.6vw,2rem); line-height:1.06; font-weight:400;
+    letter-spacing:-.012em; color:#fbfdff; text-wrap:balance;
+    text-shadow:0 0 34px rgba(150,190,255,.34); }
+  #starcard .bay{ margin:.32rem 0 0; font-family:var(--mono); font-size:.66rem; letter-spacing:.05em;
+    color:#8fa8d8; }
+  #starcard h2.nm .pair{ display:block; font-family:var(--mono); font-size:.55rem; letter-spacing:.24em;
+    text-transform:uppercase; color:#ffd9a6; margin-top:.42rem; }
+
+  #starcard .lede{ margin:.95rem 0 0; font-size:clamp(1.02rem,2.9vw,1.2rem); line-height:1.5;
+    color:#f2f6ff; letter-spacing:-.004em; text-wrap:pretty; }
+  /* the rule under the lede is the point where the card stops being poetry and
+     starts being a reference */
+  #starcard .body{ margin-top:.85rem; padding-top:.9rem; border-top:1px solid rgba(150,180,255,.16); }
+  #starcard .body p{ margin:0 0 .82rem; font-size:clamp(.845rem,2.2vw,.915rem); line-height:1.6;
+    color:#c9d6f0; text-wrap:pretty; }
+  #starcard .body p:last-child{ margin-bottom:0; }
+
+  #starcard .facts{ display:grid; grid-template-columns:repeat(auto-fit,minmax(7.6rem,1fr));
+    gap:.1rem .9rem; margin:.9rem 0 0; padding-top:.85rem;
+    border-top:1px solid rgba(150,180,255,.16); }
+  #starcard .facts div{ padding:.42rem 0; }
+  #starcard .facts dt{ font-family:var(--mono); font-size:.545rem; letter-spacing:.18em;
+    text-transform:uppercase; color:#8ba4d6; }
+  #starcard .facts dd{ margin:.2rem 0 0; font-family:var(--mono); font-size:.86rem;
+    color:#eaf1ff; font-variant-numeric:tabular-nums; letter-spacing:.01em; }
+
+  #starcard .fade{ position:sticky; bottom:-1.3rem; height:4.4rem; margin:-4.4rem 0 0;
+    pointer-events:none;
+    background:linear-gradient(rgba(9,12,27,0) 0%, rgba(9,12,27,.72) 45%, rgba(9,12,27,.99) 100%); }
+  #starcard .src{ margin:.85rem 0 0; font-family:var(--mono); font-size:.545rem; letter-spacing:.06em;
+    line-height:1.7; color:#7f95c4; }
+  #starcard .src a{ color:#a9c2f0; }
+
+  /* the chart */
+  #starcard .chart .lnk{ stroke:rgba(160,190,255,.34); stroke-width:.7; fill:none; }
+  #starcard .chart .st{ fill:#cddcff; }
+  #starcard .chart .me{ fill:#fff6de; }
+  #starcard .chart .halo{ fill:none; stroke:#ffd9a6; stroke-width:1.1; }
+
+  /* narrow: there is no side to dock to, so it becomes a sheet at the bottom and
+     the sky above it stays clear */
+  @media (max-width:820px){
+    #starcard, #starcard.dockL, #starcard.dockR{
+      left:50%; right:auto; bottom:2.4vh; max-height:46vh; width:min(94vw,32rem);
+      transform:translate(-50%,16px) scale(.985); }
+    #starcard.on{ transform:translate(-50%,0) scale(1); }
+    #starcard{ padding:1.2rem 1.15rem 1rem; }
+    #starcard .hd{ gap:.85rem; }
+    #starcard .chart{ width:80px; height:50px; }
+  }
+  @media (prefers-reduced-motion:reduce){
+    #starcard{ transition:opacity .3s, visibility 0s linear .3s; transform:none; }
+    #starcard.on{ transform:none; }
+  }`;
   document.head.appendChild(st);
 }
-function showStarStory(name, body){
-  stEl.querySelector(".nm").textContent = name;
-  stEl.querySelector(".bd").textContent = body;
-  stEl.style.opacity="1"; stEl.style.transform="translate(-50%,0)";
-  STARY.storyT = 11;
+stEl.querySelector(".x").addEventListener("click", e => { e.stopPropagation(); hideStarStory(); });
+stEl.addEventListener("pointerdown", e => e.stopPropagation());
+
+/* The little constellation, built from the same coordinates as the sky. The two
+   outliers are not in Ursa Major, so a chart of the Dipper would be a lie for
+   them: they get their own frame, with the Dipper drawn faintly behind for
+   orientation, which is exactly what a real chart does. */
+function starChart(id){
+  const all = DIPPER.concat(OUTLIERS);
+  const sub = all.find(s => s.id === id);
+  if (!sub) return "";
+  const xs = all.map(s=>s.x), ys = all.map(s=>s.y);
+  const x0 = Math.min(...xs), x1 = Math.max(...xs);
+  const y0 = Math.min(...ys), y1 = Math.max(...ys);
+  const px = v => 11 + (v-x0)/(x1-x0||1) * 78;
+  const py = v => 11 + (v-y0)/(y1-y0||1) * 40;
+  let out = "";
+  for (const [a,b] of DIP_LINKS)
+    out += `<line class="lnk" x1="${px(DIPPER[a].x).toFixed(1)}" y1="${py(DIPPER[a].y).toFixed(1)}"`
+         + ` x2="${px(DIPPER[b].x).toFixed(1)}" y2="${py(DIPPER[b].y).toFixed(1)}"/>`;
+  for (const s of all){
+    const me = s.id === id;
+    const r = (me ? 2.5 : 1.15 + s.b*1.05).toFixed(2);
+    out += `<circle class="${me?"me":"st"}" cx="${px(s.x).toFixed(1)}" cy="${py(s.y).toFixed(1)}"`
+         + ` r="${r}"${me?"":` opacity="${(0.30+s.b*0.42).toFixed(2)}"`}/>`;
+    if (me) out += `<circle class="halo" cx="${px(s.x).toFixed(1)}" cy="${py(s.y).toFixed(1)}" r="6.2"/>`;
+    /* Alcor rides beside Mizar, which is the whole reason that card exists */
+    if (s.id === "mizar")
+      out += `<circle class="${id==="mizar"?"me":"st"}" cx="${(px(s.x)+3.4).toFixed(1)}"`
+           + ` cy="${(py(s.y)-2.6).toFixed(1)}" r="${id==="mizar"?1.5:1.0}"`
+           + `${id==="mizar"?"":' opacity="0.5"'}/>`;
+  }
+  return out;
+}
+
+let cardOn = null, swapT = 0;
+function showStarStory(id){
+  const c = STAR_CARD[id];
+  if (!c) return;
+  /* already open on a different star: dip, swap underneath, come back */
+  if (cardOn && cardOn !== id && stEl.classList.contains("on")){
+    stEl.classList.add("swap");
+    clearTimeout(swapT);
+    swapT = setTimeout(()=>{ fillStarCard(id); dockStarCard(id); stEl.classList.remove("swap"); }, 170);
+    cardOn = id;
+    return;
+  }
+  cardOn = id;
+  fillStarCard(id);
+  dockStarCard(id);
+  stEl.classList.add("on");
+  document.body.classList.add("reading");
+  stEl.setAttribute("aria-hidden", "false");
+  stEl.scrollTop = 0;
+  STARY.storyT = 0;                 // it stays until it is closed, or you leave
+}
+/* to the side with more sky on it, so the star you touched is never behind the
+   thing you touched it to read */
+function dockStarCard(id){
+  const s2 = DIPPER.concat(OUTLIERS).find(z => z.id === id);
+  const x = (s2 && s2._p) ? s2._p.x : W*0.5;
+  stEl.classList.toggle("dockR", x < W*0.5);
+  stEl.classList.toggle("dockL", x >= W*0.5);
+}
+function fillStarCard(id){
+  const c = STAR_CARD[id];
+  if (!c) return;
+  stEl.querySelector(".chart").innerHTML = starChart(id);
+  stEl.querySelector(".whr").textContent = c.where;
+  stEl.querySelector("h2.nm").innerHTML =
+    esc(c.name) + (c.sub ? '<span class="pair">' + esc(c.sub) + '</span>' : "");
+  stEl.querySelector(".bay").textContent = c.bayer;
+  stEl.querySelector(".lede").textContent = c.lede;
+  stEl.querySelector(".body").innerHTML =
+    c.body.split("\n\n").map(p => "<p>" + esc(p) + "</p>").join("");
+  stEl.querySelector(".facts").innerHTML =
+    c.facts.map(([k,v]) => "<div><dt>" + esc(k) + "</dt><dd>" + esc(v) + "</dd></div>").join("");
+  stEl.scrollTop = 0;
 }
 function hideStarStory(){
-  stEl.style.opacity="0"; stEl.style.transform="translate(-50%,10px)";
+  cardOn = null; clearTimeout(swapT); stEl.classList.remove("swap");
+  stEl.classList.remove("on");
+  document.body.classList.remove("reading");
+  stEl.setAttribute("aria-hidden", "true");
+  STARY.storyT = 0;
 }
+function esc(s){ return String(s).replace(/[&<>"]/g, ch =>
+  ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;" }[ch])); }
 
 /* ============================================================================
    THE HORIZON, AND THE BINOCULARS THAT REMEMBER
@@ -827,6 +1125,7 @@ function patchPlateKite(name){
 
 function drawKitePlate(t, dt, o){
   o = o||{};
+  apFull();
   const name = o.plate || "kiteDay";
   const air = cl01(o.air===undefined?0:o.air);
   const pl = getPlate(name);
