@@ -95,15 +95,25 @@ function loadOne(layer, name){
   if (layer.state !== "idle" || !AC) return;
   layer.state = "loading";
   const src = (window.__ASSETS && window.__ASSETS[name]) || (ASSET_DIR + encodeURIComponent(name));
-  fetch(src)
-    .then(r => r.ok ? r.arrayBuffer() : Promise.reject(new Error("HTTP "+r.status)))
-    .then(a => AC.decodeAudioData(a))
-    .then(b => { layer.buf = b; layer.state = "ready"; startOne(layer); })
-    .catch(() => { layer.state = "failed"; });   // the piece still works without it
+  /* XHR, not fetch. fetch() refuses a file:// URL outright, and this is opened
+     as a local file at least as often as it is served — which is exactly why
+     the room was silent. XHR still reaches a local file in most browsers, and
+     where the assets are embedded as data URIs it never has to reach at all. */
+  const done = a => AC.decodeAudioData(a)
+        .then(b => { layer.buf = b; layer.state = "ready"; startOne(layer); })
+        .catch(() => { layer.state = "failed"; });
+  try {
+    const xhr = new XMLHttpRequest();
+    xhr.open("GET", src, true);
+    xhr.responseType = "arraybuffer";
+    xhr.onload  = () => (xhr.response ? done(xhr.response) : (layer.state = "failed"));
+    xhr.onerror = () => { layer.state = "failed"; };
+    xhr.send();
+  } catch(e){ layer.state = "failed"; }          // the piece still works without it
 }
 function loadAmbience(){
-  loadOne(AMB, "natureambeicnewithbirdschirping.wav");
-  if (OPEN_LAYER) loadOne(AMB2, "countryside-birds-rooster.wav");
+  loadOne(AMB, "amb-garden.wav");
+  if (OPEN_LAYER) loadOne(AMB2, "amb-open.wav");
 }
 function startOne(layer){
   if (!AC || !layer.buf || layer.src) return;

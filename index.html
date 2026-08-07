@@ -4111,15 +4111,25 @@ function loadOne(layer, name){
   if (layer.state !== "idle" || !AC) return;
   layer.state = "loading";
   const src = (window.__ASSETS && window.__ASSETS[name]) || (ASSET_DIR + encodeURIComponent(name));
-  fetch(src)
-    .then(r => r.ok ? r.arrayBuffer() : Promise.reject(new Error("HTTP "+r.status)))
-    .then(a => AC.decodeAudioData(a))
-    .then(b => { layer.buf = b; layer.state = "ready"; startOne(layer); })
-    .catch(() => { layer.state = "failed"; });   // the piece still works without it
+  /* XHR, not fetch. fetch() refuses a file:// URL outright, and this is opened
+     as a local file at least as often as it is served — which is exactly why
+     the room was silent. XHR still reaches a local file in most browsers, and
+     where the assets are embedded as data URIs it never has to reach at all. */
+  const done = a => AC.decodeAudioData(a)
+        .then(b => { layer.buf = b; layer.state = "ready"; startOne(layer); })
+        .catch(() => { layer.state = "failed"; });
+  try {
+    const xhr = new XMLHttpRequest();
+    xhr.open("GET", src, true);
+    xhr.responseType = "arraybuffer";
+    xhr.onload  = () => (xhr.response ? done(xhr.response) : (layer.state = "failed"));
+    xhr.onerror = () => { layer.state = "failed"; };
+    xhr.send();
+  } catch(e){ layer.state = "failed"; }          // the piece still works without it
 }
 function loadAmbience(){
-  loadOne(AMB, "natureambeicnewithbirdschirping.wav");
-  if (OPEN_LAYER) loadOne(AMB2, "countryside-birds-rooster.wav");
+  loadOne(AMB, "amb-garden.wav");
+  if (OPEN_LAYER) loadOne(AMB2, "amb-open.wav");
 }
 function startOne(layer){
   if (!AC || !layer.buf || layer.src) return;
@@ -5880,6 +5890,11 @@ function litSprite(img, key, w, h, dark, warm){
     g.globalCompositeOperation = "multiply";
     g.fillStyle = rgba([255,196,126], warm);
     g.fillRect(0,0,cw,ch);
+    // multiply against a transparent pixel returns the source, so the fill just
+    // painted the sprite's empty margin solid. Redrawing the sprite through
+    // destination-in puts its own alpha back and takes the box away with it.
+    g.globalCompositeOperation = "destination-in";
+    g.drawImage(img, 0, 0, cw, ch);
   }
   if (dark > 0.002){
     g.globalCompositeOperation = "source-atop";   // here it means what it says
@@ -6333,34 +6348,41 @@ function drawTapedDrawing(t, rev, air){
 
 /* ============================================================================
    THE TOYS
-   The room is painted without them, so they are four sprites on the floor and
-   the basket is a fifth. Two things make this read as objects in a room rather
-   than stickers dragged over a picture:
+   Four sprites on the floor of a room that is painted without them.
 
-   [1] DEPTH. The floor recedes, so a toy further back is smaller and sits
-       higher in the frame. Its size comes from where it is, not from where it
-       started, and it changes while it is being carried.
-   [2] THE BASKET HAS AN INSIDE. The sprite is cut at its front rim: the back
-       half is drawn before the toys, the front half after. A toy put in is
-       behind the front wall, which is the whole difference between a thing in a
-       basket and a thing on top of one.
+   Each PNG carries a lot of empty space — between twelve and twenty-four per
+   cent of its height is transparent below the wheels. Line the image box up
+   with the floor and every toy hovers above it by that much, and by a different
+   amount each, which is exactly what they were doing. So the content bounds are
+   measured off each sprite's own alpha and it is the CONTENT that is placed:
+   the wheels land on the boards, and all four end up the same size relative to
+   each other rather than the same size relative to their padding.
 
-   Nothing is asked of the visitor here and no gate waits on it. It is a thing
-   to find, in a room they were going to look at anyway.
+   No drawn shadow. The paintings light this room from one low window and a
+   little ellipse under each toy was reading as a sticker's drop shadow, which
+   is the opposite of the point. What sits them in the room instead is the light
+   itself — the same warm, dim key everything else in here is under.
    ========================================================================== */
 const TOYS = [];
-const TOY_SRC = ["childrenstoyforbedroom.png","childrenstoyforbedroom2.png",
-                 "childrenstoyforbedroom3.png","childrensbedroomtoy4.png"];
+/* src, then the content box inside it: x, y, w, h as fractions of the file.
+   Measured from the alpha, not guessed. */
+const TOY_SRC = [
+  { src:"childrenstoyforbedroom.png",  box:[0.2726, 0.1178, 0.5243, 0.7506] },
+  { src:"childrenstoyforbedroom2.png", box:[0.1215, 0.1478, 0.6892, 0.6836] },
+  { src:"childrenstoyforbedroom3.png", box:[0.1215, 0.2379, 0.7587, 0.5958] },
+  { src:"childrensbedroomtoy4.png",    box:[0.1719, 0.1640, 0.6250, 0.6905] }
+];
 /* the floor, as seen: depth 0 at the far wall, 1 at the bottom of the frame */
 function floorDepth(y){ return cl01((y/H - 0.72) / 0.30); }
-function floorScale(y){ return 0.70 + 0.55*floorDepth(y); }
+function floorScale(y){ return 0.74 + 0.46*floorDepth(y); }
 
 function buildToys(){
   TOYS.length = 0;
-  const rest = [ {x:0.128,y:0.892}, {x:0.300,y:0.948}, {x:0.828,y:0.888}, {x:0.892,y:0.940} ];
+  // all four on bare boards: clear of the bed, clear of the rug, clear of the pot
+  const rest = [ {x:0.302,y:0.898}, {x:0.352,y:0.962}, {x:0.812,y:0.884}, {x:0.892,y:0.936} ];
   for (let i=0;i<TOY_SRC.length;i++){
-    TOYS.push({ src:TOY_SRC[i], x:rest[i].x, y:rest[i].y,
-                w:0.057 + hash(i*6.1)*0.011, rot:(hash(i*2.7)-0.5)*0.16,
+    TOYS.push({ src:TOY_SRC[i].src, box:TOY_SRC[i].box, x:rest[i].x, y:rest[i].y,
+                w:0.052 + hash(i*6.1)*0.009, rot:(hash(i*2.7)-0.5)*0.10,
                 held:0, settle:0, vy:0, seen:0 });
   }
 }
@@ -6370,49 +6392,54 @@ function toyRect(tt){
   const c = roomCam(CAM_CLOTH);
   const y = tt.y*H + c.y;
   const sc = floorScale(y);
-  const w = tt.w*W*sc, h = w * (im.naturalHeight/im.naturalWidth);
-  return { im, x: tt.x*W + c.x, y, w, h, sc };
+  const bw = tt.box[2]*im.naturalWidth, bh = tt.box[3]*im.naturalHeight;
+  const w = tt.w*W*sc, h = w * (bh/bw);
+  return { im, x: tt.x*W + c.x, y, w, h, sc,
+           sx: tt.box[0]*im.naturalWidth, sy: tt.box[1]*im.naturalHeight, sw: bw, sh: bh };
 }
 function drawOneToy(tt, t, lit){
   const r = toyRect(tt);
   if (!r) return;
   ctx.save();
   ctx.translate(r.x, r.y - tt.settle);
-  ctx.rotate(tt.rot + tt.held*Math.sin(t*3.1)*0.03);
-  // a contact shadow, tight when it is down and spread when it is lifted
-  const lift = tt.held;
-  ctx.save();
-  ctx.globalAlpha = (0.34 - lift*0.16)*(0.4+0.6*lit);
-  ctx.fillStyle = "rgb(24,12,3)";
-  ctx.beginPath();
-  ctx.ellipse(0, tt.settle + r.h*0.02 + lift*r.h*0.28,
-              r.w*(0.34+lift*0.16), r.h*0.075*(1+lift*0.5), 0, 0, TAU);
-  ctx.fill();
-  ctx.restore();
-  ctx.drawImage(litSprite(r.im, tt.src, r.w, r.h, 1-lit, 0), -r.w*0.5, -r.h, r.w, r.h);
+  ctx.rotate(tt.rot + tt.held*Math.sin(t*3.1)*0.02);
+  /* Warm and dim, because that is what the room is — and dimmer the further it
+     stands from the window, because one low sun through one window is the only
+     light in here and the corners of the floor are not in it. */
+  const away = cl01(Math.abs(tt.x - 0.52)/0.38);
+  const dark = cl01((1-lit)*0.85 + 0.16 + away*0.26);
+  ctx.drawImage(litSpriteBox(r.im, tt.src, r, dark, 0.62), -r.w*0.5, -r.h, r.w, r.h);
   ctx.restore();
 }
-/* The basket arrived as a flattened export: the transparency checkerboard its
-   editor was showing is baked into the pixels, so drawn straight it is a grey
-   tiled rectangle with a basket in the middle. The two checker greys are read
-   off the sprite's own corner — no guessing — and every pixel that is both
-   colourless and one of those two values is cut away. The basket itself is
-   strongly coloured wood, so nothing of it is at risk. Done once, then cached. */
-/* The basket is not here, and it is worth saying why rather than quietly
-   leaving it out. basketforbedroom.png is a flattened export: the transparency
-   checkerboard its editor was displaying is baked into the pixels, so drawn as
-   it is, it is a grey tiled rectangle with a basket in the middle of it. It can
-   be keyed out — but only by reading the sprite back off a canvas, and a
-   browser refuses that for an image loaded from file://, which is how this is
-   opened. So the strip works when the piece is served and silently does nothing
-   when it is not, and a half-keyed basket is worse than no basket.
-
-   Re-exported with real transparency — the way the toys and the birds already
-   are — it drops straight back in: cut the sprite at its front rim, draw the
-   back half before the toys and the front half after, and a toy put in is
-   behind the front wall. That is the whole of it. Until then the toys are
-   simply things on a floor, which can be picked up and put down. */
-
+/* the same lighting buffer, but taking a sub-rect of the source */
+function litSpriteBox(img, key, r, dark, warm){
+  const q = Math.round(dark*24)+"|"+(r.w|0)+"x"+(r.h|0)+"|"+Math.round(warm*12);
+  let e = TINTED[key];
+  if (e && e.q === q) return e.cv;
+  const cv2 = (e && e.cv) || document.createElement("canvas");
+  const cw = Math.max(1, Math.ceil(r.w)), ch = Math.max(1, Math.ceil(r.h));
+  if (cv2.width !== cw || cv2.height !== ch){ cv2.width = cw; cv2.height = ch; }
+  const g = cv2.getContext("2d");
+  g.clearRect(0,0,cw,ch);
+  g.globalCompositeOperation = "source-over";
+  g.drawImage(img, r.sx, r.sy, r.sw, r.sh, 0, 0, cw, ch);
+  if (warm > 0){
+    g.globalCompositeOperation = "multiply";
+    g.fillStyle = rgba([255,188,116], warm);
+    g.fillRect(0,0,cw,ch);
+    // and put the sprite's own alpha back, or the margin stays as a warm box
+    g.globalCompositeOperation = "destination-in";
+    g.drawImage(img, r.sx, r.sy, r.sw, r.sh, 0, 0, cw, ch);
+  }
+  if (dark > 0.002){
+    g.globalCompositeOperation = "source-atop";
+    g.fillStyle = rgba([14,7,1], dark);
+    g.fillRect(0,0,cw,ch);
+  }
+  g.globalCompositeOperation = "source-over";
+  TINTED[key] = { q, cv: cv2 };
+  return cv2;
+}
 function toysInteract(t, dt){
   const held = TOYS.find(tt => tt.held);
   if (P.down && P.active){
@@ -6421,7 +6448,7 @@ function toysInteract(t, dt){
       for (let i=TOYS.length-1;i>=0;i--){
         const r = toyRect(TOYS[i]);
         if (!r) continue;
-        if (Math.abs(P.x-r.x) < r.w*0.60 && P.y < r.y+r.h*0.18 && P.y > r.y-r.h*1.05){
+        if (Math.abs(P.x-r.x) < r.w*0.62 && P.y < r.y+r.h*0.16 && P.y > r.y-r.h*1.06){
           TOYS[i].held = 1; TOYS[i].seen = 1;
           cv.className = "grabbing"; sfx.thud();
           break;
@@ -6453,7 +6480,7 @@ function toysInteract(t, dt){
   if (!P.down && !held){
     for (const tt of TOYS){
       const r = toyRect(tt);
-      if (r && Math.abs(P.x-r.x) < r.w*0.60 && P.y < r.y && P.y > r.y-r.h){
+      if (r && Math.abs(P.x-r.x) < r.w*0.62 && P.y < r.y && P.y > r.y-r.h){
         cv.className = "grabbable"; break;
       }
     }
@@ -10880,6 +10907,11 @@ window.__bluer = {
   get gates(){ return done; },
   get fps(){ return window.__fps; },
   get missing(){ return imgFailed.slice(); },
+  audio(){ return { ctx: AC ? AC.state : "none", on: soundOn,
+                    a1: AMB.state, a2: AMB2.state,
+                    g1: AMB.gain ? +AMB.gain.gain.value.toFixed(3) : null,
+                    g2: AMB2.gain ? +AMB2.gain.gain.value.toFixed(3) : null,
+                    playing: !!AMB.src, playing2: !!AMB2.src }; },
   cordBall, curtainGap, CTR, CG, WIN,
   get birds(){ return WIREBIRDS; },
   intro(){ return introOn; },
