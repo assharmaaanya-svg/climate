@@ -68,14 +68,14 @@ function curtainLut(airQ){
    the cloth clears the glass when it is drawn back, and covers the frame when
    it is not. */
 const CG = {
-  top:  0.040,        // just under the rod this file's neighbour draws
-  hemC: 0.845,        // hem, curtains closed — on the boards
-  hemO: 0.838,        // hem, drawn back
-  lOut: 0.298,        // left panel, outer edge (the rod's own end)
-  rOut: 0.752,        // right panel, outer edge
-  mid:  0.525,        // where they meet
-  lIn:  0.386,        // drawn back, clear of the glass at 0.377
-  rIn:  0.672,        // drawn back, clear of the glass at 0.663
+  top:  0.046,        // just under the rod this file's neighbour draws
+  hemC: 0.830,        // hem, curtains closed — on the boards
+  hemO: 0.824,        // hem, drawn back
+  lOut: 0.296,        // left panel, outer edge (the rod's own end)
+  rOut: 0.750,        // right panel, outer edge
+  mid:  0.523,        // where they meet
+  lIn:  0.378,        // drawn back, clear of the glass at 0.382
+  rIn:  0.664,        // drawn back, clear of the glass at 0.658
   slack: 1.55         // arc length as a multiple of the closed width
 };
 

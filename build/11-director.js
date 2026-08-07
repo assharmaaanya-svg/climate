@@ -698,6 +698,7 @@ function updText(now, dt){
   const moreToGo = T.p < TOTAL-0.35 && bid!=="f-end";
   sdownEl.classList.toggle("on", moreToGo && !introOn);
   sdownEl.classList.toggle("dark", light);
+  sdownEl.setAttribute("aria-hidden", String(!(moreToGo && !introOn)));
   askEl.classList.toggle("urge", T.push>0.3);
 
   /* the gate marker */
@@ -889,6 +890,7 @@ function boot(){
   buildGrid();
   buildFireflies();
   buildWireBirds();
+  buildToys();
   buildEvidenceCards();
   // paint the drawing now: it is already taped to the bedroom wall in the very
   // first frame, years before the visitor is handed it
@@ -914,6 +916,7 @@ function boot(){
       try{ beginEl.blur(); }catch(_){}
     };
     beginEl.addEventListener("click", go);
+
     introEl.addEventListener("click", e=>{ if (e.target===introEl) go(); });
     window.addEventListener("keydown", e=>{
       if (introOn && (e.key==="Enter" || e.key===" " || e.key==="Escape")){ e.preventDefault(); go(); }
@@ -932,7 +935,7 @@ document.getElementById("restart").addEventListener("click", ()=>{
   ROOM.cL=ROOM.cR=ROOM.sash=ROOM.latch=0; ROOM.latchDone=false;
   PROOM.cL=PROOM.cR=PROOM.open=PROOM.sash=0; PROOM.nudgeTo=0; PROOM.idle=0; PROOM.demo=0;
   PROOM.breeze=0; PROOM.grab=0; PROOM.sashGrab=0; PROOM.everMoved=0;
-  CORD.swing=0; CORD.swingV=0; CORD.grab=0; buildWireBirds();
+  CORD.swing=0; CORD.swingV=0; CORD.grab=0; buildWireBirds(); buildToys();
   for (const k in done) delete done[k];
   WASH.passed=0; WASH.shirtFound=false; WASH.walk=0; WASH.brushed=0;
   for (const st of CONST) st.lit=false;
@@ -959,7 +962,7 @@ window.__bluer = {
   intro(){ return introOn; },
   reset(){ PROOM.cL=PROOM.cR=PROOM.open=PROOM.sash=0; PROOM.nudgeTo=0;
            PROOM.idle=0; PROOM.demo=0; CORD.swing=0; CORD.swingV=0;
-           buildWireBirds(); delete done.curtain; delete done.sash; }
+           buildWireBirds(); buildToys(); delete done.curtain; delete done.sash; }
 };
 
 if (document.readyState==="loading") document.addEventListener("DOMContentLoaded", boot);

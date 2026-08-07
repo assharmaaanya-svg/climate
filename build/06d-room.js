@@ -32,14 +32,14 @@
 /* the window, measured off bedroomwithnobulb…png through the plate crop
    (image y 0.045 → 0.875 maps to the frame) */
 const WIN = {
-  fx0: 0.352, fx1: 0.697,      // outer frame, left and right
-  gx0: 0.377, gx1: 0.663,      // glass
-  mull: 0.520,                 // the centre mullion
-  fy0: 0.058, fy1: 0.789,      // outer frame, top and bottom (screen fractions)
-  gy0: 0.114, gy1: 0.726,      // glass
-  sill: 0.800,
-  rodY: 0.034, rodX0: 0.298, rodX1: 0.752,
-  wireY: [0.352, 0.386]        // the utility lines the birds sit on
+  fx0: 0.350, fx1: 0.694,      // outer frame, left and right
+  gx0: 0.382, gx1: 0.658,      // glass
+  mull: 0.5215,                // the centre mullion
+  fy0: 0.066, fy1: 0.741,      // outer frame, top and bottom (screen fractions)
+  gy0: 0.108, gy1: 0.711,      // glass
+  sill: 0.777,
+  rodY: 0.040, rodX0: 0.296, rodX1: 0.750,
+  wireY: [0.372, 0.398]        // the utility lines the birds sit on
 };
 
 /* ---------------------------------------------------------------- THE CAMERA
@@ -170,10 +170,10 @@ function drawCasement(t, dt, o){
    nothing at all to the ball.
    ========================================================================== */
 const CORD = {
-  x: 0.520,            // hanging in front of the mullion
+  x: 0.5215,           // hanging in front of the mullion
   // At rest it hangs clear of the painted latch on the mullion; pulling is what
   // brings it down over the handle, which is the whole point of pulling it.
-  rest: 0.238,         // where the ball sits at rest, as a fraction of H
+  rest: 0.226,         // where the ball sits at rest, as a fraction of H
   drop: 0.145,         // how much further it comes down when pulled
   ballW: 0.034,        // the ball, as a fraction of MIN
   splitY: 0.845,       // where the cord ends and the ball begins, in the sprite
@@ -320,7 +320,7 @@ const WIREBIRDS = [];
    Turning round happens instantly, hidden inside a wing-flutter, because that
    is how it happens — a bird does not narrow to nothing and widen the other
    way. */
-const BIRD_ACTS = ["flick","flick","flick","shuffle","preen","flutter","bob","bob"];
+const BIRD_ACTS = ["flick","flick","flick","flick","shuffle","preen","ruffle","bob","bob","settle"];
 function buildWireBirds(){
   WIREBIRDS.length = 0;
   const spots = [
@@ -334,72 +334,67 @@ function buildWireBirds(){
       u: s.u, wire: s.w,
       scale: 0.62 + hash(i*5.1)*0.30,
       flip: hash(i*9.7) > 0.62 ? -1 : 1,
-      act: null, actT: 0, actD: 0, dir: 1,
-      wait: 0.8 + hash(i*3.3)*5.5,          // each one keeps its own counsel
-      calm: 0.7 + hash(i*7.7)*0.9,          // some are fidgety, some are not
-      gone: 0, goneT: 0, flyPh: hash(i*2.2)*TAU
+      act: null, actT: 0, actD: 0, dir: 1, turnAt: -1,
+      wait: 0.8 + hash(i*3.3)*5.5,
+      calm: 0.7 + hash(i*7.7)*0.9,
+      trem: hash(i*4.9)*TAU
     });
   }
 }
 function updWireBirds(dt, t, o){
-  const startled = o.startle;
+  const gust = cl01(o.gust||0);
   for (let i=0;i<WIREBIRDS.length;i++){
     const b = WIREBIRDS[i];
-
-    if (b.gone <= 0 && b.goneT <= 0){
-      if (b.act){
-        b.actT += dt;
-        if (b.actT >= b.actD){
-          b.act = null;
-          // long, uneven gaps. Startled birds fidget; settled ones sit.
-          b.wait = (1.6 + Math.random()*7.0) / b.calm;
-        }
-      } else {
-        b.wait -= dt;
-        if (b.wait <= 0){
-          b.act = BIRD_ACTS[(Math.random()*BIRD_ACTS.length)|0];
-          b.actT = 0;
-          b.dir = Math.random() < 0.5 ? -1 : 1;
-          b.actD = b.act==="preen" ? 0.34 + Math.random()*0.30
-                 : b.act==="shuffle" ? 0.24
-                 : b.act==="flutter" ? 0.22
-                 : 0.14 + Math.random()*0.06;
-          if (b.act==="shuffle") b.u = cl(b.u + b.dir*0.011, 0.035, 0.935);
-          // turning round is instant, and hidden inside the flutter
-          if (b.act==="flutter" && Math.random()<0.55) b.turnAt = 0.5; else b.turnAt = -1;
-        }
+    if (b.act){
+      b.actT += dt;
+      if (b.actT >= b.actD){
+        b.act = null;
+        b.wait = (1.5 + Math.random()*6.5) / b.calm;
+      }
+    } else {
+      b.wait -= dt * (1 + gust*2.2);        // a draught makes them restless
+      if (b.wait <= 0){
+        b.act = BIRD_ACTS[(Math.random()*BIRD_ACTS.length)|0];
+        b.actT = 0;
+        b.dir = Math.random() < 0.5 ? -1 : 1;
+        b.actD = b.act==="preen"   ? 0.40 + Math.random()*0.35
+               : b.act==="settle"  ? 0.55 + Math.random()*0.30
+               : b.act==="shuffle" ? 0.26
+               : b.act==="ruffle"  ? 0.30
+               : 0.15 + Math.random()*0.07;
+        if (b.act==="shuffle") b.u = cl(b.u + b.dir*0.010, 0.035, 0.935);
+        b.turnAt = (b.act==="ruffle" && Math.random()<0.45) ? 0.45 : -1;
       }
     }
-
-    // the window opening puts them off the wire, one at a time, not as a block
-    if (startled && !b.gone && b.goneT<=0){
-      if (hash(i*13.1) < startled*0.85) b.goneT = 0.10 + hash(i*17.3)*0.95;
-    }
-    if (b.goneT > 0){
-      b.goneT -= dt;
-      if (b.goneT <= 0){ b.gone = 0.0001; b.act = null; if (soundOn) sfx.flap(); }
-    }
-    if (b.gone > 0) b.gone = Math.min(1, b.gone + dt*0.40);
-    b.flyPh += dt*13;
+    b.trem += dt*(1.6 + i*0.23);
   }
 }
-/* the pose an action puts a bird in, at the instant it is in */
-function birdPose(b){
-  const p = { dx:0, dy:0, rot:0, sy:1, sx:1 };
+/* The pose, in units of the bird's own height, measured from its feet. Feet are
+   the pivot for everything: a bird bobbing rotates about where it grips the
+   wire, and rotating about the middle of the sprite instead is exactly what
+   makes a cut-out look like a cut-out. */
+function birdPose(b, t){
+  // never perfectly frozen, but never visibly moving either
+  const p = { dx: Math.sin(b.trem*0.9)*0.006, dy: Math.sin(b.trem*1.7)*0.005,
+              rot: Math.sin(b.trem*0.6)*0.006, sy:1, sx:1 };
   if (!b.act) return p;
   const k = cl01(b.actT/b.actD);
-  const snap = k < 0.35 ? ease.o3(k/0.35) : 1 - ease.io((k-0.35)/0.65);  // out fast, back slow
+  // out fast, back slow, with a breath of anticipation before it goes
+  const anti = k < 0.12 ? -ease.io(k/0.12)*0.22 : 0;
+  const snap = k < 0.34 ? ease.o3((k-0.12)/0.22) : 1 - ease.io((k-0.34)/0.66);
+  const m = Math.max(0, snap) + anti;
   switch (b.act){
-    case "flick":   p.rot = b.dir*0.13*snap; p.dx = b.dir*0.05*snap; break;
-    case "bob":     p.dy = -0.16*snap; p.rot = -0.05*snap; break;
-    case "preen":   p.rot = b.dir*0.30*snap; p.dy = 0.07*snap; p.sy = 1-0.10*snap; break;
-    case "shuffle": p.dx = b.dir*0.30*Math.sin(k*PI); p.dy = -0.20*Math.sin(k*PI); break;
-    case "flutter": {
-      const f = Math.sin(k*PI);
-      p.dy = -0.26*f; p.sy = 1 + 0.16*f; p.sx = 1 - 0.06*f; p.rot = b.dir*0.08*f;
-      if (b.turnAt>0 && k>=b.turnAt){ b.flip = -b.flip; b.turnAt = -1; }
-      break;
-    }
+    case "flick":   p.rot += b.dir*0.12*m; p.dx += b.dir*0.03*m; break;
+    case "bob":     p.dy -= 0.10*m; p.rot += -0.07*m; break;
+    case "preen":   p.rot += b.dir*0.26*m; p.dy += 0.04*m; p.sy = 1-0.09*m; break;
+    case "settle":  p.sy = 1-0.07*m; p.dy += 0.03*m; p.rot += b.dir*0.03*m; break;
+    case "shuffle": { const f=Math.sin(k*PI);
+                      p.dx += b.dir*0.26*f; p.dy -= 0.14*f; p.rot += b.dir*0.06*f; break; }
+    case "ruffle":  { const f=Math.sin(k*PI);
+                      p.sy = 1+0.10*f; p.sx = 1+0.06*f; p.dy -= 0.05*f;
+                      p.rot += Math.sin(k*PI*5)*0.035*f;
+                      if (b.turnAt>0 && k>=b.turnAt){ b.flip = -b.flip; b.turnAt = -1; }
+                      break; }
   }
   return p;
 }
@@ -408,7 +403,6 @@ function drawWireBirds(t, o){
   if (!imgReady(im)) return;
   const vis = cl01(o.vis);
   if (vis < 0.02) return;
-  // the glass moves at the wall's depth; what is behind it moves less
   const cw = roomCam(CAM_WALL), cb = roomCam(CAM_WIRE);
   const gx0 = WIN.gx0*W + cw.x, gx1 = WIN.gx1*W + cw.x;
   const gy0 = WIN.gy0*H + cw.y, gy1 = WIN.gy1*H + cw.y;
@@ -421,30 +415,19 @@ function drawWireBirds(t, o){
 
   for (const b of WIREBIRDS){
     const c = b.cut;
-    const dw = (gx1-gx0) * 0.052 * b.scale;
+    const dw = (gx1-gx0) * 0.050 * b.scale;
     const dh = dw * (c.h/c.w);
-    const wy = WIN.wireY[b.wire]*H;
-    const ps = birdPose(b);
-    let x = gx0 + (gx1-gx0)*b.u + bx + ps.dx*dw;
-    let y = wy + cw.y + by - dh*0.90 + ps.dy*dh;
-    let a = vis, rot = ps.rot, sy = ps.sy, sx = ps.sx;
-
-    if (b.gone > 0){
-      const g2 = ease.o(b.gone);
-      x += (b.flip>0 ? 1 : -1) * (gx1-gx0) * 0.55 * g2;
-      y -= (gy1-gy0) * 0.42 * g2 * g2 + Math.sin(b.flyPh)*dh*0.22*(1-g2*0.6);
-      sy = 1 + Math.sin(b.flyPh)*0.20*(1-g2*0.5);          // wingbeats
-      rot = (b.flip>0?-1:1) * 0.26 * g2;
-      a *= 1 - sm(b.gone, 0.55, 1.0);
-      if (a < 0.01) continue;
-    }
+    const ps = birdPose(b, t);
+    // the feet: where it grips the wire, and the pivot for everything it does
+    const fx = gx0 + (gx1-gx0)*b.u + bx + ps.dx*dw;
+    const fy = WIN.wireY[b.wire]*H + cw.y + by + ps.dy*dh;
 
     ctx.save();
-    ctx.globalAlpha = a;
-    ctx.translate(x, y + dh*0.5);
-    ctx.rotate(rot);
-    ctx.scale(b.flip*sx, sy);
-    ctx.drawImage(im, c.x, c.y, c.w, c.h, -dw*0.5, -dh*0.5, dw, dh);
+    ctx.globalAlpha = vis;
+    ctx.translate(fx, fy);
+    ctx.rotate(ps.rot);
+    ctx.scale(b.flip*ps.sx, ps.sy);
+    ctx.drawImage(im, c.x, c.y, c.w, c.h, -dw*0.5, -dh, dw, dh);
     ctx.restore();
   }
   ctx.restore();
@@ -457,7 +440,7 @@ function drawWireBirds(t, o){
    muffled through glass. Open the window and the same birds are suddenly in the
    room — nothing new arrives, the glass just stops being there.
    ========================================================================== */
-const RSND = { chirp: 1.6, was: 0, wasOpen: 0 };
+const RSND = { was: 0 };
 function roomSound(dt, t, rev){
   const sash = PROOM.sash;
 
@@ -468,18 +451,11 @@ function roomSound(dt, t, rev){
   if (RSND.was < 0.93 && sash >= 0.93) sfx.casementRest();
   RSND.was = sash;
 
-  if (!soundOn) return;
-  // through glass, then through nothing
-  const near   = 0.14 + 0.26*rev + 1.55*sash;      // how loud
-  const bright = 0.08 + 0.20*rev + 0.82*sash;      // how much high end survives
-  const rate   = (0.20 + 0.26*rev + 1.35*sash);    // chirps a second
-  RSND.chirp -= dt*rate;
-  if (RSND.chirp <= 0){
-    RSND.chirp = 0.5 + Math.random()*2.4;
-    sfx.bird(near, bright);
-    // birds answer each other, so sometimes a second one follows
-    if (Math.random() < 0.34*(0.4+sash*1.6)) RSND.chirp = 0.14 + Math.random()*0.20;
-  }
+  /* The birds are a recording, and it runs the whole time. Opening the window
+     does not start it — it takes the glass out from in front of it. */
+  const open = 0.10 + 0.16*rev + 0.74*ease.o(sash);
+  const vol  = 0.16 + 0.24*rev + 0.62*ease.o(sash);
+  ambience(vol, open);
 }
 
 /* ------------------------------------------------------- THE DRAWING ON THE WALL
@@ -513,6 +489,145 @@ function drawTapedDrawing(t, rev, air){
 }
 
 /* ============================================================================
+   THE TOYS
+   The room is painted without them, so they are four sprites on the floor and
+   the basket is a fifth. Two things make this read as objects in a room rather
+   than stickers dragged over a picture:
+
+   [1] DEPTH. The floor recedes, so a toy further back is smaller and sits
+       higher in the frame. Its size comes from where it is, not from where it
+       started, and it changes while it is being carried.
+   [2] THE BASKET HAS AN INSIDE. The sprite is cut at its front rim: the back
+       half is drawn before the toys, the front half after. A toy put in is
+       behind the front wall, which is the whole difference between a thing in a
+       basket and a thing on top of one.
+
+   Nothing is asked of the visitor here and no gate waits on it. It is a thing
+   to find, in a room they were going to look at anyway.
+   ========================================================================== */
+const TOYS = [];
+const TOY_SRC = ["childrenstoyforbedroom.png","childrenstoyforbedroom2.png",
+                 "childrenstoyforbedroom3.png","childrensbedroomtoy4.png"];
+/* the floor, as seen: depth 0 at the far wall, 1 at the bottom of the frame */
+function floorDepth(y){ return cl01((y/H - 0.72) / 0.30); }
+function floorScale(y){ return 0.70 + 0.55*floorDepth(y); }
+
+function buildToys(){
+  TOYS.length = 0;
+  const rest = [ {x:0.115,y:0.905}, {x:0.318,y:0.960}, {x:0.815,y:0.900}, {x:0.885,y:0.955} ];
+  for (let i=0;i<TOY_SRC.length;i++){
+    TOYS.push({ src:TOY_SRC[i], x:rest[i].x, y:rest[i].y,
+                w:0.088 + hash(i*6.1)*0.016, rot:(hash(i*2.7)-0.5)*0.16,
+                held:0, settle:0, vy:0, seen:0 });
+  }
+}
+function toyRect(tt){
+  const im = IMG[tt.src];
+  if (!imgReady(im)) return null;
+  const c = roomCam(CAM_CLOTH);
+  const y = tt.y*H + c.y;
+  const sc = floorScale(y);
+  const w = tt.w*W*sc, h = w * (im.naturalHeight/im.naturalWidth);
+  return { im, x: tt.x*W + c.x, y, w, h, sc };
+}
+function drawOneToy(tt, t, lit){
+  const r = toyRect(tt);
+  if (!r) return;
+  ctx.save();
+  ctx.translate(r.x, r.y - tt.settle);
+  ctx.rotate(tt.rot + tt.held*Math.sin(t*3.1)*0.03);
+  // a contact shadow, tight when it is down and spread when it is lifted
+  const lift = tt.held;
+  ctx.save();
+  ctx.globalAlpha = (0.34 - lift*0.16)*(0.4+0.6*lit);
+  ctx.fillStyle = "rgb(24,12,3)";
+  ctx.beginPath();
+  ctx.ellipse(0, tt.settle + r.h*0.02 + lift*r.h*0.28,
+              r.w*(0.34+lift*0.16), r.h*0.075*(1+lift*0.5), 0, 0, TAU);
+  ctx.fill();
+  ctx.restore();
+  ctx.drawImage(r.im, -r.w*0.5, -r.h, r.w, r.h);
+  // the room's light, on it
+  ctx.globalCompositeOperation = "source-atop";
+  ctx.fillStyle = rgba([12,6,1], 1-lit);
+  ctx.fillRect(-r.w*0.5, -r.h, r.w, r.h);
+  ctx.restore();
+}
+/* The basket arrived as a flattened export: the transparency checkerboard its
+   editor was showing is baked into the pixels, so drawn straight it is a grey
+   tiled rectangle with a basket in the middle. The two checker greys are read
+   off the sprite's own corner — no guessing — and every pixel that is both
+   colourless and one of those two values is cut away. The basket itself is
+   strongly coloured wood, so nothing of it is at risk. Done once, then cached. */
+/* The basket is not here, and it is worth saying why rather than quietly
+   leaving it out. basketforbedroom.png is a flattened export: the transparency
+   checkerboard its editor was displaying is baked into the pixels, so drawn as
+   it is, it is a grey tiled rectangle with a basket in the middle of it. It can
+   be keyed out — but only by reading the sprite back off a canvas, and a
+   browser refuses that for an image loaded from file://, which is how this is
+   opened. So the strip works when the piece is served and silently does nothing
+   when it is not, and a half-keyed basket is worse than no basket.
+
+   Re-exported with real transparency — the way the toys and the birds already
+   are — it drops straight back in: cut the sprite at its front rim, draw the
+   back half before the toys and the front half after, and a toy put in is
+   behind the front wall. That is the whole of it. Until then the toys are
+   simply things on a floor, which can be picked up and put down. */
+
+function toysInteract(t, dt){
+  const held = TOYS.find(tt => tt.held);
+  if (P.down && P.active){
+    if (!held){
+      // the nearest toy under the pointer, by its own drawn size
+      for (let i=TOYS.length-1;i>=0;i--){
+        const r = toyRect(TOYS[i]);
+        if (!r) continue;
+        if (Math.abs(P.x-r.x) < r.w*0.60 && P.y < r.y+r.h*0.18 && P.y > r.y-r.h*1.05){
+          TOYS[i].held = 1; TOYS[i].seen = 1;
+          cv.className = "grabbing"; sfx.thud();
+          break;
+        }
+      }
+    } else {
+      const c = roomCam(CAM_CLOTH);
+      held.x = cl((P.x - c.x)/W, 0.055, 0.945);
+      held.y = cl((P.y - c.y)/H, 0.760, 0.985);
+      held.rot = lerp(held.rot, cl(P.dx*0.010, -0.22, 0.22), Math.min(1, dt*6));
+    }
+  } else if (held){
+    // set down where it was let go, with a small drop onto the boards
+    held.held = 0;
+    cv.className = "";
+    held.rot = lerp(held.rot, (Math.random()-0.5)*0.10, 0.6);
+    held.settle = Math.max(held.settle, MIN*0.010);
+    held.vy = 0;
+    sfx.thud();
+  }
+  // whatever was dropped comes to rest
+  for (const tt of TOYS){
+    if (tt.settle > 0.05){
+      tt.vy += dt*1400;
+      tt.settle -= tt.vy*dt;
+      if (tt.settle <= 0){ tt.settle = 0; tt.vy = 0; }
+    }
+  }
+  if (!P.down && !held){
+    for (const tt of TOYS){
+      const r = toyRect(tt);
+      if (r && Math.abs(P.x-r.x) < r.w*0.60 && P.y < r.y && P.y > r.y-r.h){
+        cv.className = "grabbable"; break;
+      }
+    }
+  }
+}
+function drawToys(t, dt, lit){
+  if (!TOYS.length) buildToys();
+  // furthest back first, so one standing in front of another overlaps it
+  const order = TOYS.slice().sort((a,b)=> (a.held-b.held) || (a.y-b.y));
+  for (const tt of order) drawOneToy(tt, t, lit);
+}
+
+/* ============================================================================
    THE CHAPTER
    ========================================================================== */
 function drawRoom(t, dt, o){
@@ -529,7 +644,10 @@ function drawRoom(t, dt, o){
   drawCasement(t, dt, { open: ease.io(cl01(PROOM.sash)), air });
 
   /* the birds, before the curtains, because they are outside */
-  updWireBirds(dt, t, { startle: PROOM.sash>0.10 ? cl01((PROOM.sash-0.10)*1.6) : 0 });
+  /* They do not leave. A window opening across a garden makes birds look up,
+     not abandon the wire, and a flock of cut-outs sliding off screen was the
+     least convincing thing in the room. */
+  updWireBirds(dt, t, { gust: PROOM.sash*0.8 + PROOM.breeze*0.4 });
   drawWireBirds(t, { vis: rev });
 
   /* the room is one room. How dark it is, is how far the curtains are still
@@ -568,6 +686,12 @@ function drawRoom(t, dt, o){
     ctx.globalCompositeOperation = "multiply";
     ctx.drawImage(TMP, 0, 0);
     ctx.restore();
+  }
+
+  /* the floor: the basket, and whatever is still lying on it */
+  if (rev > 0.15){
+    toysInteract(t, dt);
+    drawToys(t, dt, 0.24 + 0.62*rev*(1-air*0.3));
   }
 
   /* the drawing taped over the bed, years before it is handed over */

@@ -185,19 +185,23 @@
   #intro .fine{ margin-top:clamp(.9rem,2vh,1.4rem); font-family:var(--mono); font-size:.6rem; letter-spacing:.14em;
     text-transform:uppercase; opacity:.42; }
 
-  /* ---------- the scroll arrow: small, quiet, and always there ---------- */
-  #sdown{ position:fixed; left:50%; bottom:1.5vh; transform:translateX(-50%); z-index:5;
-    display:flex; flex-direction:column; align-items:center; gap:.35em;
-    font-family:var(--mono); font-size:.5rem; letter-spacing:.24em; text-transform:uppercase;
-    color:var(--ink); text-shadow:var(--sh); opacity:0; transition:opacity 1s;
-    pointer-events:none; }
-  #sdown.on{ opacity:.34; }
+  /* ---------- the scroll arrow: always there, and only ever a sign ----------
+     It was briefly a button too. It should not be: this piece is drag-and-click
+     the whole way through, and a second thing that advances the story invites
+     an accidental press to skip a moment the visitor had not finished. One way
+     through, said clearly and permanently. Skip, top right, is the escape. */
+  #sdown{ position:fixed; left:50%; bottom:2.2vh; transform:translateX(-50%); z-index:11;
+    display:flex; flex-direction:column; align-items:center; gap:.45em;
+    font-family:var(--mono); font-size:.62rem; letter-spacing:.22em; text-transform:uppercase;
+    color:var(--ink); text-shadow:var(--sh); opacity:0; transition:opacity 1s, transform .25s;
+    background:none; border:0; padding:.5em 1.1em; pointer-events:none; }
+  #sdown.on{ opacity:.62; }
   #sdown.dark{ color:#1d2a36; text-shadow:0 1px 12px rgba(255,255,255,.85); }
-  #sdown i{ width:7px; height:7px; border-right:1.4px solid currentColor;
-    border-bottom:1.4px solid currentColor; transform:rotate(45deg);
+  #sdown i{ width:12px; height:12px; border-right:2px solid currentColor;
+    border-bottom:2px solid currentColor; transform:rotate(45deg);
     animation:sbob 2.6s ease-in-out infinite; }
-  @keyframes sbob{ 0%,100%{ transform:rotate(45deg) translate(0,0); opacity:.55 }
-                   50%{ transform:rotate(45deg) translate(2px,2px); opacity:1 } }
+  @keyframes sbob{ 0%,100%{ transform:rotate(45deg) translate(0,0); opacity:.6 }
+                   50%{ transform:rotate(45deg) translate(3px,3px); opacity:1 } }
   @media (prefers-reduced-motion: reduce){ #sdown i{ animation:none; } }
 
   .sr{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }

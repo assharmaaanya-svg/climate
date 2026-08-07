@@ -1,6 +1,7 @@
 /* ============================================================================
    SOUND
-   Everything is synthesised — no files, nothing to load. Layers cross-fade with
+   Almost everything is synthesised. The one recording is the nature ambience —
+   real birds, which no oscillator is going to talk anyone into. Layers cross-fade with
    the world state, so sound carries across every transition instead of cutting.
    The traffic bed and the wind bed trade places as the air loads: you hear the
    change before you notice you are hearing it.
@@ -58,10 +59,79 @@ function initAudio(){
 
     // crickets: a gated chirp band for the night
     BED.crickets = bed(AC, master, "bandpass", 4400, 6, 0.0);
+
+    /* The recording. It runs from the moment sound is on and never restarts —
+       what changes is how much glass is between it and the listener, which is a
+       gain and a filter, not a different track. Birds do not begin when a
+       window opens; they were always out there. */
+    AMB.gain = AC.createGain();  AMB.gain.gain.value = 0;
+    AMB.filt = AC.createBiquadFilter(); AMB.filt.type = "lowpass";
+    AMB.filt.frequency.value = 700; AMB.filt.Q.value = 0.4;
+    AMB.filt.connect(AMB.gain); AMB.gain.connect(master);
+    if (OPEN_LAYER){
+      AMB2.gain = AC.createGain(); AMB2.gain.gain.value = 0;
+      AMB2.filt = AC.createBiquadFilter(); AMB2.filt.type = "lowpass";
+      AMB2.filt.frequency.value = 1800; AMB2.filt.Q.value = 0.4;
+      AMB2.filt.connect(AMB2.gain); AMB2.gain.connect(master);
+    }
+    loadAmbience();
     return true;
   } catch(e){ return false; }
 }
 function envGain(g, to, tc){ if(!AC) return; g.gain.setTargetAtTime(to, AC.currentTime, tc||0.5); }
+
+/* ---------------------------------------------------------------- ambience
+   Two recordings, layered, never crossfaded. The first is always there and is
+   only ever muffled by whatever is in the way. The second — the open
+   countryside — is silent until the window is, and then it arrives underneath
+   the first rather than replacing it. Nothing swaps; more of the world simply
+   gets in. A crossfade between two field recordings announces itself as a track
+   change, which is the one thing this must not sound like.
+   OPEN_LAYER can be set false to run on the first recording alone. */
+const OPEN_LAYER = true;
+const AMB = { buf:null, src:null, gain:null, filt:null, state:"idle", vol:0, open:0 };
+const AMB2 = { buf:null, src:null, gain:null, filt:null, state:"idle" };
+function loadOne(layer, name){
+  if (layer.state !== "idle" || !AC) return;
+  layer.state = "loading";
+  const src = (window.__ASSETS && window.__ASSETS[name]) || (ASSET_DIR + encodeURIComponent(name));
+  fetch(src)
+    .then(r => r.ok ? r.arrayBuffer() : Promise.reject(new Error("HTTP "+r.status)))
+    .then(a => AC.decodeAudioData(a))
+    .then(b => { layer.buf = b; layer.state = "ready"; startOne(layer); })
+    .catch(() => { layer.state = "failed"; });   // the piece still works without it
+}
+function loadAmbience(){
+  loadOne(AMB, "natureambeicnewithbirdschirping.wav");
+  if (OPEN_LAYER) loadOne(AMB2, "countryside-birds-rooster.wav");
+}
+function startOne(layer){
+  if (!AC || !layer.buf || layer.src) return;
+  const s = AC.createBufferSource();
+  s.buffer = layer.buf; s.loop = true;
+  // loop inside the recording, away from its own head and tail, so the seam
+  // never lands on a fade
+  if (layer.buf.duration > 6){ s.loopStart = 1.2; s.loopEnd = layer.buf.duration - 1.2; }
+  s.connect(layer.filt);
+  s.start(0, (s.loopStart||0) + Math.random()*Math.max(0, layer.buf.duration-6));
+  layer.src = s;
+}
+/* `v` is how loud, `open` is how little is in the way */
+function ambience(v, open){
+  AMB.vol = v; AMB.open = open;
+  if (!AC || !soundOn || !AMB.gain) return;
+  if (AMB.state === "ready" && !AMB.src) startOne(AMB);
+  envGain(AMB.gain, Math.max(0, v), 0.55);
+  // shut, it is muffled through glass; open, nothing is taking the top off it
+  AMB.filt.frequency.setTargetAtTime(620 + 8600*cl01(open), AC.currentTime, 0.55);
+  if (AMB2.gain){
+    if (AMB2.state === "ready" && !AMB2.src) startOne(AMB2);
+    // held well under the first, and only present once the window is
+    const o = cl01((open-0.34)/0.66);
+    envGain(AMB2.gain, Math.max(0, v*0.46*o*o), 0.9);
+    AMB2.filt.frequency.setTargetAtTime(1800 + 7000*cl01(open), AC.currentTime, 0.8);
+  }
+}
 
 function updSound(dt, t){
   updCC(dt);
@@ -161,6 +231,7 @@ bSound.addEventListener("click", async ()=>{
   bSound.textContent = soundOn ? "Sound on" : "Sound";
   bSound.setAttribute("aria-label", soundOn?"Turn sound off":"Turn sound on");
   envGain(master, soundOn?0.85:0, 0.6);
+  if (soundOn && AC){ if (AC.state==="suspended") AC.resume(); if (AMB.state==="idle") loadAmbience(); }
   if (soundOn && !ccOn) cc("");
 });
 bCC.addEventListener("click", ()=>{
