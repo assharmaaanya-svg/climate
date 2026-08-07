@@ -756,7 +756,7 @@ function gateProgress(g){
   switch(g){
     case "curtain": case "curtain2": return Math.min(PROOM.cL,PROOM.cR)/CTR.need;
     case "sash":    return PROOM.sash/0.55;
-    case "sheets":  return cl01(SHEETS.pan>0 ? Math.max(SHEETS.panPeak, 0) : 0)/0.80;
+    case "sheets":  return cl01(SHEETS.panPeak*0.5 + (SHEETS.panPeak>0.85 ? (1-SHEETS.pan)*0.5 : 0));
     case "shirt":   return PWASH.through/5;
     case "kite": case "rkite": return PKITE.best/0.40;
     case "stars":   { let n=0; for(const s2 of DIPPER) if(STARY.lit[s2.id])n++; return n/DIPPER.length; }

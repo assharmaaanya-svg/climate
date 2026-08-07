@@ -60,7 +60,9 @@ const SHEETS = {
   /* where the mother stands, as a fraction of the frame: the torso's own slot,
      which is sheet 3's slot, because that is where she was painted */
   momPanel: 0, momAt: 2,
-  pan: 0, panPeak: 0,            // how far along the line, and how far you went
+  /* where along the line you are, and how you got there. `pan` is 0 at the
+     start and 1 at the far end; it is dragged, not scrolled. */
+  pan: 0, panV: 0, panPeak: 0, grabbed: 0, everGrabbed: 0, hint: 0,
   built: false, cloth: [], wind: 0.20,
   gust: 0, gustT: 1.5, gustD: 0, gustA: 0, gustP: 0,
   momGone: 0, momFade: 1, seen: 0
@@ -217,16 +219,41 @@ function drawSheetsScene(t, dt, o){
      in a world two frames wide: you start where she is, walk on into the second
      stretch of washing, and walk back. Coming back is the point — by then she
      has finished and gone in, and nothing is said about it. */
-  const f = cl01(o.f===undefined ? 0 : o.f);
-  const away = Math.sin(f*PI);                 // 0 at the start, 1 out there, 0 back
-  SHEETS.pan = away;
+  /* You take hold of the line and pull yourself along it. Scrolling moves you
+     between chapters, so it cannot also move you within one — and dragging is
+     the right verb anyway: this is the only chapter where the visitor travels
+     rather than acts, and travelling should feel like it costs something.
+
+     It keeps its momentum when you let go and comes to rest on its own, so a
+     short flick carries you a long way and a slow drag places you exactly. */
+  const dragW = W*1.30;                                // how far a full traverse is
+  if (P.down && P.active){
+    if (!SHEETS.grabbed){ SHEETS.grabbed = 1; SHEETS.everGrabbed = 1; SHEETS.panV = 0; }
+    cv.className = "grabbing";
+    const d = -P.dx / dragW;
+    SHEETS.pan = cl01(SHEETS.pan + d);
+    if (Math.abs(P.dx) > 0.4) SHEETS.panV = d/Math.max(1e-3, dt);
+  } else {
+    if (SHEETS.grabbed) SHEETS.grabbed = 0;
+    cv.className = "grabbable";
+    // it glides, and it stops
+    SHEETS.pan = cl01(SHEETS.pan + SHEETS.panV*dt);
+    SHEETS.panV *= Math.pow(0.020, dt);
+    if (Math.abs(SHEETS.panV) < 0.004) SHEETS.panV = 0;
+    // before anyone has touched it, the line drifts a little, which is the only
+    // way a still picture can say that it moves
+    if (!SHEETS.everGrabbed){
+      SHEETS.hint += dt;
+      SHEETS.pan = cl01(SHEETS.pan + Math.sin(SHEETS.hint*0.42)*dt*0.055);
+    }
+  }
+  const away = SHEETS.pan;
   SHEETS.panPeak = Math.max(SHEETS.panPeak, away);
   /* She leaves while your back is turned. The trigger is not "you went far
      enough" — that fired while she was still in shot and she dissolved in front
      of the visitor, which is a special effect rather than an absence. It is
-     "you went to the far end AND you are on your way back", by which point her
-     sheet is off the side of the frame. Nothing is seen to happen. You simply
-     arrive and she has finished and gone in. */
+     "you reached the far end AND you are on your way back", by which point her
+     sheet is off the side of the frame. Nothing is seen to happen. */
   if (SHEETS.panPeak > 0.88 && away < 0.80) SHEETS.momGone = 1;
   SHEETS.momFade = lerp(SHEETS.momFade, SHEETS.momGone ? 0 : 1, Math.min(1, dt*0.7));
 
@@ -290,7 +317,8 @@ function drawSheetsScene(t, dt, o){
   }
 
   // walking the line is the whole of it; there is nothing else to do here
-  if (o.gate && f > 0.80) meet(o.gate);
+  // going down the line and coming back is the whole of it
+  if (o.gate && SHEETS.panPeak > 0.85 && away < 0.35) meet(o.gate);
 }
 
 /* There is no reaching into the washing any more. It asked the visitor to
