@@ -39,7 +39,16 @@ const WIN = {
   gy0: 0.108, gy1: 0.711,      // glass
   sill: 0.777,
   rodY: 0.040, rodX0: 0.296, rodX1: 0.750,
-  wireY: [0.372, 0.398]        // the utility lines the birds sit on
+  /* The utility lines, traced out of the painting rather than guessed at. Each
+     is a catenary — it sags to a low point around x=0.55 and rises to the poles
+     either side — so a bird's height depends entirely on where along it stands.
+     Two fixed heights is why they were never quite on the wire. Three points
+     per line, measured; the curve between them is the parabola through them. */
+  wires: [
+    [[0.386,0.3380],[0.550,0.3700],[0.654,0.3500]],
+    [[0.386,0.3560],[0.550,0.3890],[0.654,0.3720]],
+    [[0.442,0.4000],[0.550,0.4125],[0.654,0.4000]]
+  ]
 };
 
 /* ------------------------------------------------------------ LIGHTING SPRITES
@@ -363,12 +372,13 @@ const BIRD_ACTS = ["flick","flick","flick","flick","shuffle","preen","ruffle","b
 function buildWireBirds(){
   WIREBIRDS.length = 0;
   const spots = [
-    { u:0.075, w:0 }, { u:0.150, w:0 }, { u:0.215, w:0 }, { u:0.268, w:0 },
-    { u:0.660, w:1 }, { u:0.755, w:1 }, { u:0.830, w:1 }
+    { u:0.085, w:0 }, { u:0.155, w:0 }, { u:0.232, w:1 }, { u:0.300, w:0 },
+    { u:0.680, w:1 }, { u:0.762, w:0 }, { u:0.845, w:1 }
   ];
   for (let i=0;i<7;i++){
     const s = spots[i];
     WIREBIRDS.push({
+      idx: i,
       cut: WIRE_CUT[i],
       u: s.u, wire: s.w,
       scale: 0.62 + hash(i*5.1)*0.30,
@@ -380,6 +390,22 @@ function buildWireBirds(){
     });
   }
 }
+/* the parabola through a wire's three measured points, and its slope */
+function wireAt(w, fx){
+  const p = WIN.wires[w];
+  let y = 0;
+  for (let i=0;i<3;i++){
+    let L = p[i][1];
+    for (let j=0;j<3;j++) if (j!==i) L *= (fx - p[j][0]) / (p[i][0] - p[j][0]);
+    y += L;
+  }
+  return y;
+}
+function wireSlope(w, fx){
+  const e = 0.004;
+  return (wireAt(w, fx+e) - wireAt(w, fx-e)) / (2*e);
+}
+
 function updWireBirds(dt, t, o){
   const gust = cl01(o.gust||0);
   for (let i=0;i<WIREBIRDS.length;i++){
@@ -401,7 +427,7 @@ function updWireBirds(dt, t, o){
                : b.act==="shuffle" ? 0.26
                : b.act==="ruffle"  ? 0.30
                : 0.15 + Math.random()*0.07;
-        if (b.act==="shuffle") b.u = cl(b.u + b.dir*0.010, 0.035, 0.935);
+        if (b.act==="shuffle") b.u = cl(b.u + b.dir*0.010, 0.055, 0.915);
         b.turnAt = (b.act==="ruffle" && Math.random()<0.45) ? 0.45 : -1;
       }
     }
@@ -454,19 +480,25 @@ function drawWireBirds(t, o){
 
   for (const b of WIREBIRDS){
     const c = b.cut;
-    const dw = (gx1-gx0) * 0.050 * b.scale;
+    const dw = (gx1-gx0) * 0.038 * b.scale;      // small: it is a long way off
     const dh = dw * (c.h/c.w);
     const ps = birdPose(b, t);
-    // the feet: where it grips the wire, and the pivot for everything it does
+    // where along the wire it stands, and therefore how high the wire is there
+    const fu = WIN.gx0 + (WIN.gx1-WIN.gx0)*b.u;
     const fx = gx0 + (gx1-gx0)*b.u + bx + ps.dx*dw;
-    const fy = WIN.wireY[b.wire]*H + cw.y + by + ps.dy*dh;
+    const fy = wireAt(b.wire, fu)*H + cw.y + by + ps.dy*dh;
+    // and a bird on a sloping wire stands square to the wire, not to the world
+    const tilt = Math.atan(wireSlope(b.wire, fu) * (H/W));
 
     ctx.save();
     ctx.globalAlpha = vis;
     ctx.translate(fx, fy);
-    ctx.rotate(ps.rot);
+    ctx.rotate(tilt + ps.rot);
     ctx.scale(b.flip*ps.sx, ps.sy);
-    ctx.drawImage(im, c.x, c.y, c.w, c.h, -dw*0.5, -dh, dw, dh);
+    // against a lit sky at that distance they are nearly silhouettes
+    const lit = litSpriteBox(im, "bird"+b.idx, {
+      w:dw, h:dh, sx:c.x, sy:c.y, sw:c.w, sh:c.h }, 0.30, 0.40);
+    ctx.drawImage(lit, -dw*0.5, -dh, dw, dh);
     ctx.restore();
   }
   ctx.restore();
