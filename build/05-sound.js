@@ -178,7 +178,9 @@ function ambience(v, open){
 }
 
 /* The washing line. `v` is how loud the scene is, `wind` is the line's own gust
-   value, and `mom` is how much of her is still there. */
+   value, and `mom` is how much of her there is to hear — which is how much of
+   her is still on the line, times whether the visitor has reached out and
+   touched her. She does not hum at anyone who has not. */
 const LINEQ = { t: 0 };
 function lineSound(v, wind, mom){
   LINEQ.t = 0.3;                    // updSound fades the line out when this lapses
@@ -191,8 +193,10 @@ function lineSound(v, wind, mom){
   envGain(RUS2.gain, v*0.42*w*w, 0.35);
   RUS2.filt.frequency.setTargetAtTime(3200 + 4200*w, AC.currentTime, 0.4);
   /* her humming ducks under a gust rather than fighting it, and goes when she
-     does. It is quiet on purpose — loud enough to be company, not a presence. */
-  envGain(HUM.gain, v*0.085*cl01(mom)*(1 - w*0.45), 1.1);
+     does. It is quiet on purpose — loud enough to be company, not a presence —
+     and it comes up over a second and a half so that touching her feels like
+     noticing something that was already going on. */
+  envGain(HUM.gain, v*0.085*cl01(mom)*(1 - w*0.45), 1.5);
 }
 
 function updSound(dt, t){

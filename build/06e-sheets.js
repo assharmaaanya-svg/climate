@@ -70,9 +70,12 @@ const SHEETS = {
      momentum, and it can be walked back. */
   walk: 0, vel: 0, far: 0, grabbed: 0, everGrabbed: 0, hint: 0, passed: 0,
   built: false, cloth: [], wind: 0.20, skLag: 0.16,
-  gustImg: "gust of wind.png", puffs: [], puffT: 2.0,
   gust: 0, gustT: 1.5, gustD: 0, gustA: 0, gustP: 0,
-  momGone: 0, momFade: 1
+  momGone: 0, momFade: 1,
+  /* she hums while she works, but only once you have touched her. It is not
+     something the piece announces — the halo the exploring visitor already gets
+     on touchable things is the only invitation there is. */
+  hum: 0
 };
 /* close enough that two or three fill the frame, so you go between them
    rather than past them — which is what pushing through washing is */
@@ -248,74 +251,33 @@ function drawSheetsScene(t, dt, o){
     if (a > 0.005) drawShadow(rect, a, opt.deform, s.box);
   }
 
-  drawGusts(dt, rect, air);
-
   SHEETS.momFade = lerp(SHEETS.momFade, SHEETS.momGone ? 0 : 1, Math.min(1, dt*0.8));
 
+  /* Her, as something to touch. The circle sits on her body rather than on her
+     whole sheet, so it is her you are reaching for and not the washing, and it
+     is registered every frame because the camera drifts. `once:false` — it is a
+     switch, not a one-time discovery, so you can put her back to silence. */
+  if (SHEETS.momFade > 0.4){
+    const sb = SHEETS.shadow.box;
+    spot("mother",
+         rect.x + (sb[0] + sb[2]*0.5)*rect.w,
+         rect.y + (sb[1] + sb[3]*0.62)*rect.h,
+         MIN*0.15,
+         ()=>{
+           SHEETS.hum = SHEETS.hum > 0.5 ? 0 : 1;
+           ripple(rect.x + (sb[0]+sb[2]*0.5)*rect.w,
+                  rect.y + (sb[1]+sb[3]*0.62)*rect.h, [255,236,198], MIN*0.16);
+           curiosity += 0.3;
+         }, false);
+  }
+
   /* You are outdoors here and nothing is between you and it, so the ambience
-     opens all the way — and the cloth and her humming come in on top. */
+     opens all the way — and the cloth comes in on top. Her humming does not,
+     until she is touched. */
   ambience(0.72 - air*0.22, 1);
-  lineSound(0.9 - air*0.3, SHEETS.wind, SHEETS.momFade);
+  lineSound(0.9 - air*0.3, SHEETS.wind, SHEETS.momFade * SHEETS.hum);
 
   if (o.gate) meet(o.gate);
-}
-
-/* -------------------------------------------------------------- clean wind
-   A gust you can see. It is one painted swirl of air, already cut out, drifting
-   across in front of the washing — and it is released by the same gust that is
-   moving the sheets, so what you see arriving is what you can see arriving in
-   the cloth a moment earlier. Never more than two at once, never at full
-   strength, and it fades away entirely as the air loads: this is clean wind,
-   and later on there is no such thing.
-
-   In front of the sheets rather than behind them, because it is the air between
-   you and the line, and because a wisp of light passing behind cloth would be
-   invisible anyway. */
-function drawGusts(dt, rect, air){
-  const img = IMG[SHEETS.gustImg];
-  const clean = cl01(1 - air*2.2);              // gone by the time the air is half bad
-  const G = SHEETS.puffs;
-
-  /* one is released when a gust of wind has properly arrived, and not more
-     often than every few seconds */
-  SHEETS.puffT -= dt;
-  if (imgReady(img) && clean > 0.05 && SHEETS.gust > 0.42 && SHEETS.puffT <= 0 && G.length < 2){
-    /* A long wait between them. They were arriving before the last one had
-       left, which made the air permanently visible — and air you can always see
-       is not a gust, it is a texture. About a third of the time there is one
-       crossing, and the rest of the time the wind is only in the cloth. */
-    SHEETS.puffT = 7.5 + Math.random()*9.0;
-    const dir = Math.random() < 0.78 ? 1 : -1;   // mostly with the sheets' lean
-    G.push({
-      p: 0,
-      life: 4.8 + Math.random()*2.4,
-      y: 0.20 + Math.random()*0.30,
-      rise: (Math.random()*2-1) * 0.05,
-      w: 0.34 + Math.random()*0.30,
-      dir,
-      a: 0.13 + Math.random()*0.09
-    });
-  }
-
-  for (let i=G.length-1; i>=0; i--){
-    const g = G[i];
-    g.p += dt / g.life;
-    if (g.p >= 1){ G.splice(i,1); continue; }
-    if (!imgReady(img)) continue;
-    /* in and out over its whole crossing, so it never appears or vanishes on
-       screen — it is always already fading when you notice it */
-    const fade = Math.sin(g.p*PI);
-    const w = g.w*rect.w, h = w * (img.naturalHeight/img.naturalWidth);
-    const u = g.dir > 0 ? (-0.38 + g.p*1.76) : (1.38 - g.p*1.76);
-    const x = rect.x + u * rect.w;
-    const y = rect.y + (g.y + g.rise*(g.p-0.5)) * rect.h;
-    ctx.save();
-    ctx.globalAlpha = g.a * fade * fade * clean;
-    ctx.translate(x, y);
-    if (g.dir < 0) ctx.scale(-1, 1);
-    ctx.drawImage(img, -w*0.5, -h*0.5, w, h);
-    ctx.restore();
-  }
 }
 
 /* ---------------------------------------------------------------- her shadow

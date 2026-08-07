@@ -23,6 +23,10 @@ no attribution required, credited here anyway).
 | `assets/line-gust.wav` | `sheetsrustlingnicely.wav` | Aanya Sharma | — |
 | `assets/line-hum.wav` | `womanhumming.wav` | Aanya Sharma | — |
 
+The humming is the one layer that does not simply play: it is silent until the visitor
+touches the mother on the line, and touching her again puts her back to silence. Nothing
+in the piece says so.
+
 Each built file is a purpose-cut loop: decoded, downmixed to mono, resampled to 22.05 kHz,
 cut to a chosen window, and then had its own tail folded back over its head under an
 equal-power crossfade so the loop point is inaudible. They are deliberately different
