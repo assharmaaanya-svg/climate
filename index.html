@@ -695,9 +695,9 @@ const BEATS = [
   { id:"breathe",   ch:1, len:1.1,
     line:"And the whole outside came in at once." },
   /* ---------------- chapter two: life happened outdoors ---------------- */
-  { id:"laundry",   ch:2, len:1.35, gate:"sheets",  ask:"Push through the sheets",
+  { id:"laundry",   ch:2, len:2.10, gate:"sheets",  ask:"",
     line:"Sheets that had been in the sun all morning." },
-  { id:"shirt",     ch:2, len:1.0,  gate:"shirt",   ask:"Something small is still on the line",
+  { id:"shirt",     ch:2, len:1.0,  gate:"shirt",   ask:"",
     line:"" },
   { id:"kite",      ch:2, len:1.5,  gate:"kite",    ask:"Hold and pull to climb · release to let it run",
     line:"You put it up into all of that." },
@@ -1000,6 +1000,12 @@ const PLATES = {
     crop:{ x:0.0, y:0.0, w:1.0, h:1.0 },
     bands:[ {to:0.30,p:0.012}, {to:0.62,p:0.035}, {to:0.80,p:0.09}, {to:1.0,p:0.20} ]
   },
+  /* the line further along, painted with four empty pins */
+  lineScene2: {
+    clean:"image2ofnosheetswithpinsfor4sheets.png",
+    crop:{ x:0.0, y:0.0, w:1.0, h:1.0 },
+    bands:[ {to:0.30,p:0.012}, {to:0.62,p:0.035}, {to:0.80,p:0.09}, {to:1.0,p:0.20} ]
+  },
   /* the laundry, in four versions. `sheetBand` marks the rows that will be fed
      through the cloth mesh so the painted washing moves. */
   laundry: {
@@ -1064,6 +1070,7 @@ function preloadPlates(){
     "updatedbedroomwithwindowslightlyopenwithnotoys.jpg",
     "bulb latch png transparent.png","birdsonthedistanceinbedroom.png",
     "sheetsscenewithnosheets.png","sheet1.png","sheet2.png","sheet3.png","sheet4.png","sheet5.png",
+    "image2ofnosheetswithpinsfor4sheets.png","sheetsss6.png","sheetsss7.png","sheetsss8.png","sheetsss9.png",
     "momshadowsillhoutecroppedbutnotperfectly.png","momsskirt.png",
     "basketforbedroom.png","childrenstoyforbedroom.png","childrenstoyforbedroom2.png",
     "childrenstoyforbedroom3.png","childrensbedroomtoy4.png",
@@ -6693,18 +6700,31 @@ function drawRoom(t, dt, o){
 const SHEETS = {
   /* the sprites, in the order they hang. Each box is the sprite's own content
      inside its file, measured from alpha — the position IS the composition. */
-  src: [
-    { img:"sheet1.png", box:[0.0000,0.1273,0.1542,0.4213] },
-    { img:"sheet2.png", box:[0.1976,0.1528,0.1577,0.4074] },
-    { img:"sheet3.png", box:[0.3917,0.1640,0.1958,0.4573] },
-    { img:"sheet4.png", box:[0.6014,0.1663,0.1924,0.4042] },
-    { img:"sheet5.png", box:[0.8232,0.1505,0.1525,0.5000] }
+  /* Two panels of the same line. Everything is measured off each sprite's own
+     alpha, and every sprite keeps the position it had in the composite it was
+     cut from, so a sheet drawn at its panel's rect lands on a painted pin
+     without anything here knowing where a pin is. */
+  panels: [
+    { plate:"lineScene", src:[
+      { img:"sheet1.png", box:[0.0000,0.1273,0.1542,0.4213] },
+      { img:"sheet2.png", box:[0.1976,0.1528,0.1577,0.4074] },
+      { img:"sheet3.png", box:[0.3917,0.1640,0.1958,0.4573] },
+      { img:"sheet4.png", box:[0.6014,0.1663,0.1924,0.4042] },
+      { img:"sheet5.png", box:[0.8232,0.1505,0.1525,0.5000] }
+    ]},
+    { plate:"lineScene2", src:[
+      { img:"sheetsss6.png", box:[0.0486,0.1339,0.1580,0.3880] },
+      { img:"sheetsss7.png", box:[0.3160,0.1640,0.1198,0.4296] },
+      { img:"sheetsss8.png", box:[0.4878,0.1709,0.2361,0.4388] },
+      { img:"sheetsss9.png", box:[0.7865,0.1547,0.1597,0.4134] }
+    ]}
   ],
   torso: { img:"momshadowsillhoutecroppedbutnotperfectly.png", box:[0.3934,0.1644,0.1924,0.4444] },
   skirt: { img:"momsskirt.png", box:[0.2305,0.2477,0.5269,0.5764] },
   /* where the mother stands, as a fraction of the frame: the torso's own slot,
      which is sheet 3's slot, because that is where she was painted */
-  momAt: 2,
+  momPanel: 0, momAt: 2,
+  pan: 0, panPeak: 0,            // how far along the line, and how far you went
   built: false, cloth: [], wind: 0.20,
   gust: 0, gustT: 1.5, gustD: 0, gustA: 0, gustP: 0,
   momGone: 0, momFade: 1, seen: 0
@@ -6712,13 +6732,15 @@ const SHEETS = {
 
 function buildSheets(){
   SHEETS.cloth.length = 0;
-  for (let i=0;i<SHEETS.src.length;i++){
+  let n = 0;
+  for (const p of SHEETS.panels) for (let i=0;i<p.src.length;i++){
     SHEETS.cloth.push({
-      ph: hash(i*4.7)*TAU,           // its own place in the wind
-      rate: 0.86 + hash(i*9.1)*0.32, // and its own weight
-      slack: 0.80 + hash(i*2.3)*0.45,
+      ph: hash(n*4.7)*TAU,           // its own place in the wind
+      rate: 0.86 + hash(n*9.1)*0.32, // and its own weight
+      slack: 0.80 + hash(n*2.3)*0.45,
       lag: 0, swing: 0
     });
+    n++;
   }
   SHEETS.built = true;
 }
@@ -6787,12 +6809,7 @@ function drawCloth(img, box, o){
     const w1 = Math.sin(k1*v - t*1.35*c.rate + ph);
     const w2 = Math.sin(k2*(v*0.7 + u*0.9) - t*0.78*c.rate + ph*1.7);
     const lift = (0.62*w1 + 0.38*w2);
-    // and where a hand is going through it, the cloth folds away from that point
-    const push = c.push || 0;
-    const at = c.at===undefined ? 0.5 : c.at;
-    const bulge = push * Math.exp(-Math.pow((u-at)/0.34, 2)) * (0.30+0.70*hang);
-    const dx = sway * dw * (0.30*hang*edge + 0.16*hang*lift*c.slack)
-             + Math.sign(u-at || 1) * bulge * dw * 0.30;
+    const dx = sway * dw * (0.30*hang*edge + 0.16*hang*lift*c.slack);
     // cloth that swings sideways also rises, and the hem lifts most
     const dy = -Math.abs(dx) * 0.22 * hang
              + sway*dh*0.030*hang*w1
@@ -6803,44 +6820,52 @@ function drawCloth(img, box, o){
   };
 
   const cols = LOW ? 8 : 13, rows = LOW ? 9 : 15;
+
+  /* The cloth and its shading are built on their own surface and arrive as one
+     finished thing.
+
+     The shading used to be a gradient clipped to the mesh outline. The outline
+     is a quadrilateral grid; the sheet inside it is not — it has a curved hem
+     and edges that fall away — so everywhere the outline was not filled by
+     actual cloth, the multiply landed on the sky instead. That is the dark box
+     around every sheet. Masking by the sprite's own alpha is the only thing
+     that can be right, and source-atop on a surface of its own is what "its own
+     alpha" means. */
+  offscreen2(()=>{
+    warpImage(img, sx, sy, sw, sh, deform, cols, rows);
+
+    // where the mesh is compressing, the cloth is turning away from a low sun
+    const mid = 0.55;
+    const pa = deform(0, mid), pb = deform(1, mid);
+    if (Math.abs(pb.x - pa.x) > 2){
+      const g = tc2.createLinearGradient(pa.x, pa.y, pb.x, pb.y);
+      let last = -1;
+      for (let i=0;i<=cols;i++){
+        const u = i/cols;
+        const q0 = deform(Math.max(0,u-1/cols), mid), q1 = deform(Math.min(1,u+1/cols), mid);
+        const spread = Math.abs(q1.x-q0.x) / Math.max(1e-6, (2*dw/cols));
+        const shade = (1 - cl01(spread)) * 0.42;          // edge-on cloth is darker
+        const off = cl01((deform(u,mid).x - pa.x)/(pb.x - pa.x));
+        if (off <= last) continue;
+        last = off;
+        g.addColorStop(off, "rgba(46,26,8," + shade.toFixed(3) + ")");
+      }
+      tc2.globalCompositeOperation = "source-atop";
+      tc2.fillStyle = g;
+      tc2.fillRect(0, 0, W, H);
+    }
+    // cloth nearer the ground sits out of the direct sun
+    if (o.dim > 0){
+      tc2.globalCompositeOperation = "source-atop";
+      tc2.fillStyle = rgba([54,30,10], o.dim);
+      tc2.fillRect(0, 0, W, H);
+    }
+    tc2.globalCompositeOperation = "source-over";
+  });
+
   ctx.save();
   ctx.globalAlpha = o.alpha===undefined ? 1 : o.alpha;
-  warpImage(img, sx, sy, sw, sh, deform, cols, rows);
-  ctx.restore();
-
-  /* Light. Where the mesh is compressing horizontally the cloth is turning away
-     from the viewer, so it takes less of the low sun. Drawn as one horizontal
-     gradient with a stop per column, multiplied over the piece — the same thing
-     the curtains do, for the same reason. */
-  ctx.save();
-  ctx.beginPath();
-  ctx.moveTo(deform(0,0).x, deform(0,0).y);
-  for (let i=1;i<=cols;i++){ const p=deform(i/cols,0); ctx.lineTo(p.x,p.y); }
-  for (let j=1;j<=rows;j++){ const p=deform(1,j/rows); ctx.lineTo(p.x,p.y); }
-  for (let i=cols-1;i>=0;i--){ const p=deform(i/cols,1); ctx.lineTo(p.x,p.y); }
-  for (let j=rows-1;j>=0;j--){ const p=deform(0,j/rows); ctx.lineTo(p.x,p.y); }
-  ctx.closePath();
-  ctx.clip();
-  const mid = 0.55;
-  const a = deform(0,mid), b = deform(1,mid);
-  if (Math.abs(b.x-a.x) > 2){
-    const g = ctx.createLinearGradient(a.x, a.y, b.x, b.y);
-    let last = -1;
-    for (let i=0;i<=cols;i++){
-      const u = i/cols;
-      const p0 = deform(Math.max(0,u-1/cols), mid), p1 = deform(Math.min(1,u+1/cols), mid);
-      const spread = Math.abs(p1.x-p0.x) / Math.max(1e-6, (2*dw/cols));
-      const kk = cl01(0.34 + 0.66*Math.pow(cl01(spread), 0.9));
-      const off = cl01((deform(u,mid).x - a.x)/(b.x - a.x));
-      if (off <= last) continue;
-      last = off;
-      const v = Math.round(255*(0.62 + 0.38*kk));
-      g.addColorStop(off, "rgb("+v+","+Math.round(v*0.99)+","+Math.round(v*0.96)+")");
-    }
-    ctx.globalCompositeOperation = "multiply";
-    ctx.fillStyle = g;
-    ctx.fillRect(x0-dw, y0-dh*0.2, dw*3, dh*1.6);
-  }
+  ctx.drawImage(TMP2, 0, 0);
   ctx.restore();
 }
 
@@ -6848,93 +6873,185 @@ function drawCloth(img, box, o){
 function drawSheetsScene(t, dt, o){
   o = o||{};
   const air = cl01(o.air===undefined?0:o.air);
-  if (!drawPlate("lineScene", { air })) { ctx.fillStyle="#caa06a"; ctx.fillRect(0,0,W,H); return; }
+  if (!getPlate("lineScene")){ ctx.fillStyle="#caa06a"; ctx.fillRect(0,0,W,H); return; }
   if (!SHEETS.built) buildSheets();
   updSheetWind(dt, t);
 
-  // the plate fills the frame, and the sprites share its geometry exactly
+  /* Scrolling walks you down the line. The two painted panels sit side by side
+     in a world two frames wide: you start where she is, walk on into the second
+     stretch of washing, and walk back. Coming back is the point — by then she
+     has finished and gone in, and nothing is said about it. */
+  const f = cl01(o.f===undefined ? 0 : o.f);
+  const away = Math.sin(f*PI);                 // 0 at the start, 1 out there, 0 back
+  SHEETS.pan = away;
+  SHEETS.panPeak = Math.max(SHEETS.panPeak, away);
+  /* She leaves while your back is turned. The trigger is not "you went far
+     enough" — that fired while she was still in shot and she dissolved in front
+     of the visitor, which is a special effect rather than an absence. It is
+     "you went to the far end AND you are on your way back", by which point her
+     sheet is off the side of the frame. Nothing is seen to happen. You simply
+     arrive and she has finished and gone in. */
+  if (SHEETS.panPeak > 0.88 && away < 0.80) SHEETS.momGone = 1;
+  SHEETS.momFade = lerp(SHEETS.momFade, SHEETS.momGone ? 0 : 1, Math.min(1, dt*0.7));
+
   const c0 = roomCam(0.05);
-  const rect = { x: c0.x, y: c0.y, w: W, h: H };
+  const panX = away * W;                        // one whole frame's worth of walking
+  let n = 0;
 
-  sheetsInteract(dt, rect);
+  for (let p=0;p<SHEETS.panels.length;p++){
+    const panel = SHEETS.panels[p];
+    const ox = p*W - panX;
+    // nothing to do for a panel that is entirely off the side
+    if (ox > W || ox < -W){ n += panel.src.length; continue; }
 
-  for (let i=0;i<SHEETS.src.length;i++){
-    const s = SHEETS.src[i];
-    const img = IMG[s.img];
-    const c = SHEETS.cloth[i];
-    if (!c) continue;
-
-    drawCloth(img, s.box, {
-      t, c, x:rect.x, y:rect.y, w:rect.w, h:rect.h,
-      give: 1, wave1: 5.2, wave2: 3.4, pin: 1,
-      alpha: 1
-    });
-
-    /* She goes on AFTER her sheet, not behind it. Behind it she was simply
-       covered — the cloth is opaque. What you actually see of someone standing
-       on the far side of a backlit sheet is their shadow thrown onto it, and
-       that is a multiply over the cloth, not a sprite underneath. */
-    if (i === SHEETS.momAt && SHEETS.momFade > 0.01) drawMother(t, dt, rect, c, air);
-  }
-}
-
-/* ------------------------------------------------------- pushing through them
-   The washing is between you and the rest of the morning, so you go through it.
-   Whichever sheet the pointer is on gives way in front of it — the cloth folds
-   away from your hand rather than the whole sheet sliding — and each new one
-   you pass through is one more of them behind you. */
-function sheetsInteract(dt, rect){
-  const px = P.active ? P.x : -1e4;
-  for (let i=0;i<SHEETS.cloth.length;i++){
-    const c = SHEETS.cloth[i], b = SHEETS.src[i].box;
-    const x0 = rect.x + b[0]*rect.w, x1 = x0 + b[2]*rect.w;
-    const inside = px > x0 - rect.w*0.02 && px < x1 + rect.w*0.02;
-    const near = inside ? 1 - cl01(Math.abs(px - (x0+x1)*0.5) / ((x1-x0)*0.75)) : 0;
-    c.push = lerp(c.push||0, near*(P.down ? 1.35 : 0.85), Math.min(1, dt*5));
-    c.at   = inside ? cl01((px - x0)/(x1 - x0)) : 0.5;
-    if (near > 0.55 && !c.passed){
-      c.passed = 1;
-      PWASH.through = (PWASH.through||0) + 1;
-      sfx.cloth(0.55);
+    ctx.save();
+    ctx.translate(ox, 0);
+    /* Each panel is clipped to its own frame. Band canvases are drawn wider
+       than the frame with their outermost columns stretched outward, so that
+       parallax always has material to slide — which is right for one plate and
+       wrong for two side by side: the second panel's stretched left edge paints
+       a smear of streaked pixels straight over the first panel's good content
+       at the seam. Clipped, they meet exactly. */
+    ctx.beginPath(); ctx.rect(0, 0, W, H); ctx.clip();
+    if (!drawPlate(panel.plate, { air })){ ctx.restore(); n += panel.src.length; continue; }
+    /* The two paintings are the same field but not the same paint — panel two's
+       sky is a shade lighter — so butted together they show a seam. The later
+       panel's leading edge is faded out over a slice of the frame, which is
+       enough because their horizons already line up. */
+    if (p > 0){
+      const fw = W*0.075;
+      const fg = ctx.createLinearGradient(0, 0, fw, 0);
+      fg.addColorStop(0, "rgba(0,0,0,1)");
+      fg.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.save();
+      ctx.globalCompositeOperation = "destination-out";
+      ctx.fillStyle = fg;
+      ctx.fillRect(0, 0, fw, H);
+      ctx.restore();
     }
+    const rect = { x: c0.x, y: c0.y, w: W, h: H };
+
+    for (let i=0;i<panel.src.length;i++, n++){
+      const s = panel.src[i];
+      const img = IMG[s.img];
+      const c = SHEETS.cloth[n];
+      if (!c) continue;
+
+      drawCloth(img, s.box, {
+        t, c, x:rect.x, y:rect.y, w:rect.w, h:rect.h,
+        give: 1, wave1: 5.2, wave2: 3.4, pin: 1,
+        alpha: 1
+      });
+
+      /* She goes on AFTER her sheet, not behind it. Behind it she was simply
+         covered — cloth is opaque. What you see of someone on the far side of a
+         backlit sheet is their shadow thrown onto it, which is a multiply over
+         the cloth rather than a sprite underneath. */
+      if (p === SHEETS.momPanel && i === SHEETS.momAt && SHEETS.momFade > 0.01)
+        drawMother(t, dt, rect, c, air, panel.src[i].box);
+    }
+    ctx.restore();
   }
+
+  // walking the line is the whole of it; there is nothing else to do here
+  if (o.gate && f > 0.80) meet(o.gate);
 }
+
+/* There is no reaching into the washing any more. It asked the visitor to
+   "push through the sheets", which meant nothing on a screen, and it put a
+   prompt over a painting that did not need one. Walking down the line is the
+   whole of this chapter. */
 
 /* ------------------------------------------------------------- the mother
-   She is one sprite, drawn exactly where and how big she was cut, multiplied
-   onto the sheet. Three things I got wrong on the way here, each worth keeping
-   written down:
+   Two sprites doing two different jobs.
 
-   THE WHITE BOX. Her sprite has no transparency at all — she is a silhouette
-   painted on solid white. Multiply is the fix and the truth at once: white
-   under multiply leaves the backdrop untouched, so the matte vanishes without
-   being keyed, and darkening what is behind you by your own colour is what a
-   shadow does.
+   THE SHADOW is her upper body thrown onto the sheet she is pegging. It was cut
+   straight out of that shadow, so its own box is where it belongs and how big
+   it is — no decision to make. It is drawn with multiply, which is both the
+   right blend for a shadow and the reason her sprite needs no keying: she is a
+   silhouette painted on solid white, and white under multiply leaves the
+   backdrop exactly as it was.
 
-   THE DARK BOX. Softening her with ctx.filter="blur()" put a dark rectangle
-   round her. A blur on a drawImage samples outside the region it drew, and
-   outside it is transparent black — which multiply then multiplies. Whatever
-   softness she needs has to come from her own edges, not from a filter.
-
-   THE SKIRT. momsskirt.png is not used here, and it is worth saying why rather
-   than quietly leaving it out. Her shadow on the sheet ends where the sheet
-   ends: sheet 3's hem is at 0.621 of the frame and the sprite already reaches
-   0.609. There is no room under her for a skirt, and stretching one into the
-   gap is what made her look pulled out of shape. If the skirt is meant to be
-   her real skirt showing below the hem rather than part of the shadow, that is
-   a different and better idea — say so and it goes in, smaller than the shadow,
-   because a shadow cast on nearby cloth is larger than the person casting it.
+   THE SKIRT is not part of that shadow. It is her, below the hem, in the open
+   air — which is why it is smaller than the shadow above it. A shadow cast on
+   cloth a foot behind someone is bigger than the person casting it, so a skirt
+   drawn at the shadow's width would be a giant's. It hangs from just under the
+   sheet's hem, gathered at the waist and free below, and it goes through the
+   same cloth mesh as everything else on this line.
 */
-function drawMother(t, dt, rect, c, air){
-  const torso = IMG[SHEETS.torso.img];
-  if (!imgReady(torso)) return;
-  const tb = SHEETS.torso.box;
+function drawMother(t, dt, rect, c, air, sheetBoxIn){
+  const torso = IMG[SHEETS.torso.img], skirt = IMG[SHEETS.skirt.img];
   const a = SHEETS.momFade;
+  const tb = SHEETS.torso.box;
+  const sheetBox = sheetBoxIn;
+  const hemY = sheetBox[1] + sheetBox[3];          // where her sheet ends
 
+  /* Her sprite stops at her hips — above the sheet's hem — so on its own she
+     reads as a woman cut in half by a straight line. The skirt closes that, and
+     it does two jobs at once because it is in two places at once:
+
+       ABOVE THE HEM it is still her shadow on the cloth, so it is drawn with
+       multiply like the rest of her, starting at her waist and clipped to the
+       sheet. That is what joins her back together.
+       BELOW THE HEM it is her, in the open air, and so it is drawn plainly —
+       and smaller, because a shadow cast on cloth a foot behind someone is
+       larger than the person casting it.
+  */
+  if (imgReady(skirt)){
+    const sk = SHEETS.skirt.box;
+    const aspect = (sk[3]*skirt.naturalHeight) / (sk[2]*skirt.naturalWidth);
+    const midX = tb[0] + tb[2]*0.5;
+    const waistY = tb[1] + tb[3]*0.955;
+
+    // [1] the shadow half — her width, meeting her waist, stopped at the hem
+    const shW = tb[2]*0.92;
+    const shH = shW * aspect * (rect.w/rect.h);
+    const shX = midX - shW*0.5;
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(rect.x + (shX-shW)*rect.w, rect.y + waistY*rect.h,
+             shW*3*rect.w, (hemY-waistY)*rect.h);
+    ctx.clip();
+    ctx.globalCompositeOperation = "multiply";
+    drawCloth(skirt, [0,0,1,1], {
+      t, c: { ph:c.ph+1.9, rate:c.rate*0.68, slack:1.30, swing:c.swing },
+      x: rect.x + shX*rect.w - sk[0]*(shW/sk[2])*rect.w,
+      y: rect.y + waistY*rect.h - sk[1]*(shH/sk[3])*rect.h,
+      w: (shW/sk[2])*rect.w, h: (shH/sk[3])*rect.h,
+      give: 0.85, wave1: 2.6, wave2: 1.9, pin: 0.22, alpha: a*0.78
+    });
+    ctx.restore();
+
+    /* [2] Her actual skirt, below the hem. The size is not guessed: it is taken
+       off momwithonesheetsprite.png, which is this exact sheet with her really
+       behind it. There the skirt is 0.96 of the sheet's width and hangs 0.44 of
+       the sheet's height below its hem — far more than the small thing I had
+       assumed. About a third of it is hidden behind the cloth, so it is drawn
+       taller than it shows and clipped at the hem. */
+    const sheetW = sheetBox[2], sheetH = sheetBox[3];
+    const skW = sheetW * 0.96;
+    const skH = sheetH * 0.62;                     // 0.44 shows, the rest is behind
+    const skX = midX - skW*0.5;
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(rect.x + (skX-skW)*rect.w, rect.y + hemY*rect.h,
+             skW*3*rect.w, (1-hemY)*rect.h);
+    ctx.clip();
+    drawCloth(skirt, [0,0,1,1], {
+      t, c: { ph:c.ph+1.9, rate:c.rate*0.68, slack:1.30, swing:c.swing },
+      x: rect.x + skX*rect.w - sk[0]*(skW/sk[2])*rect.w,
+      y: rect.y + (hemY - skH*0.28)*rect.h - sk[1]*(skH/sk[3])*rect.h,
+      w: (skW/sk[2])*rect.w, h: (skH/sk[3])*rect.h,
+      give: 0.85, wave1: 2.6, wave2: 1.9, pin: 0.22, alpha: a*0.90, dim: 0.30
+    });
+    ctx.restore();
+  }
+
+  /* the shadow on the sheet */
+  if (!imgReady(torso)) return;
   ctx.save();
   ctx.globalCompositeOperation = "multiply";
   ctx.globalAlpha = a*0.78;
-  // she leans with the sheet she is holding, from where her feet are
   const sway = (c.swing||0) * 0.05;
   ctx.translate(rect.x + (tb[0]+tb[2]*0.5)*rect.w, rect.y + (tb[1]+tb[3])*rect.h);
   ctx.rotate(Math.sin(t*0.6 + c.ph)*0.006*(0.4+sway*6));
@@ -10713,7 +10830,7 @@ function render(t, dt){
       // the washing line, built from the painted scene and the sheet sprites
       if (getPlate("lineScene")){
         setPop({ birds:0.9, butterflies:0.8, dragonflies:0.8, fireflies:0, seeds:0.9 });
-        drawSheetsScene(t, dt, { air: PWASH.progress*0.30 });
+        drawSheetsScene(t, dt, { air: PWASH.progress*0.30, f: T.f, gate: BEATS[T.i].gate });
         // she is there the first time and not the second
         SHEETS.seen = Math.max(SHEETS.seen, 1);
         SHEETS.momFade = lerp(SHEETS.momFade, SHEETS.momGone ? 0 : 1, Math.min(1, dt*0.8));
@@ -10774,7 +10891,7 @@ function render(t, dt){
       SHEETS.momGone = 1;
       SHEETS.momFade = lerp(SHEETS.momFade, 0, Math.min(1, dt*0.9));
       if (getPlate("lineScene")){
-        drawSheetsScene(t, dt, { air: 0.55 + PWASH.progress*0.35 });
+        drawSheetsScene(t, dt, { air: 0.55 + PWASH.progress*0.35, f: T.f });
         WASH.dust = 0.55;
         washInteract("brush", dt);
         updLens(dt, done["brush"]);
@@ -11036,7 +11153,7 @@ function gateProgress(g){
   switch(g){
     case "curtain": case "curtain2": return Math.min(PROOM.cL,PROOM.cR)/CTR.need;
     case "sash":    return PROOM.sash/0.55;
-    case "sheets":  return PWASH.through/3;
+    case "sheets":  return cl01(SHEETS.pan>0 ? Math.max(SHEETS.panPeak, 0) : 0)/0.80;
     case "shirt":   return PWASH.through/5;
     case "kite": case "rkite": return PKITE.best/0.40;
     case "stars":   { let n=0; for(const s2 of DIPPER) if(STARY.lit[s2.id])n++; return n/DIPPER.length; }
@@ -11265,6 +11382,7 @@ window.__bluer = {
   get birds(){ return WIREBIRDS; },
   get sheets(){ return SHEETS; },
   get wash(){ return PWASH; },
+  get f(){ return T.f; },
   intro(){ return introOn; },
   reset(){ PROOM.cL=PROOM.cR=PROOM.open=PROOM.sash=0; PROOM.nudgeTo=0;
            PROOM.idle=0; PROOM.demo=0; CORD.swing=0; CORD.swingV=0;

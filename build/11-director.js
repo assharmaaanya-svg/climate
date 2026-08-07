@@ -433,7 +433,7 @@ function render(t, dt){
       // the washing line, built from the painted scene and the sheet sprites
       if (getPlate("lineScene")){
         setPop({ birds:0.9, butterflies:0.8, dragonflies:0.8, fireflies:0, seeds:0.9 });
-        drawSheetsScene(t, dt, { air: PWASH.progress*0.30 });
+        drawSheetsScene(t, dt, { air: PWASH.progress*0.30, f: T.f, gate: BEATS[T.i].gate });
         // she is there the first time and not the second
         SHEETS.seen = Math.max(SHEETS.seen, 1);
         SHEETS.momFade = lerp(SHEETS.momFade, SHEETS.momGone ? 0 : 1, Math.min(1, dt*0.8));
@@ -494,7 +494,7 @@ function render(t, dt){
       SHEETS.momGone = 1;
       SHEETS.momFade = lerp(SHEETS.momFade, 0, Math.min(1, dt*0.9));
       if (getPlate("lineScene")){
-        drawSheetsScene(t, dt, { air: 0.55 + PWASH.progress*0.35 });
+        drawSheetsScene(t, dt, { air: 0.55 + PWASH.progress*0.35, f: T.f });
         WASH.dust = 0.55;
         washInteract("brush", dt);
         updLens(dt, done["brush"]);
@@ -756,7 +756,7 @@ function gateProgress(g){
   switch(g){
     case "curtain": case "curtain2": return Math.min(PROOM.cL,PROOM.cR)/CTR.need;
     case "sash":    return PROOM.sash/0.55;
-    case "sheets":  return PWASH.through/3;
+    case "sheets":  return cl01(SHEETS.pan>0 ? Math.max(SHEETS.panPeak, 0) : 0)/0.80;
     case "shirt":   return PWASH.through/5;
     case "kite": case "rkite": return PKITE.best/0.40;
     case "stars":   { let n=0; for(const s2 of DIPPER) if(STARY.lit[s2.id])n++; return n/DIPPER.length; }
@@ -985,6 +985,7 @@ window.__bluer = {
   get birds(){ return WIREBIRDS; },
   get sheets(){ return SHEETS; },
   get wash(){ return PWASH; },
+  get f(){ return T.f; },
   intro(){ return introOn; },
   reset(){ PROOM.cL=PROOM.cR=PROOM.open=PROOM.sash=0; PROOM.nudgeTo=0;
            PROOM.idle=0; PROOM.demo=0; CORD.swing=0; CORD.swingV=0;

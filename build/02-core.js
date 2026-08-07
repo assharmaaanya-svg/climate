@@ -336,9 +336,9 @@ const BEATS = [
   { id:"breathe",   ch:1, len:1.1,
     line:"And the whole outside came in at once." },
   /* ---------------- chapter two: life happened outdoors ---------------- */
-  { id:"laundry",   ch:2, len:1.35, gate:"sheets",  ask:"Push through the sheets",
+  { id:"laundry",   ch:2, len:2.10, gate:"sheets",  ask:"",
     line:"Sheets that had been in the sun all morning." },
-  { id:"shirt",     ch:2, len:1.0,  gate:"shirt",   ask:"Something small is still on the line",
+  { id:"shirt",     ch:2, len:1.0,  gate:"shirt",   ask:"",
     line:"" },
   { id:"kite",      ch:2, len:1.5,  gate:"kite",    ask:"Hold and pull to climb · release to let it run",
     line:"You put it up into all of that." },
