@@ -103,12 +103,6 @@ const PLATES = {
     crop:{ x:0.0, y:0.0, w:1.0, h:1.0 },
     bands:[ {to:0.30,p:0.012}, {to:0.62,p:0.035}, {to:0.80,p:0.09}, {to:1.0,p:0.20} ]
   },
-  /* the line further along, painted with four empty pins */
-  lineScene2: {
-    clean:"sheetsscencefor4sheets.png",
-    crop:{ x:0.0, y:0.0, w:1.0, h:1.0 },
-    bands:[ {to:0.30,p:0.012}, {to:0.62,p:0.035}, {to:0.80,p:0.09}, {to:1.0,p:0.20} ]
-  },
   /* the laundry, in four versions. `sheetBand` marks the rows that will be fed
      through the cloth mesh so the painted washing moves. */
   laundry: {
@@ -172,7 +166,7 @@ function preloadPlates(){
   const order = ["updatedbedroomwithnotoys.jpg",
     "updatedbedroomwithwindowslightlyopenwithnotoys.jpg",
     "bulb latch png transparent.png","birdsonthedistanceinbedroom.png",
-    "sheetsscencefor5ssheetsandmom.png","sheetsscencefor4sheets.png","sheet1.png","sheet2.png","sheet3.png","sheet4.png","sheet5.png",
+    "sheetsscencefor5ssheetsandmom.png","sheet1.png","sheet2.png","sheet3.png","sheet4.png","sheet5.png",
     "sheetsss6.png","sheetsss7.png","sheetsss8.png","sheetsss9.png",
     "momshadowsillhoutecroppedbutnotperfectly.png","momsskirt.png",
     "basketforbedroom.png","childrenstoyforbedroom.png","childrenstoyforbedroom2.png",
