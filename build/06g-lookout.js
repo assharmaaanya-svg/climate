@@ -175,22 +175,23 @@ const LMARK = [
     tick:"The far hills",
     say:"The far hills. On a clear day, every one of them." },
 
-  { id:"spire",  x:0.8000, y:0.6760, r:0.048, aud:"town",
-    say:"The church. You could hear that bell all the way up here.",
-    glint:{ x:0.7995, y:0.6480, w:0.007 } },
   { id:"lane",   x:0.2450, y:0.7130, r:0.082, aud:"town",
     say:"Your street. Fourth along, the one with the gate that stuck." },
   { id:"tree",   x:0.7450, y:0.6940, r:0.055, aud:"birds",
     say:"The big tree at the crossroads. Everybody met under that tree." },
   { id:"pole",   x:0.0970, y:0.5150, r:0.060,
     say:"The pole at the top of the field. It hummed if you leaned on it." },
-  { id:"hall",   x:0.9280, y:0.7120, r:0.055, aud:"town",
-    say:"The town hall, and the tower you were never allowed up." },
   { id:"clouds", x:0.1750, y:0.1450, r:0.125,
     say:"Clouds. You used to lie back here and give them names." },
   { id:"flowers",x:0.3050, y:0.9100, r:0.115,
     say:"Buttercups, the whole way down the hill." }
 ];
+/* There were two more and they were both buildings: the church spire and the town
+   hall. A valley with four named landmarks in it does not need a fifth and a sixth
+   thing that also look like landmarks — the visitor cannot tell which of them the
+   list is about, and a church that answers when the water tower is the one on the
+   list is a chapter arguing with itself. What is left is a street, a tree, a pole,
+   the clouds and the buttercups: none of them competes with the four. */
 
 /* the top wire, which is the one the birds sit on. Two measured points, and it
    is straight enough between them that a line is honest. */

@@ -356,10 +356,16 @@ function morphLensToPaper(t, dt, q){
 function morphPaperToAir(t, q){
   const e = ease.io(q);
   const r = paperRect();
-  // the paper falls away downward as the world comes back
+  /* The paper falls away and the world it was a drawing OF comes back behind it.
+     That world used to be built from code — drawSky, drawLand, drawGround — which
+     was right when the whole piece was vector, and became the one place a visitor
+     could see the old engine showing through: a grey vector skyline with hedges,
+     directly behind a chapter whose neighbours are all paintings. It is the town
+     plate now, which is also the view the visitor was holding binoculars on two
+     beats ago, so the paper falls away onto the place it was drawn from. */
   apFull();
-  const s=drawSky(); const sp=drawSun(t,s); drawClouds(s); drawLand(t,{});
-  drawGround(t, AP.hy+AP.h*0.12, { dust:0.4 });
+  drawPlate("town", { air: 0.10 + e*0.06 });
+  const sp = null;
   ctx.save();
   ctx.globalAlpha=1-ease.i(e);
   ctx.translate(r.x+r.w/2, r.y+r.h/2 + e*H*0.7); ctx.rotate(-0.008+e*0.4);

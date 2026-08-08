@@ -33,7 +33,7 @@ originals are kept at the repository root; `assets/` holds only the loops built 
 | `assets/look-birds.wav` | the birds on the wire |
 | `assets/look-tower.wav` | inside the water tower |
 | `assets/look-hills.wav` | the far hills |
-| `assets/look-town.wav` | the street, the church, the town hall |
+| `assets/look-town.wav` | the street below the hill |
 
 Each looping file was decoded, downmixed to mono, resampled to 22.05 kHz, cut to a chosen window,
 and then had its own tail folded back over its head under an equal-power crossfade so the loop

@@ -167,17 +167,23 @@ const LOOKA = {
      focus, this ducks almost to nothing, which is what makes a memory of one
      place feel like one place rather than a sound added to a mix. */
   bed:    { buf:null, src:null, gain:null, filt:null, state:"idle",
-            file:"look-valley.wav", lp:2600, vol:0.30 },
+            file:"look-valley.wav", lp:2600, vol:0.26 },
+  /* These four are the point of the chapter and they were mixed like background:
+     quiet enough that the water tower, which is the most filtered of them, could
+     not be heard at all. A place you have brought into focus should be the loudest
+     thing on screen, so they are roughly doubled, and the tower keeps more of its
+     top end — water on a steel tank is a bright sound and a 2.4 kHz lid took the
+     recognisable part of it away along with the harshness. */
   school: { buf:null, src:null, gain:null, filt:null, state:"idle",
-            file:"look-school.wav", lp:1900, vol:0.34 },
+            file:"look-school.wav", lp:2600, vol:0.72 },
   birds:  { buf:null, src:null, gain:null, filt:null, state:"idle",
-            file:"look-birds.wav",  lp:6800, vol:0.24 },
+            file:"look-birds.wav",  lp:8200, vol:0.58 },
   tower:  { buf:null, src:null, gain:null, filt:null, state:"idle",
-            file:"look-tower.wav",  lp:2400, vol:0.22 },
+            file:"look-tower.wav",  lp:4200, vol:0.66 },
   hills:  { buf:null, src:null, gain:null, filt:null, state:"idle",
-            file:"look-hills.wav",  lp:1150, vol:0.30 },
+            file:"look-hills.wav",  lp:1500, vol:0.66 },
   town:   { buf:null, src:null, gain:null, filt:null, state:"idle",
-            file:"look-town.wav",   lp:2100, vol:0.26 }
+            file:"look-town.wav",   lp:2400, vol:0.52 }
 };
 
 /* `names` may be a list: the first that decodes wins. Everything ships as
@@ -375,7 +381,7 @@ function lookSound(dt, v, place, focus, open){
   // the duck itself is smoothed here rather than by a gain node, because the
   // ambience bed and the noise beds all have to move together
   LOOKDUCK = LOOKDUCK + (duck - LOOKDUCK) * Math.min(1, dt*0.55);
-  const away = 1 - LOOKDUCK*0.82;
+  const away = 1 - LOOKDUCK*0.88;
 
   for (const k in LOOKA){
     const L = LOOKA[k];

@@ -366,7 +366,7 @@
      that stopped happening in it.</p>
   <p class="how">Scroll to move through it.</p>
   <button id="begin" autofocus>Begin</button>
-  <p class="fine">captions for sound, top right</p>
+  <p class="fine">An interactive experience about air pollution.</p>
 </div></div>
 
 <div id="chapter" aria-hidden="true"></div>
@@ -4374,17 +4374,23 @@ const LOOKA = {
      focus, this ducks almost to nothing, which is what makes a memory of one
      place feel like one place rather than a sound added to a mix. */
   bed:    { buf:null, src:null, gain:null, filt:null, state:"idle",
-            file:"look-valley.wav", lp:2600, vol:0.30 },
+            file:"look-valley.wav", lp:2600, vol:0.26 },
+  /* These four are the point of the chapter and they were mixed like background:
+     quiet enough that the water tower, which is the most filtered of them, could
+     not be heard at all. A place you have brought into focus should be the loudest
+     thing on screen, so they are roughly doubled, and the tower keeps more of its
+     top end — water on a steel tank is a bright sound and a 2.4 kHz lid took the
+     recognisable part of it away along with the harshness. */
   school: { buf:null, src:null, gain:null, filt:null, state:"idle",
-            file:"look-school.wav", lp:1900, vol:0.34 },
+            file:"look-school.wav", lp:2600, vol:0.72 },
   birds:  { buf:null, src:null, gain:null, filt:null, state:"idle",
-            file:"look-birds.wav",  lp:6800, vol:0.24 },
+            file:"look-birds.wav",  lp:8200, vol:0.58 },
   tower:  { buf:null, src:null, gain:null, filt:null, state:"idle",
-            file:"look-tower.wav",  lp:2400, vol:0.22 },
+            file:"look-tower.wav",  lp:4200, vol:0.66 },
   hills:  { buf:null, src:null, gain:null, filt:null, state:"idle",
-            file:"look-hills.wav",  lp:1150, vol:0.30 },
+            file:"look-hills.wav",  lp:1500, vol:0.66 },
   town:   { buf:null, src:null, gain:null, filt:null, state:"idle",
-            file:"look-town.wav",   lp:2100, vol:0.26 }
+            file:"look-town.wav",   lp:2400, vol:0.52 }
 };
 
 /* `names` may be a list: the first that decodes wins. Everything ships as
@@ -4582,7 +4588,7 @@ function lookSound(dt, v, place, focus, open){
   // the duck itself is smoothed here rather than by a gain node, because the
   // ambience bed and the noise beds all have to move together
   LOOKDUCK = LOOKDUCK + (duck - LOOKDUCK) * Math.min(1, dt*0.55);
-  const away = 1 - LOOKDUCK*0.82;
+  const away = 1 - LOOKDUCK*0.88;
 
   for (const k in LOOKA){
     const L = LOOKA[k];
@@ -9022,22 +9028,23 @@ const LMARK = [
     tick:"The far hills",
     say:"The far hills. On a clear day, every one of them." },
 
-  { id:"spire",  x:0.8000, y:0.6760, r:0.048, aud:"town",
-    say:"The church. You could hear that bell all the way up here.",
-    glint:{ x:0.7995, y:0.6480, w:0.007 } },
   { id:"lane",   x:0.2450, y:0.7130, r:0.082, aud:"town",
     say:"Your street. Fourth along, the one with the gate that stuck." },
   { id:"tree",   x:0.7450, y:0.6940, r:0.055, aud:"birds",
     say:"The big tree at the crossroads. Everybody met under that tree." },
   { id:"pole",   x:0.0970, y:0.5150, r:0.060,
     say:"The pole at the top of the field. It hummed if you leaned on it." },
-  { id:"hall",   x:0.9280, y:0.7120, r:0.055, aud:"town",
-    say:"The town hall, and the tower you were never allowed up." },
   { id:"clouds", x:0.1750, y:0.1450, r:0.125,
     say:"Clouds. You used to lie back here and give them names." },
   { id:"flowers",x:0.3050, y:0.9100, r:0.115,
     say:"Buttercups, the whole way down the hill." }
 ];
+/* There were two more and they were both buildings: the church spire and the town
+   hall. A valley with four named landmarks in it does not need a fifth and a sixth
+   thing that also look like landmarks — the visitor cannot tell which of them the
+   list is about, and a church that answers when the water tower is the one on the
+   list is a chapter arguing with itself. What is left is a street, a tree, a pole,
+   the clouds and the buttercups: none of them competes with the four. */
 
 /* the top wire, which is the one the birds sit on. Two measured points, and it
    is straight enough between them that a line is honest. */
@@ -12369,10 +12376,16 @@ function morphLensToPaper(t, dt, q){
 function morphPaperToAir(t, q){
   const e = ease.io(q);
   const r = paperRect();
-  // the paper falls away downward as the world comes back
+  /* The paper falls away and the world it was a drawing OF comes back behind it.
+     That world used to be built from code — drawSky, drawLand, drawGround — which
+     was right when the whole piece was vector, and became the one place a visitor
+     could see the old engine showing through: a grey vector skyline with hedges,
+     directly behind a chapter whose neighbours are all paintings. It is the town
+     plate now, which is also the view the visitor was holding binoculars on two
+     beats ago, so the paper falls away onto the place it was drawn from. */
   apFull();
-  const s=drawSky(); const sp=drawSun(t,s); drawClouds(s); drawLand(t,{});
-  drawGround(t, AP.hy+AP.h*0.12, { dust:0.4 });
+  drawPlate("town", { air: 0.10 + e*0.06 });
+  const sp = null;
   ctx.save();
   ctx.globalAlpha=1-ease.i(e);
   ctx.translate(r.x+r.w/2, r.y+r.h/2 + e*H*0.7); ctx.rotate(-0.008+e*0.4);
