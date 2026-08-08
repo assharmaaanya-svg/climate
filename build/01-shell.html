@@ -19,7 +19,17 @@
     font-family:var(--serif); -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility; }
   body{ overflow-x:hidden; }
 
-  #scene{ position:fixed; inset:0; width:100vw; height:100vh; display:block; z-index:0;
+  /* THE CANVAS IS THE LAYOUT VIEWPORT, NOT 100vw.
+     This was a real misalignment and not a subtle one. `100vw` includes the width
+     of the vertical scrollbar; `left:50%` on a fixed element resolves against the
+     layout viewport, which excludes it. The piece is scroll-driven, so on any
+     platform with a classic scrollbar there is always one — measured at 1280x800
+     the canvas was 1280 wide against a 1265 layout viewport, putting the painting's
+     centre 7.5 CSS pixels right of the narration, the instruction and the scroll
+     cue, all three of which were correctly centred on each other. Everything
+     centred looked pushed left, because the picture behind it was pushed right.
+     `width:100%` inside `inset:0` is the layout viewport exactly. */
+  #scene{ position:fixed; inset:0; width:100%; height:100%; display:block; z-index:0;
     touch-action:none; cursor:default; }
   #scene.grabbable{ cursor:grab; }
   #scene.grabbing{ cursor:grabbing; }

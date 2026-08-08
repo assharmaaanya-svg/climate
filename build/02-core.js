@@ -116,8 +116,11 @@ function offscreen2(fn){
 }
 
 function fit(){
-  const w = window.innerWidth || document.documentElement.clientWidth || _w0;
-  const h = window.innerHeight || document.documentElement.clientHeight || _h0;
+  /* clientWidth first, innerWidth only as a fallback: innerWidth counts the
+     scrollbar and this canvas has to match the box the centred UI is measured
+     against, or the whole painting sits half a scrollbar to the right of it. */
+  const w = document.documentElement.clientWidth || window.innerWidth || _w0;
+  const h = document.documentElement.clientHeight || window.innerHeight || _h0;
   W=w; H=h; MIN=Math.min(W,H);
   DPR = Math.min(window.devicePixelRatio||1, LOW?1.6:2);
   cv.width = Math.max(1,(W*DPR)|0); cv.height = Math.max(1,(H*DPR)|0);
@@ -348,7 +351,7 @@ const BEATS = [
     line:"There were so many it was hard to look at one." },
   { id:"wish",      ch:2, len:0.95,
     line:"" },
-  { id:"horizon",   ch:2, len:1.75, gate:"find",    ask:"Hold the binoculars and look around",
+  { id:"horizon",   ch:2, len:1.75, gate:"find",    ask:"Press and hold to zoom in with the binoculars",
     line:"On a good day you could see all the way to the hills." },
   { id:"drawing",   ch:2, len:1.45, gate:"colour",  ask:"Colour it in",
     line:"You never had to think about which blue." },
@@ -359,7 +362,7 @@ const BEATS = [
     line:"" },
   { id:"r-stars",   ch:3, len:1.35, gate:"rstars",  ask:"Find the shape again",
     line:"" },
-  { id:"r-horizon", ch:3, len:1.3,  gate:"rfind",   ask:"Hold the binoculars on the hills",
+  { id:"r-horizon", ch:3, len:1.3,  gate:"rfind",   ask:"Press and hold to zoom in with the binoculars",
     line:"" },
   { id:"r-drawing", ch:3, len:1.3,
     line:"She kept it on the fridge for eleven years." },
@@ -431,19 +434,26 @@ function readTimeline(dt){
   const max = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
   T.target = cl01(window.scrollY / max) * TOTAL;
 
-  // the ceiling sits at the end of the first beat whose gate is unmet
-  let c = TOTAL;
-  for (let i=0;i<N;i++){
-    if (!gateMet(BEATS[i].gate)) { c = ofs[i] + BEATS[i].len*0.86; break; }
-  }
-  T.ceil = c;
+  /* NOTHING HOLDS THE SCROLL ANY MORE.
+     The ceiling used to sit at the end of the first beat whose interaction was
+     undone, so a visitor who did not want to pull a curtain, or could not work out
+     how, was stopped there. That is a puzzle gate in a piece that is not a puzzle:
+     the interactions are how you spend time in a memory, not a toll to get to the
+     next one. They are all still here and still do what they did, and `done` still
+     records what was actually touched so the ending can count it. They simply do
+     not stand in the doorway.
+
+     `T.ceil` is left in place at the end of the piece rather than deleted, because
+     `T.blocked` and `T.push` feed the resistance, the gate marker and the scroll
+     cue, and all three now resolve to "not blocked" on their own. */
+  T.ceil = TOTAL;
 
   const want = Math.min(T.target, T.ceil);
   const over = T.target - T.ceil;
   T.blocked = over > 0.03;
   T.push = cl01(over/0.5);
 
-  // ease, with a touch of resistance when held
+  // ease, with a touch of resistance at the very end of the piece
   const k = REDUCE ? 1 : (T.blocked ? 0.055 : 0.085);
   T.p += (want - T.p) * Math.min(1, k*dt*60);
   if (Math.abs(want-T.p) < 0.0004) T.p = want;

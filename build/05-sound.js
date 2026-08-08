@@ -531,9 +531,14 @@ bCC.addEventListener("click", ()=>{
   bCC.setAttribute("aria-pressed", String(ccOn));
   if (!ccOn) ccEl.classList.remove("on"); else cc("captions on");
 });
+/* Skip used to exist because an undone interaction stopped the scroll, and its job
+   was to unstick you. Nothing stops the scroll now, so it means the only thing left
+   for it to mean: move on. It marks the current beat's action as done so the
+   instruction stops offering something the visitor has decided against, and then
+   moves the page along. */
 bSkip.addEventListener("click", ()=>{
   const g = BEATS[T.i].gate;
   if (g) meet(g);
-  else window.scrollBy(0, H*0.9);
+  window.scrollBy(0, H*0.9);
   bSkip.blur();
 });
