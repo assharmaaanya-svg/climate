@@ -128,7 +128,7 @@ const RUS2 = { buf:null, src:null, gain:null, filt:null, state:"idle" };
 const HUM  = { buf:null, src:null, gain:null, filt:null, state:"idle" };
 /* the field: open wind off the water, and him */
 const KWIND = { buf:null, src:null, gain:null, filt:null, state:"idle" };
-const LAUGH = { buf:null, gain:null, state:"idle", next: 6 };
+const LAUGH = { buf:null, gain:null, state:"idle", next: 4 };
 /* after dark. The birds that sang all afternoon are not out here now — what is
    out here is insects, and one bird that only calls at night. */
 const CRICK = { buf:null, src:null, gain:null, filt:null, state:"idle" };
@@ -246,7 +246,7 @@ function lineSound(v, wind, mom){
      under the birds — company, not an announcement. It comes up over a second
      and a half, so touching her feels like noticing something that was already
      going on, and it leaves over four, so it is gone before you are sure. */
-  envGain(HUM.gain, v*0.34*cl01(mom)*(1 - w*0.35), mom > 0.02 ? 1.5 : 4.0);
+  envGain(HUM.gain, v*0.58*cl01(mom)*(1 - w*0.30), mom > 0.02 ? 1.5 : 4.0);
 }
 
 /* The kite field. `v` is how loud, `night` is how far the evening has gone, and
@@ -257,36 +257,48 @@ function kiteSound(dt, v, night, joy){
   KITEQ.t = 0.3;
   if (!AC || !soundOn || !KWIND.gain) return;
   if (KWIND.state === "ready" && !KWIND.src) startOne(KWIND);
-  envGain(KWIND.gain, v*0.46, 0.8);
+  envGain(KWIND.gain, v*0.82, 0.8);
   /* the wind off the water loses its top as the light goes — colder, further */
   KWIND.filt.frequency.setTargetAtTime(5200 - night*2100, AC.currentTime, 1.4);
   /* him: rare, faint, and never on a beat you could predict. He goes quiet as
      it gets dark, because by then he has been out here a long time. */
   LAUGH.next -= dt * (1 + joy*2.2);
   if (LAUGH.next <= 0){
-    LAUGH.next = 15 + Math.random()*16;
-    fireLaugh(v * (0.055 + Math.random()*0.045) * (1 - night*0.55));
+    LAUGH.next = 9 + Math.random()*11;
+    fireLaugh(v * (0.20 + Math.random()*0.10) * (1 - night*0.45));
   }
 }
 
-/* After dark. The daytime ambience is not lowered here so much as taken away:
-   whatever the last scene left it at, the night pushes it down, because the
-   birds that were in it stopped hours ago. What comes up instead is insects,
-   which are everywhere and even, and one whip-poor-will a long way off.
+/* After dark: insects, which are everywhere and even, and one bird that only
+   calls at night, a long way off in the treeline.
 
-   `deep` is how far into the night it is — the crickets arrive first, at dusk,
-   and he does not start calling until it is properly dark. */
+   `deep` is how far into the night it is. `bird` is how much of him is wanted,
+   because he is the one sound here with a shape you can predict: a two-note call
+   on a loop, and a loop of a call you can hum along to stops being weather and
+   becomes a ringtone. At the line and in the field he arrives and leaves and is
+   welcome. In the star chapter, where nothing else is happening and the visitor
+   is standing still reading, he is the only thing moving and he wears out fast,
+   so that chapter asks for none of him and the crickets carry it alone.
+
+   This function used to also push the daytime ambience down, which was wrong in
+   a way that took the whole field chapter with it: `deep` is 0 at the start of
+   the evening, and it was setting the garden bed to 0.03 regardless, so the
+   moment the kite scene opened the world went quiet and only the wind was left.
+   Each scene owns its own daylight now; this owns the night and nothing else. */
 const NIGHTQ = { t: 0 };
-function nightSound(v, deep){
+let nbDrift = 0.4, nbT = 0;
+function nightSound(dt, v, deep, bird){
   NIGHTQ.t = 0.3;
   if (!AC || !soundOn || !CRICK.gain) return;
   for (const L of [CRICK, NBIRD]) if (L.state === "ready" && !L.src) startOne(L);
   const d = cl01(deep);
-  envGain(CRICK.gain, v*0.40*(0.35 + d*0.65), 1.6);
-  envGain(NBIRD.gain, v*0.30*cl01((d-0.30)/0.70), 2.4);
-  /* and the day goes. Slowly — a bird chorus that stops dead is a cut. */
-  if (AMB.gain)  envGain(AMB.gain,  0.030*(1-d), 3.2);
-  if (AMB2.gain) envGain(AMB2.gain, 0.006*(1-d), 3.2);
+  const b = bird === undefined ? 1 : cl01(bird);
+  envGain(CRICK.gain, v*0.42*(0.35 + d*0.65), 1.6);
+  /* he calls for a while, then stops for a while, on a slow clock of his own, so
+     he is never simply on */
+  nbT -= dt;
+  if (nbT <= 0){ nbT = 9 + Math.random()*14; nbDrift = Math.random() < 0.55 ? 1 : 0; }
+  envGain(NBIRD.gain, v*0.26*b*nbDrift*cl01((d-0.30)/0.70), 3.0);
 }
 
 function updSound(dt, t){

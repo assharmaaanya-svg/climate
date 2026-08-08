@@ -209,15 +209,16 @@
     font-family:var(--mono); font-size:.7rem; letter-spacing:.26em; text-transform:uppercase;
     color:var(--ink); text-shadow:var(--sh); opacity:0; transition:opacity 1s;
     padding:.6em 1.3em; pointer-events:none; }
-  #sdown.on{ opacity:.9; animation:spulse 7s ease-in-out infinite; }
+  #sdown.on{ opacity:.9; animation:spulse 13s ease-in-out infinite; }
   #sdown.dark{ color:#1d2a36; text-shadow:0 1px 12px rgba(255,255,255,.85); }
   #sdown i{ width:20px; height:20px; border-right:2.5px solid currentColor;
     border-bottom:2.5px solid currentColor; transform:rotate(45deg);
     animation:sbob 2.6s ease-in-out infinite; }
   @keyframes sbob{ 0%,100%{ transform:rotate(45deg) translate(0,0); opacity:.55 }
                    50%{ transform:rotate(45deg) translate(4px,4px); opacity:1 } }
-  @keyframes spulse{ 0%,72%,100%{ opacity:.9; transform:translateX(-50%) scale(1) }
-                     82%{ opacity:1; transform:translateX(-50%) scale(1.14) } }
+  /* once in a while, not on a loop you can feel */
+  @keyframes spulse{ 0%,84%,100%{ opacity:.9; transform:translateX(-50%) scale(1) }
+                     91%{ opacity:1; transform:translateX(-50%) scale(1.16) } }
   @media (prefers-reduced-motion: reduce){
     #sdown i{ animation:none; } #sdown.on{ animation:none; } }
 
@@ -312,7 +313,7 @@
 <div id="ask" aria-live="polite"></div>
 <div id="gate" aria-hidden="true"><span id="gateTxt"></span><span class="bar"><i id="gateBar"></i></span><span class="chev"></span></div>
 <div id="cc" aria-hidden="true"></div>
-<div id="sdown" aria-hidden="true"><span>keep scrolling</span><i></i></div>
+<div id="sdown" aria-hidden="true"><span>scroll</span><i></i></div>
 
 <div id="pace" aria-hidden="true">
   <h2>Scroll slowly to begin your journey.</h2>
@@ -761,22 +762,22 @@ function ph(L, fh){ return fh*AP.h*CAM.zoom; }
    ========================================================================= */
 const BEATS = [
   /* ---------------- chapter one: the world came inside ---------------- */
-  { id:"dark",      ch:1, len:1.5,  gate:"curtain", ask:"Drag a curtain aside",
+  { id:"dark",      ch:1, len:1.5,  gate:"curtain", ask:"Drag the curtains apart",
     line:"Before you were awake, someone was already up." },
-  { id:"light",     ch:1, len:1.4,  gate:"sash",    ask:"Pull that down",
+  { id:"light",     ch:1, len:1.4,  gate:"sash",    ask:"Pull the cord down",
     line:"She always opened it first." },
   { id:"breathe",   ch:1, len:1.1,
     line:"And the whole outside came in at once." },
   /* ---------------- chapter two: life happened outdoors ---------------- */
-  { id:"laundry",   ch:2, len:2.10, gate:"sheets",  ask:"",
+  { id:"laundry",   ch:2, len:2.10, gate:"sheets",  ask:"Tap the woman to hear her",
     line:"Sheets that had been in the sun all morning." },
   { id:"shirt",     ch:2, len:1.0,  gate:"shirt",   ask:"",
     line:"" },
-  { id:"kite",      ch:2, len:1.6,  gate:"kite",    ask:"Hold to pull the kite in",
+  { id:"kite",      ch:2, len:1.6,  gate:"kite",    ask:"Hold anywhere to pull the kite in",
     line:"You put it up into all of that." },
   { id:"climb",     ch:2, len:1.25,
     line:"" },
-  { id:"stars",     ch:2, len:1.55, gate:"stars",   ask:"Tap a star to learn about it",
+  { id:"stars",     ch:2, len:1.55, gate:"stars",   ask:"Tap a bright star to learn about it",
     line:"There were so many it was hard to look at one." },
   { id:"wish",      ch:2, len:0.95,
     line:"" },
@@ -4248,7 +4249,7 @@ const RUS2 = { buf:null, src:null, gain:null, filt:null, state:"idle" };
 const HUM  = { buf:null, src:null, gain:null, filt:null, state:"idle" };
 /* the field: open wind off the water, and him */
 const KWIND = { buf:null, src:null, gain:null, filt:null, state:"idle" };
-const LAUGH = { buf:null, gain:null, state:"idle", next: 6 };
+const LAUGH = { buf:null, gain:null, state:"idle", next: 4 };
 /* after dark. The birds that sang all afternoon are not out here now — what is
    out here is insects, and one bird that only calls at night. */
 const CRICK = { buf:null, src:null, gain:null, filt:null, state:"idle" };
@@ -4366,7 +4367,7 @@ function lineSound(v, wind, mom){
      under the birds — company, not an announcement. It comes up over a second
      and a half, so touching her feels like noticing something that was already
      going on, and it leaves over four, so it is gone before you are sure. */
-  envGain(HUM.gain, v*0.34*cl01(mom)*(1 - w*0.35), mom > 0.02 ? 1.5 : 4.0);
+  envGain(HUM.gain, v*0.58*cl01(mom)*(1 - w*0.30), mom > 0.02 ? 1.5 : 4.0);
 }
 
 /* The kite field. `v` is how loud, `night` is how far the evening has gone, and
@@ -4377,36 +4378,48 @@ function kiteSound(dt, v, night, joy){
   KITEQ.t = 0.3;
   if (!AC || !soundOn || !KWIND.gain) return;
   if (KWIND.state === "ready" && !KWIND.src) startOne(KWIND);
-  envGain(KWIND.gain, v*0.46, 0.8);
+  envGain(KWIND.gain, v*0.82, 0.8);
   /* the wind off the water loses its top as the light goes — colder, further */
   KWIND.filt.frequency.setTargetAtTime(5200 - night*2100, AC.currentTime, 1.4);
   /* him: rare, faint, and never on a beat you could predict. He goes quiet as
      it gets dark, because by then he has been out here a long time. */
   LAUGH.next -= dt * (1 + joy*2.2);
   if (LAUGH.next <= 0){
-    LAUGH.next = 15 + Math.random()*16;
-    fireLaugh(v * (0.055 + Math.random()*0.045) * (1 - night*0.55));
+    LAUGH.next = 9 + Math.random()*11;
+    fireLaugh(v * (0.20 + Math.random()*0.10) * (1 - night*0.45));
   }
 }
 
-/* After dark. The daytime ambience is not lowered here so much as taken away:
-   whatever the last scene left it at, the night pushes it down, because the
-   birds that were in it stopped hours ago. What comes up instead is insects,
-   which are everywhere and even, and one whip-poor-will a long way off.
+/* After dark: insects, which are everywhere and even, and one bird that only
+   calls at night, a long way off in the treeline.
 
-   `deep` is how far into the night it is — the crickets arrive first, at dusk,
-   and he does not start calling until it is properly dark. */
+   `deep` is how far into the night it is. `bird` is how much of him is wanted,
+   because he is the one sound here with a shape you can predict: a two-note call
+   on a loop, and a loop of a call you can hum along to stops being weather and
+   becomes a ringtone. At the line and in the field he arrives and leaves and is
+   welcome. In the star chapter, where nothing else is happening and the visitor
+   is standing still reading, he is the only thing moving and he wears out fast,
+   so that chapter asks for none of him and the crickets carry it alone.
+
+   This function used to also push the daytime ambience down, which was wrong in
+   a way that took the whole field chapter with it: `deep` is 0 at the start of
+   the evening, and it was setting the garden bed to 0.03 regardless, so the
+   moment the kite scene opened the world went quiet and only the wind was left.
+   Each scene owns its own daylight now; this owns the night and nothing else. */
 const NIGHTQ = { t: 0 };
-function nightSound(v, deep){
+let nbDrift = 0.4, nbT = 0;
+function nightSound(dt, v, deep, bird){
   NIGHTQ.t = 0.3;
   if (!AC || !soundOn || !CRICK.gain) return;
   for (const L of [CRICK, NBIRD]) if (L.state === "ready" && !L.src) startOne(L);
   const d = cl01(deep);
-  envGain(CRICK.gain, v*0.40*(0.35 + d*0.65), 1.6);
-  envGain(NBIRD.gain, v*0.30*cl01((d-0.30)/0.70), 2.4);
-  /* and the day goes. Slowly — a bird chorus that stops dead is a cut. */
-  if (AMB.gain)  envGain(AMB.gain,  0.030*(1-d), 3.2);
-  if (AMB2.gain) envGain(AMB2.gain, 0.006*(1-d), 3.2);
+  const b = bird === undefined ? 1 : cl01(bird);
+  envGain(CRICK.gain, v*0.42*(0.35 + d*0.65), 1.6);
+  /* he calls for a while, then stops for a while, on a slow clock of his own, so
+     he is never simply on */
+  nbT -= dt;
+  if (nbT <= 0){ nbT = 9 + Math.random()*14; nbDrift = Math.random() < 0.55 ? 1 : 0; }
+  envGain(NBIRD.gain, v*0.26*b*nbDrift*cl01((d-0.30)/0.70), 3.0);
 }
 
 function updSound(dt, t){
@@ -7595,10 +7608,14 @@ function drawKiteSky(t, dt, o){
   /* the meadow he is standing in, back over the top of him */
   drawPlate("kiteSky", { air: night, onlyBand: FRONT });
 
-  kiteSound(dt, 0.85 - air*0.25, night, KSKY.joy);
-  /* the day handing over. The crickets start while there is still light in the
-     sky, which is what actually happens, and the afternoon's birds go with it. */
-  nightSound(0.85 - air*0.25, night*0.85);
+  const vol = 0.85 - air*0.25;
+  kiteSound(dt, vol, night, KSKY.joy);
+  /* The day handing over, out here in the open where nothing is in the way. The
+     garden bed goes as the light does rather than being switched off, and the
+     crickets come up under it while there is still colour in the sky, which is
+     what actually happens. */
+  ambience(vol*0.62*(1 - night*0.86), 1);
+  nightSound(dt, vol, night*0.85, 1);
   cv.className = P.down ? "grabbing" : "grabbable";
   if (o.gate && KSKY.best > 0.52) meet(o.gate);
 }
@@ -11697,13 +11714,16 @@ function render(t, dt){
       setPop({ birds:0, butterflies:0, dragonflies:0, fireflies:1.0, seeds:0.2 });
       starsInteractP("stars", dt, { air:0.06, glow:0.06 });
       drawStarsPlate(t, dt, { air:0.06, glow:0.06 });
-      nightSound(0.95, 1);
+      /* the afternoon is hours gone, and he is not wanted here */
+      ambience(0.02, 1);
+      nightSound(dt, 0.95, 1, 0);
       break;
     }
     case "wish": {
       setPop({ birds:0, butterflies:0, dragonflies:0, fireflies:0.9, seeds:0.2 });
       starsInteractP(null, dt, { air:0.08, glow:0.07 });
-      nightSound(0.95, 1);
+      ambience(0.02, 1);
+      nightSound(dt, 0.95, 1, 0);
       drawStarsPlate(t, dt, { air:0.08, glow:0.07 });
       break;
     }
@@ -11769,7 +11789,8 @@ function render(t, dt){
       setPop({ birds:0, butterflies:0, dragonflies:0, fireflies:0, seeds:0.05 });
       starsInteractP("rstars", dt, { air:0.78, glow:0.55 });
       /* years later the insects are thinner too, and he has stopped calling */
-      nightSound(0.55, 0.30);
+      ambience(0.02, 1);
+      nightSound(dt, 0.55, 0.30, 0);
       drawStarsPlate(t, dt, { air:0.78, glow:0.55 });
       if (false){ starsInteract("rstars", dt); drawStars(t, dt, {}); }
       // the gaps where the shape used to close

@@ -258,10 +258,14 @@ function drawKiteSky(t, dt, o){
   /* the meadow he is standing in, back over the top of him */
   drawPlate("kiteSky", { air: night, onlyBand: FRONT });
 
-  kiteSound(dt, 0.85 - air*0.25, night, KSKY.joy);
-  /* the day handing over. The crickets start while there is still light in the
-     sky, which is what actually happens, and the afternoon's birds go with it. */
-  nightSound(0.85 - air*0.25, night*0.85);
+  const vol = 0.85 - air*0.25;
+  kiteSound(dt, vol, night, KSKY.joy);
+  /* The day handing over, out here in the open where nothing is in the way. The
+     garden bed goes as the light does rather than being switched off, and the
+     crickets come up under it while there is still colour in the sky, which is
+     what actually happens. */
+  ambience(vol*0.62*(1 - night*0.86), 1);
+  nightSound(dt, vol, night*0.85, 1);
   cv.className = P.down ? "grabbing" : "grabbable";
   if (o.gate && KSKY.best > 0.52) meet(o.gate);
 }

@@ -209,15 +209,16 @@
     font-family:var(--mono); font-size:.7rem; letter-spacing:.26em; text-transform:uppercase;
     color:var(--ink); text-shadow:var(--sh); opacity:0; transition:opacity 1s;
     padding:.6em 1.3em; pointer-events:none; }
-  #sdown.on{ opacity:.9; animation:spulse 7s ease-in-out infinite; }
+  #sdown.on{ opacity:.9; animation:spulse 13s ease-in-out infinite; }
   #sdown.dark{ color:#1d2a36; text-shadow:0 1px 12px rgba(255,255,255,.85); }
   #sdown i{ width:20px; height:20px; border-right:2.5px solid currentColor;
     border-bottom:2.5px solid currentColor; transform:rotate(45deg);
     animation:sbob 2.6s ease-in-out infinite; }
   @keyframes sbob{ 0%,100%{ transform:rotate(45deg) translate(0,0); opacity:.55 }
                    50%{ transform:rotate(45deg) translate(4px,4px); opacity:1 } }
-  @keyframes spulse{ 0%,72%,100%{ opacity:.9; transform:translateX(-50%) scale(1) }
-                     82%{ opacity:1; transform:translateX(-50%) scale(1.14) } }
+  /* once in a while, not on a loop you can feel */
+  @keyframes spulse{ 0%,84%,100%{ opacity:.9; transform:translateX(-50%) scale(1) }
+                     91%{ opacity:1; transform:translateX(-50%) scale(1.16) } }
   @media (prefers-reduced-motion: reduce){
     #sdown i{ animation:none; } #sdown.on{ animation:none; } }
 
@@ -312,7 +313,7 @@
 <div id="ask" aria-live="polite"></div>
 <div id="gate" aria-hidden="true"><span id="gateTxt"></span><span class="bar"><i id="gateBar"></i></span><span class="chev"></span></div>
 <div id="cc" aria-hidden="true"></div>
-<div id="sdown" aria-hidden="true"><span>keep scrolling</span><i></i></div>
+<div id="sdown" aria-hidden="true"><span>scroll</span><i></i></div>
 
 <div id="pace" aria-hidden="true">
   <h2>Scroll slowly to begin your journey.</h2>

@@ -466,13 +466,16 @@ function render(t, dt){
       setPop({ birds:0, butterflies:0, dragonflies:0, fireflies:1.0, seeds:0.2 });
       starsInteractP("stars", dt, { air:0.06, glow:0.06 });
       drawStarsPlate(t, dt, { air:0.06, glow:0.06 });
-      nightSound(0.95, 1);
+      /* the afternoon is hours gone, and he is not wanted here */
+      ambience(0.02, 1);
+      nightSound(dt, 0.95, 1, 0);
       break;
     }
     case "wish": {
       setPop({ birds:0, butterflies:0, dragonflies:0, fireflies:0.9, seeds:0.2 });
       starsInteractP(null, dt, { air:0.08, glow:0.07 });
-      nightSound(0.95, 1);
+      ambience(0.02, 1);
+      nightSound(dt, 0.95, 1, 0);
       drawStarsPlate(t, dt, { air:0.08, glow:0.07 });
       break;
     }
@@ -538,7 +541,8 @@ function render(t, dt){
       setPop({ birds:0, butterflies:0, dragonflies:0, fireflies:0, seeds:0.05 });
       starsInteractP("rstars", dt, { air:0.78, glow:0.55 });
       /* years later the insects are thinner too, and he has stopped calling */
-      nightSound(0.55, 0.30);
+      ambience(0.02, 1);
+      nightSound(dt, 0.55, 0.30, 0);
       drawStarsPlate(t, dt, { air:0.78, glow:0.55 });
       if (false){ starsInteract("rstars", dt); drawStars(t, dt, {}); }
       // the gaps where the shape used to close

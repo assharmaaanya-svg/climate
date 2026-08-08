@@ -329,22 +329,22 @@ function ph(L, fh){ return fh*AP.h*CAM.zoom; }
    ========================================================================= */
 const BEATS = [
   /* ---------------- chapter one: the world came inside ---------------- */
-  { id:"dark",      ch:1, len:1.5,  gate:"curtain", ask:"Drag a curtain aside",
+  { id:"dark",      ch:1, len:1.5,  gate:"curtain", ask:"Drag the curtains apart",
     line:"Before you were awake, someone was already up." },
-  { id:"light",     ch:1, len:1.4,  gate:"sash",    ask:"Pull that down",
+  { id:"light",     ch:1, len:1.4,  gate:"sash",    ask:"Pull the cord down",
     line:"She always opened it first." },
   { id:"breathe",   ch:1, len:1.1,
     line:"And the whole outside came in at once." },
   /* ---------------- chapter two: life happened outdoors ---------------- */
-  { id:"laundry",   ch:2, len:2.10, gate:"sheets",  ask:"",
+  { id:"laundry",   ch:2, len:2.10, gate:"sheets",  ask:"Tap the woman to hear her",
     line:"Sheets that had been in the sun all morning." },
   { id:"shirt",     ch:2, len:1.0,  gate:"shirt",   ask:"",
     line:"" },
-  { id:"kite",      ch:2, len:1.6,  gate:"kite",    ask:"Hold to pull the kite in",
+  { id:"kite",      ch:2, len:1.6,  gate:"kite",    ask:"Hold anywhere to pull the kite in",
     line:"You put it up into all of that." },
   { id:"climb",     ch:2, len:1.25,
     line:"" },
-  { id:"stars",     ch:2, len:1.55, gate:"stars",   ask:"Tap a star to learn about it",
+  { id:"stars",     ch:2, len:1.55, gate:"stars",   ask:"Tap a bright star to learn about it",
     line:"There were so many it was hard to look at one." },
   { id:"wish",      ch:2, len:0.95,
     line:"" },
