@@ -33,7 +33,7 @@
   #spine{ position:relative; z-index:1; pointer-events:none; }
 
   /* ---------- narration ---------- */
-  #cap{ position:fixed; left:50%; bottom:19vh; transform:translate(-50%,12px); z-index:6; margin:0;
+  #cap{ position:fixed; left:50%; bottom:22vh; transform:translate(-50%,12px); z-index:6; margin:0;
     width:min(90vw,34ch); text-align:center; font-size:clamp(1.1rem,3.5vw,1.75rem); line-height:1.4;
     letter-spacing:.004em; color:var(--ink); text-shadow:var(--sh); opacity:0; pointer-events:none;
     transition:opacity 1.5s cubic-bezier(.4,0,.2,1), transform 1.5s cubic-bezier(.4,0,.2,1); }
@@ -43,14 +43,37 @@
                 0 0 42px rgba(255,246,226,.75); }
 
   /* ---------- interaction prompt ---------- */
-  #ask{ position:fixed; left:50%; bottom:7.6vh; transform:translate(-50%,8px); z-index:6;
-    font-family:var(--mono); font-size:clamp(.72rem,2.1vw,.84rem); letter-spacing:.13em;
-    text-transform:uppercase; color:var(--ink); opacity:0; pointer-events:none; text-align:center;
-    max-width:min(92vw,46ch); line-height:1.6; transition:opacity .9s, transform .9s;
-    background:rgba(8,12,18,.5); border:1px solid rgba(251,250,245,.2); border-radius:999px;
-    padding:.7em 1.5em; -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px);
-    box-shadow:0 10px 40px rgba(0,0,0,.34); }
+  /* THE BOTTOM OF THE SCREEN, IN ORDER.
+     Three things live down here and they were all in each other's way: the
+     narration, the instruction, and the scroll cue. They are stacked now, with
+     room between them, and the instruction is one line so it cannot grow up into
+     the sentence above it:
+         narration    22vh
+         instruction  11.5vh
+         scroll cue    2.2vh
+     The gate marker sat on top of the scroll cue as well, which is worse than
+     untidy: the two say opposite things, one meaning "you have to do something
+     here" and the other "carry on down". Only one of them shows at a time now. */
+  #ask{ position:fixed; left:50%; bottom:11.5vh; transform:translate(-50%,10px); z-index:6;
+    display:flex; align-items:center; gap:.9em; white-space:nowrap;
+    font-family:var(--mono); font-size:clamp(.7rem,1.95vw,.79rem); letter-spacing:.15em;
+    text-transform:uppercase; color:#fdfcf8; opacity:0; pointer-events:none;
+    max-width:92vw; line-height:1.4; transition:opacity 1s, transform 1s;
+    background:linear-gradient(rgba(14,18,28,.6), rgba(8,11,19,.72));
+    border:1px solid rgba(251,250,245,.24); border-radius:999px;
+    padding:.85em 1.85em .85em 1.5em;
+    -webkit-backdrop-filter:blur(11px) saturate(1.15); backdrop-filter:blur(11px) saturate(1.15);
+    box-shadow:0 16px 48px rgba(0,0,0,.44), 0 1px 0 rgba(255,255,255,.07) inset; }
+  /* a lit dot: this is available now */
+  #ask::before{ content:""; width:6px; height:6px; border-radius:50%; flex:none;
+    background:#ffd9a6; box-shadow:0 0 13px rgba(255,190,110,.9);
+    animation:askdot 2.8s ease-in-out infinite; }
+  @keyframes askdot{ 0%,100%{ opacity:.42; transform:scale(1) } 50%{ opacity:1; transform:scale(1.35) } }
   #ask.on{ opacity:1; transform:translate(-50%,0); }
+  /* narrow screens cannot hold a long line on one row, so let it wrap there */
+  @media (max-width:600px){
+    #ask{ white-space:normal; text-align:left; max-width:88vw; bottom:13vh; }
+  }
   /* a star card is a thing to read; the narration and the prompt get out of its
      way rather than being read over the top of it */
   body.reading #cap, body.reading #ask, body.reading #gate{
@@ -59,8 +82,10 @@
   body.pacing #cap, body.pacing #ask, body.pacing #gate, body.pacing #sdown,
   body.pacing #chapter, body.pacing .ctl{
     opacity:0 !important; transition:opacity .8s; }
-  #ask.dark{ color:#17222c; background:rgba(255,253,246,.66); border-color:rgba(20,30,40,.2);
-    box-shadow:0 10px 40px rgba(90,60,20,.18); }
+  #ask.dark{ color:#17222c; border-color:rgba(20,30,40,.22);
+    background:linear-gradient(rgba(255,253,246,.78), rgba(255,250,238,.68));
+    box-shadow:0 14px 44px rgba(90,60,20,.2), 0 1px 0 rgba(255,255,255,.5) inset; }
+  #ask.dark::before{ background:#b4671e; box-shadow:0 0 12px rgba(180,103,30,.55); }
   #ask.urge{ animation:urge 2.6s ease-in-out infinite; }
   @keyframes urge{ 0%,100%{ opacity:.88; } 50%{ opacity:.45; } }
 
@@ -211,16 +236,20 @@
     padding:.6em 1.3em; pointer-events:none; }
   #sdown.on{ opacity:.9; animation:spulse 13s ease-in-out infinite; }
   #sdown.dark{ color:#1d2a36; text-shadow:0 1px 12px rgba(255,255,255,.85); }
-  #sdown i{ width:20px; height:20px; border-right:2.5px solid currentColor;
-    border-bottom:2.5px solid currentColor; transform:rotate(45deg);
+  /* An SVG chevron, not a rotated square with two borders. A rotated square's
+     visual centre is not its box centre, which is why the old arrow could never
+     be made to line up under the word. */
+  #sdown svg{ width:22px; height:13px; overflow:visible;
     animation:sbob 2.6s ease-in-out infinite; }
-  @keyframes sbob{ 0%,100%{ transform:rotate(45deg) translate(0,0); opacity:.55 }
-                   50%{ transform:rotate(45deg) translate(4px,4px); opacity:1 } }
+  #sdown svg path{ fill:none; stroke:currentColor; stroke-width:2.4;
+    stroke-linecap:round; stroke-linejoin:round; }
+  @keyframes sbob{ 0%,100%{ transform:translateY(0); opacity:.55 }
+                   50%{ transform:translateY(5px); opacity:1 } }
   /* once in a while, not on a loop you can feel */
   @keyframes spulse{ 0%,84%,100%{ opacity:.9; transform:translateX(-50%) scale(1) }
                      91%{ opacity:1; transform:translateX(-50%) scale(1.16) } }
   @media (prefers-reduced-motion: reduce){
-    #sdown i{ animation:none; } #sdown.on{ animation:none; } }
+    #sdown svg{ animation:none; } #sdown.on{ animation:none; } }
 
   /* ---------- the pace card ----------
      It comes up once, after Begin, and it is not a tutorial: it says how fast to
@@ -313,7 +342,8 @@
 <div id="ask" aria-live="polite"></div>
 <div id="gate" aria-hidden="true"><span id="gateTxt"></span><span class="bar"><i id="gateBar"></i></span><span class="chev"></span></div>
 <div id="cc" aria-hidden="true"></div>
-<div id="sdown" aria-hidden="true"><span>scroll</span><i></i></div>
+<div id="sdown" aria-hidden="true"><span>scroll</span>
+  <svg viewBox="0 0 22 13" aria-hidden="true"><path d="M1.6 1.6 11 11 20.4 1.6"/></svg></div>
 
 <div id="pace" aria-hidden="true">
   <h2>Scroll slowly to begin your journey.</h2>
@@ -762,22 +792,22 @@ function ph(L, fh){ return fh*AP.h*CAM.zoom; }
    ========================================================================= */
 const BEATS = [
   /* ---------------- chapter one: the world came inside ---------------- */
-  { id:"dark",      ch:1, len:1.5,  gate:"curtain", ask:"Drag the curtains apart",
+  { id:"dark",      ch:1, len:1.5,  gate:"curtain", ask:"Gently pull the curtains apart",
     line:"Before you were awake, someone was already up." },
   { id:"light",     ch:1, len:1.4,  gate:"sash",    ask:"Pull the cord down",
     line:"She always opened it first." },
   { id:"breathe",   ch:1, len:1.1,
     line:"And the whole outside came in at once." },
   /* ---------------- chapter two: life happened outdoors ---------------- */
-  { id:"laundry",   ch:2, len:2.10, gate:"sheets",  ask:"Tap the woman to hear her",
+  { id:"laundry",   ch:2, len:2.10, gate:"sheets",  ask:"Tap your mother to hear her hum",
     line:"Sheets that had been in the sun all morning." },
   { id:"shirt",     ch:2, len:1.0,  gate:"shirt",   ask:"",
     line:"" },
-  { id:"kite",      ch:2, len:1.6,  gate:"kite",    ask:"Hold anywhere to pull the kite in",
+  { id:"kite",      ch:2, len:1.6,  gate:"kite",    ask:"Hold to bring the kite closer",
     line:"You put it up into all of that." },
   { id:"climb",     ch:2, len:1.25,
     line:"" },
-  { id:"stars",     ch:2, len:1.55, gate:"stars",   ask:"Tap a bright star to learn about it",
+  { id:"stars",     ch:2, len:1.55, gate:"stars",   ask:"Tap a bright star to discover its story",
     line:"There were so many it was hard to look at one." },
   { id:"wish",      ch:2, len:0.95,
     line:"" },
@@ -6082,25 +6112,12 @@ function curtainHelp(t, dt){
     const bob = (1-PROOM.demo)*Math.sin(t*1.5)*W*0.004;
     drawHandGlyph(edge + dirn*(r*2.6 + travel + bob), y, r, a, dirn);
   }
-  // the words, on the canvas, where the hands are — not in a corner
-  if (PROOM.demo > 0.05){
-    ctx.save();
-    ctx.globalAlpha = PROOM.demo*0.9;
-    ctx.font = "500 " + Math.max(12, MIN*0.021) + "px " + MONO;
-    ctx.textAlign = "center"; ctx.textBaseline = "middle";
-    const msg = PROOM.everMoved ? "keep pulling" : "drag the curtains apart";
-    // direct, and in the place where the hands already are
-    const yy = y + MIN*0.098;   // under the hands, clear of the narration below
-    ctx.shadowColor = "rgba(8,4,0,0.9)"; ctx.shadowBlur = MIN*0.03;
-    ctx.fillStyle = rgba([255,246,228], 0.80+0.20*pulse);
-    ctx.fillText(msg, W*0.5, yy);
-    if (PROOM.idle > 12){
-      ctx.font = "500 " + Math.max(10, MIN*0.016) + "px " + MONO;
-      ctx.fillStyle = rgba([255,246,228], 0.55);
-      ctx.fillText("or tap them", W*0.5, yy + MIN*0.042);
-    }
-    ctx.restore();
-  }
+  /* No words here. There used to be a sentence painted on the canvas under the
+     hands, on the theory that an instruction belongs where the hands are — but
+     canvas text has no layout, no hinting and nowhere to sit, and it looked like
+     a debug overlay next to everything else in the piece. The hands say where;
+     the one instruction pill at the bottom of the screen says what, in the same
+     type, in the same place, in every chapter. */
 }
 /* ============================================================================
    THE BEDROOM
@@ -7008,7 +7025,7 @@ const SHEETS = {
      garden again — which is how you actually hear somebody humming while they
      work, rather than a loop that has been switched on. Touch her again and it
      comes back. */
-  hum: 0
+  hum: 0, tapped: 0
 };
 /* close enough that two or three fill the frame, so you go between them
    rather than past them — which is what pushing through washing is */
@@ -7197,6 +7214,7 @@ function drawSheetsScene(t, dt, o){
          rect.y + (sb[1] + sb[3]*0.62)*rect.h,
          MIN*0.15,
          ()=>{
+           SHEETS.tapped = 1;                           // and the prompt can go
            SHEETS.hum = SHEETS.hum > 0.35 ? 0 : 1.18;   // a little over 1: it
            ripple(rect.x + (sb[0]+sb[2]*0.5)*rect.w,    // holds full before it
                   rect.y + (sb[1]+sb[3]*0.62)*rect.h,   // starts to go
@@ -11320,6 +11338,11 @@ function updWind(dt){
 /* the transition amount out of the current beat */
 const TQ = () => sm(T.f, 0.80, 1.0);
 
+/* Beats with something to do that is not a gate. `true` once it is done. */
+const OPTIONAL = {
+  laundry: () => !!SHEETS.tapped
+};
+
 /* ------------------------------------------------------------------ morph 1
    The window becomes the world. The frame widens until it is the edge of the
    screen, the walls thin out to nothing, and the two curtain panels lengthen
@@ -11961,10 +11984,12 @@ function updText(now, dt){
      the visitor is clearly getting on with it */
   const g = B.gate;
   const needed = g && !gateMet(g);
-  // the canvas says it where the hands are; the pill would only repeat it, and
-  // two copies of the same sentence in one frame is how they end up colliding
-  const onCanvas = (bid==="dark") && PROOM.demo > 0.25;
-  const askTxt = (needed && !onCanvas) ? (B.ask||"") : "";
+  /* Some things a visitor can do are not gates. Touching her on the washing line
+     is one: the chapter does not wait for it and never told anyone it was there,
+     which is the same as it not existing. So a beat may also declare an optional
+     action, and its instruction stays up until that action has happened. */
+  const optional = OPTIONAL[bid];
+  const askTxt = (needed || (optional && !optional())) ? (B.ask||"") : "";
   askEl.textContent = askTxt;
   const busy = P.down || tSinceAct < 1.4;
   askEl.classList.toggle("on", !!askTxt && (T.push>0.05 || !busy || (now-beatEnter)<3600));
@@ -11972,9 +11997,12 @@ function updText(now, dt){
   /* the scroll arrow: small, and there the whole way, because scrolling is the
      one thing the visitor has to know and the only thing the card tells them */
   const moreToGo = T.p < TOTAL-0.35 && bid!=="f-end";
-  sdownEl.classList.toggle("on", moreToGo && !introOn);
+  /* not while the gate is up: one says carry on down and the other says you have
+     something to do here first, and they were sitting on top of each other */
+  const cue = moreToGo && !introOn && !(T.blocked && !!needed);
+  sdownEl.classList.toggle("on", cue);
   sdownEl.classList.toggle("dark", light);
-  sdownEl.setAttribute("aria-hidden", String(!(moreToGo && !introOn)));
+  sdownEl.setAttribute("aria-hidden", String(!cue));
   askEl.classList.toggle("urge", T.push>0.3);
 
   /* the gate marker */

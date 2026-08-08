@@ -81,7 +81,7 @@ const SHEETS = {
      garden again — which is how you actually hear somebody humming while they
      work, rather than a loop that has been switched on. Touch her again and it
      comes back. */
-  hum: 0
+  hum: 0, tapped: 0
 };
 /* close enough that two or three fill the frame, so you go between them
    rather than past them — which is what pushing through washing is */
@@ -270,6 +270,7 @@ function drawSheetsScene(t, dt, o){
          rect.y + (sb[1] + sb[3]*0.62)*rect.h,
          MIN*0.15,
          ()=>{
+           SHEETS.tapped = 1;                           // and the prompt can go
            SHEETS.hum = SHEETS.hum > 0.35 ? 0 : 1.18;   // a little over 1: it
            ripple(rect.x + (sb[0]+sb[2]*0.5)*rect.w,    // holds full before it
                   rect.y + (sb[1]+sb[3]*0.62)*rect.h,   // starts to go

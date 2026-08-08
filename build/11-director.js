@@ -72,6 +72,11 @@ function updWind(dt){
 /* the transition amount out of the current beat */
 const TQ = () => sm(T.f, 0.80, 1.0);
 
+/* Beats with something to do that is not a gate. `true` once it is done. */
+const OPTIONAL = {
+  laundry: () => !!SHEETS.tapped
+};
+
 /* ------------------------------------------------------------------ morph 1
    The window becomes the world. The frame widens until it is the edge of the
    screen, the walls thin out to nothing, and the two curtain panels lengthen
@@ -713,10 +718,12 @@ function updText(now, dt){
      the visitor is clearly getting on with it */
   const g = B.gate;
   const needed = g && !gateMet(g);
-  // the canvas says it where the hands are; the pill would only repeat it, and
-  // two copies of the same sentence in one frame is how they end up colliding
-  const onCanvas = (bid==="dark") && PROOM.demo > 0.25;
-  const askTxt = (needed && !onCanvas) ? (B.ask||"") : "";
+  /* Some things a visitor can do are not gates. Touching her on the washing line
+     is one: the chapter does not wait for it and never told anyone it was there,
+     which is the same as it not existing. So a beat may also declare an optional
+     action, and its instruction stays up until that action has happened. */
+  const optional = OPTIONAL[bid];
+  const askTxt = (needed || (optional && !optional())) ? (B.ask||"") : "";
   askEl.textContent = askTxt;
   const busy = P.down || tSinceAct < 1.4;
   askEl.classList.toggle("on", !!askTxt && (T.push>0.05 || !busy || (now-beatEnter)<3600));
@@ -724,9 +731,12 @@ function updText(now, dt){
   /* the scroll arrow: small, and there the whole way, because scrolling is the
      one thing the visitor has to know and the only thing the card tells them */
   const moreToGo = T.p < TOTAL-0.35 && bid!=="f-end";
-  sdownEl.classList.toggle("on", moreToGo && !introOn);
+  /* not while the gate is up: one says carry on down and the other says you have
+     something to do here first, and they were sitting on top of each other */
+  const cue = moreToGo && !introOn && !(T.blocked && !!needed);
+  sdownEl.classList.toggle("on", cue);
   sdownEl.classList.toggle("dark", light);
-  sdownEl.setAttribute("aria-hidden", String(!(moreToGo && !introOn)));
+  sdownEl.setAttribute("aria-hidden", String(!cue));
   askEl.classList.toggle("urge", T.push>0.3);
 
   /* the gate marker */

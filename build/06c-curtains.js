@@ -534,23 +534,10 @@ function curtainHelp(t, dt){
     const bob = (1-PROOM.demo)*Math.sin(t*1.5)*W*0.004;
     drawHandGlyph(edge + dirn*(r*2.6 + travel + bob), y, r, a, dirn);
   }
-  // the words, on the canvas, where the hands are — not in a corner
-  if (PROOM.demo > 0.05){
-    ctx.save();
-    ctx.globalAlpha = PROOM.demo*0.9;
-    ctx.font = "500 " + Math.max(12, MIN*0.021) + "px " + MONO;
-    ctx.textAlign = "center"; ctx.textBaseline = "middle";
-    const msg = PROOM.everMoved ? "keep pulling" : "drag the curtains apart";
-    // direct, and in the place where the hands already are
-    const yy = y + MIN*0.098;   // under the hands, clear of the narration below
-    ctx.shadowColor = "rgba(8,4,0,0.9)"; ctx.shadowBlur = MIN*0.03;
-    ctx.fillStyle = rgba([255,246,228], 0.80+0.20*pulse);
-    ctx.fillText(msg, W*0.5, yy);
-    if (PROOM.idle > 12){
-      ctx.font = "500 " + Math.max(10, MIN*0.016) + "px " + MONO;
-      ctx.fillStyle = rgba([255,246,228], 0.55);
-      ctx.fillText("or tap them", W*0.5, yy + MIN*0.042);
-    }
-    ctx.restore();
-  }
+  /* No words here. There used to be a sentence painted on the canvas under the
+     hands, on the theory that an instruction belongs where the hands are — but
+     canvas text has no layout, no hinting and nowhere to sit, and it looked like
+     a debug overlay next to everything else in the piece. The hands say where;
+     the one instruction pill at the bottom of the screen says what, in the same
+     type, in the same place, in every chapter. */
 }
