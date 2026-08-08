@@ -78,9 +78,11 @@
      way rather than being read over the top of it */
   body.reading #cap, body.reading #ask, body.reading #gate{
     opacity:0 !important; transition:opacity .45s; }
+  /* an aside and the narration are two voices two vh apart, so only one speaks */
+  body.aside #cap{ opacity:0 !important; transition:opacity .5s; }
   /* and while the pace card is up, nothing else on screen competes with it */
   body.pacing #cap, body.pacing #ask, body.pacing #gate, body.pacing #sdown,
-  body.pacing #chapter, body.pacing .ctl{
+  body.pacing #chapter, body.pacing #look, body.pacing .ctl{
     opacity:0 !important; transition:opacity .8s; }
   #ask.dark{ color:#17222c; border-color:rgba(20,30,40,.22);
     background:linear-gradient(rgba(255,253,246,.78), rgba(255,250,238,.68));
@@ -126,6 +128,42 @@
     opacity:0; transition:opacity 1.2s; pointer-events:none; }
   #chapter.on{ opacity:.5; }
   #chapter.dark{ color:#1d2a36; text-shadow:0 1px 12px rgba(255,255,255,.8); }
+
+  /* ---------- the four places, on the hill ----------
+     A checklist is a dangerous object in a piece like this: the moment it looks
+     like a score the visitor stops looking at the valley and starts clearing a
+     list. So it is small, it sits in the one corner nothing else uses, it is
+     three quarters transparent until you have found something, and finding
+     something does exactly one thing — the box becomes a tick, over most of a
+     second. Nothing flashes, nothing counts up, nothing makes a sound. */
+  #look{ position:fixed; left:16px; z-index:11;
+    top:calc(max(15px,env(safe-area-inset-top)) + 26px);
+    font-family:var(--mono); color:var(--ink); pointer-events:none;
+    opacity:0; transform:translateY(-4px);
+    transition:opacity 1.6s cubic-bezier(.4,0,.2,1), transform 1.6s cubic-bezier(.4,0,.2,1); }
+  #look.on{ opacity:1; transform:none; }
+  #look .hd{ margin:0 0 .75em; font-size:.53rem; letter-spacing:.26em; text-transform:uppercase;
+    opacity:.4; text-shadow:0 1px 10px rgba(6,10,16,.85); }
+  #look ul{ margin:0; padding:0; list-style:none; display:flex; flex-direction:column; gap:.62em; }
+  #look li{ display:flex; align-items:center; gap:.72em;
+    font-size:.63rem; letter-spacing:.1em; line-height:1;
+    opacity:.46; text-shadow:0 1px 10px rgba(6,10,16,.9);
+    transition:opacity 1.1s ease; }
+  #look li.got{ opacity:.82; }
+  #look svg{ width:13px; height:13px; flex:none; overflow:visible; }
+  #look .bx{ fill:none; stroke:currentColor; stroke-width:1.25; opacity:.72;
+    transition:opacity .9s ease; }
+  #look li.got .bx{ opacity:.18; }
+  /* the tick draws itself on, rather than appearing */
+  #look .tk{ fill:none; stroke:currentColor; stroke-width:1.7; stroke-linecap:round;
+    stroke-linejoin:round; stroke-dasharray:16; stroke-dashoffset:16; opacity:0; }
+  #look li.got .tk{ stroke-dashoffset:0; opacity:1;
+    transition:stroke-dashoffset .9s cubic-bezier(.32,.72,.3,1) .08s, opacity .25s ease; }
+  #look.dark{ color:#1b2733; }
+  #look.dark .hd, #look.dark li{ text-shadow:0 1px 12px rgba(255,255,255,.85); }
+  @media (max-height:560px){ #look .hd{ display:none; } #look li{ font-size:.58rem; } }
+  @media (prefers-reduced-motion:reduce){
+    #look .tk{ transition:none; } #look li.got .tk{ transition:none; } }
 
   /* ---------- air-quality warning (chapter 5) ---------- */
   #aq{ position:fixed; left:50%; top:50%; transform:translate(-50%,-50%) scale(.96); z-index:9;
@@ -332,6 +370,9 @@
 </div></div>
 
 <div id="chapter" aria-hidden="true"></div>
+
+<!-- the four places, on the hill. Filled in from the landmark table. -->
+<div id="look" aria-hidden="true"><p class="hd">Look for</p><ul></ul></div>
 
 <div class="ctl">
   <button id="bCC" aria-pressed="false" aria-label="Turn captions for sound on">CC</button>
@@ -811,7 +852,7 @@ const BEATS = [
     line:"There were so many it was hard to look at one." },
   { id:"wish",      ch:2, len:0.95,
     line:"" },
-  { id:"horizon",   ch:2, len:1.45, gate:"find",    ask:"Hold still to focus",
+  { id:"horizon",   ch:2, len:1.75, gate:"find",    ask:"Hold the binoculars and look around",
     line:"On a good day you could see all the way to the hills." },
   { id:"drawing",   ch:2, len:1.45, gate:"colour",  ask:"Colour it in",
     line:"You never had to think about which blue." },
@@ -822,7 +863,7 @@ const BEATS = [
     line:"" },
   { id:"r-stars",   ch:3, len:1.35, gate:"rstars",  ask:"Find the shape again",
     line:"" },
-  { id:"r-horizon", ch:3, len:1.3,  gate:"rfind",   ask:"Hold to remember",
+  { id:"r-horizon", ch:3, len:1.3,  gate:"rfind",   ask:"Hold the binoculars on the hills",
     line:"" },
   { id:"r-drawing", ch:3, len:1.3,
     line:"She kept it on the fridge for eleven years." },
@@ -885,6 +926,10 @@ function since(bid){ const k=BEATS.findIndex(b=>b.id===bid); return k<0?0:T.p-of
 const done = Object.create(null);   // gate id -> true
 function gateMet(g){ return !g || done[g]===true; }
 function meet(g){ if (g && !done[g]){ done[g]=true; ping(); } }
+/* Same thing, without the bell. The lookout's four places acknowledge themselves
+   by becoming a tick and nothing else: a chime on top of that would turn quietly
+   recognising a school into scoring a point. */
+function meetQuiet(g){ if (g && !done[g]){ done[g]=true; } }
 
 function readTimeline(dt){
   const max = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
@@ -1193,8 +1238,9 @@ function preloadPlates(){
     "moresheets.png","moresheetspolluted.png","sheetswithmother.png","sheetspollutedwithmother.png",
     "childflykite.png","childflykiteevening.png","childflykite night.png","pollutedkitefly.png",
     "stargaze.png","pollutedstargaze.png","viewoftown.png","viewoftownafterpollution.png",
-    "sheetspostpollution.png","sheetspostpollution with basket.png","bedroomopenver2.png",
-    "binoculras png.avif"];
+    "sheetspostpollution.png","sheetspostpollution with basket.png","bedroomopenver2.png"];
+  /* the binocular overlay is not here any more: the lookout draws its field of
+     view rather than loading it. See build/06g-lookout.js. */
   for (const n of order) loadImg(n);
 }
 
@@ -3895,8 +3941,18 @@ function whisper(txt, dark){
   whEl.style.opacity = ".92"; whEl.style.transform="translate(-50%,0)";
   whT = 4.2;
 }
+/* The whisper sits at 20vh and the narration at 22vh, which is close enough that
+   two lines of either put them on top of each other. It never showed before
+   because asides were rare; in the lookout the visitor triggers one every few
+   seconds, and the school's line landed straight across the chapter's own
+   sentence. So an aside now takes the floor: the narration steps back while one is
+   up and comes back when it goes. */
 function updWhisper(dt){
-  if (whT>0){ whT-=dt; if (whT<=0){ whEl.style.opacity="0"; whEl.style.transform="translate(-50%,6px)"; } }
+  if (whT>0){
+    whT-=dt;
+    if (whT<=0){ whEl.style.opacity="0"; whEl.style.transform="translate(-50%,6px)"; }
+  }
+  document.body.classList.toggle("aside", whT>0);
 }
 
 /* ------------------------------------------------------------------ AMBIENT LIFE */
@@ -4246,6 +4302,16 @@ function initAudio(){
     LAUGH.gain = AC.createGain(); LAUGH.gain.gain.value = 1;
     LAUGH.gain.connect(master);
 
+    /* The lookout. One layer per place, each of them silent until the visitor is
+       looking at that place through the binoculars. */
+    for (const k in LOOKA){
+      const L = LOOKA[k];
+      L.gain = AC.createGain(); L.gain.gain.value = 0;
+      L.filt = AC.createBiquadFilter(); L.filt.type = "lowpass";
+      L.filt.frequency.value = L.lp; L.filt.Q.value = 0.4;
+      L.filt.connect(L.gain); L.gain.connect(master);
+    }
+
     /* the night */
     for (const L of [CRICK, NBIRD]){
       L.gain = AC.createGain(); L.gain.gain.value = 0;
@@ -4284,6 +4350,42 @@ const LAUGH = { buf:null, gain:null, state:"idle", next: 4 };
    out here is insects, and one bird that only calls at night. */
 const CRICK = { buf:null, src:null, gain:null, filt:null, state:"idle" };
 const NBIRD = { buf:null, src:null, gain:null, filt:null, state:"idle" };
+/* THE LOOKOUT. Four places that remember themselves.
+
+   Everything else in this piece is scene ambience: it belongs to a chapter and it
+   plays for as long as the chapter does. These do not. Each one exists only while
+   the visitor has the binoculars on that particular place, comes up over a couple
+   of seconds so it is never an event, and goes when they look away. The intended
+   effect is not that looking triggers a sound — it is that the place has been
+   making that sound the whole time and the lenses are what let you hear it.
+
+   Levels are deliberately low. Every one of these plays UNDER the garden bed, the
+   wind bed and the birds, so it reads as something carried up the hill on the air
+   rather than something that arrived. Filters do the distance: the school is a
+   long way down and across, so it loses its top; the tank is metal, so it keeps
+   just enough. */
+const LOOKA = {
+  /* Not a place: the valley itself. The town as it sounds from a hill a couple of
+     kilometres above it — this is what is there when the visitor is not holding on
+     anything in particular, so the chapter is never silent and never announces
+     that an interaction has started.
+
+     It is also the thing that gets out of the way. When a place does come into
+     focus, this ducks almost to nothing, which is what makes a memory of one
+     place feel like one place rather than a sound added to a mix. */
+  bed:    { buf:null, src:null, gain:null, filt:null, state:"idle",
+            file:"look-valley.wav", lp:2600, vol:0.30 },
+  school: { buf:null, src:null, gain:null, filt:null, state:"idle",
+            file:"look-school.wav", lp:1900, vol:0.34 },
+  birds:  { buf:null, src:null, gain:null, filt:null, state:"idle",
+            file:"look-birds.wav",  lp:6800, vol:0.24 },
+  tower:  { buf:null, src:null, gain:null, filt:null, state:"idle",
+            file:"look-tower.wav",  lp:2400, vol:0.22 },
+  hills:  { buf:null, src:null, gain:null, filt:null, state:"idle",
+            file:"look-hills.wav",  lp:1150, vol:0.30 },
+  town:   { buf:null, src:null, gain:null, filt:null, state:"idle",
+            file:"look-town.wav",   lp:2100, vol:0.26 }
+};
 
 /* `names` may be a list: the first that decodes wins. Everything ships as
    16-bit PCM wav now, which every browser decodes, so the list is really only
@@ -4325,6 +4427,7 @@ function loadAmbience(){
   loadOne(LAUGH, "kite-laugh.wav");
   loadOne(CRICK, "night-crickets.wav");
   loadOne(NBIRD, "night-birds.wav");
+  for (const k in LOOKA) loadOne(LOOKA[k], LOOKA[k].file);
 }
 /* A one-shot, not a layer. The laugh is four seconds of a child and there is no
    honest way to loop that — looped laughter is a horror-film cue. So it is
@@ -4452,13 +4555,62 @@ function nightSound(dt, v, deep, bird){
   envGain(NBIRD.gain, v*0.26*b*nbDrift*cl01((d-0.30)/0.70), 3.0);
 }
 
+/* THE LOOKOUT MIX.
+   `place` is the key of whatever is in the middle of the lenses, or null. `focus`
+   is how far the memory has come back, because a place you have not brought into
+   focus is a place you are not really looking at yet. `open` is how loud the wider
+   world should be when nothing in particular is being remembered.
+
+   The whole chapter is one crossfade with two positions. Looking around: the
+   valley bed and the garden birds, at ordinary level, the way a hilltop sounds.
+   Holding on somewhere: everything else steps back to about a fifth of itself and
+   that one place comes up on its own. Not a mix of two things — a shift of
+   attention, which is what remembering somewhere actually feels like.
+
+   `LOOKDUCK` is how far into that second position we are, and updSound reads it so
+   the wind and leaf beds duck as well. Everything the visitor can hear is inside
+   the duck; nothing survives it at full level. */
+const LOOKQ = { t: 0 };
+let LOOKDUCK = 0;
+function lookSound(dt, v, place, focus, open){
+  LOOKQ.t = 0.3;
+  if (!AC || !soundOn) return;
+  /* a place has to be genuinely in focus before it is heard at all: the sound is
+     the reward for having held on it, not for having pointed at it */
+  const f = cl01((cl01(focus) - 0.20) / 0.58);
+  const duck = place ? f : 0;
+  // the duck itself is smoothed here rather than by a gain node, because the
+  // ambience bed and the noise beds all have to move together
+  LOOKDUCK = LOOKDUCK + (duck - LOOKDUCK) * Math.min(1, dt*0.55);
+  const away = 1 - LOOKDUCK*0.82;
+
+  for (const k in LOOKA){
+    const L = LOOKA[k];
+    if (L.state === "idle") loadOne(L, L.file);
+    if (L.state === "ready" && !L.src) startOne(L);
+    if (!L.gain) continue;
+    const want = k === "bed" ? v * L.vol * away
+                             : (place === k ? v * L.vol * f : 0);
+    /* in over two seconds, out over three: arriving should be slower than a
+       fade-in, and leaving slower still, so that a place fades out of hearing at
+       about the speed it fades out of focus */
+    envGain(L.gain, want, want > 0.0005 ? 2.1 : 3.0);
+  }
+  // the birds and the open countryside step back with everything else
+  ambience((open===undefined ? 0.6 : open) * away, 1);
+}
+
 function updSound(dt, t){
   updCC(dt);
   if (!AC || !soundOn) return;
   const h = AIR.h, night = (AIR.tod<0.14||AIR.tod>0.84)?1:0;
   const out = OUTSIDE;                                   // 0 in the room, 1 outdoors
-  envGain(BED.wind.g,    (0.030+0.052*out)*(1-h*0.55)*(1-MUFFLE*0.7), 0.7);
-  envGain(BED.leaves.g,  0.016*out*(1-h*0.7)*(1-MUFFLE*0.8), 0.7);
+  /* while a place is being remembered through the binoculars, the weather steps
+     back too. Otherwise the wind bed sits on top of the memory and nothing has
+     actually got quieter. */
+  const lk = 1 - LOOKDUCK*0.80;
+  envGain(BED.wind.g,    (0.030+0.052*out)*(1-h*0.55)*(1-MUFFLE*0.7)*lk, 0.7);
+  envGain(BED.leaves.g,  0.016*out*(1-h*0.7)*(1-MUFFLE*0.8)*lk, 0.7);
   envGain(BED.traffic.g, (0.008 + 0.062*h)*(0.45+0.55*out), 1.1);
   envGain(BED.room.g,    0.020*(1-out*0.7) + MUFFLE*0.03, 0.7);
   envGain(BED.pad.g,     0.030*(1-h*0.30), 1.4);
@@ -4477,6 +4629,12 @@ function updSound(dt, t){
   else if (KWIND.gain){ envGain(KWIND.gain, 0, 1.1); }
   if (NIGHTQ.t > 0){ NIGHTQ.t -= dt; }
   else if (CRICK.gain){ for (const L of [CRICK, NBIRD]) envGain(L.gain, 0, 2.0); }
+  /* a place's memory does not follow the visitor out of the chapter it belongs to */
+  if (LOOKQ.t > 0){ LOOKQ.t -= dt; }
+  else if (LOOKA.bed.gain){
+    for (const k in LOOKA) envGain(LOOKA[k].gain, 0, 1.4);
+    LOOKDUCK = Math.max(0, LOOKDUCK - dt*0.8);           // and the duck lets go
+  }
 }
 
 /* ------------------------------------------------------------------ one-shots */
@@ -8429,291 +8587,9 @@ function hideStarStory(){
 function esc(s){ return String(s).replace(/[&<>"]/g, ch =>
   ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;" }[ch])); }
 
-/* ============================================================================
-   THE HORIZON, AND THE BINOCULARS THAT REMEMBER
-   Outside the lenses: the hazed plate. Inside: the clean one, but it does not
-   simply appear. Holding still lets it come back — visibility first, then
-   colour, then the air itself — and it blooms outward from where you are
-   looking. Move, and it starts to go again. It should feel like the world
-   remembering, not like a filter being switched off.
-   ========================================================================== */
-const PLOOK = {
-  ax:0, ay:0, vx:0, vy:0,          // aim, with inertia
-  hold:0, recall:0, radius:0, mag:1,
-  found:Object.create(null), n:0
-};
-/* The four things worth finding, measured off viewoftown.png. The plate is
-   cropped to the top 88% of the source, so a source y becomes y/0.88 on screen.
-   Each says one plain thing when you land on it — no explanation, no fact. */
-const PMARK = [
-  { id:"hills",  x:0.450, y:0.653, r:0.30,
-    label:"The far hills. On a clear day, every one of them." },
-  { id:"school", x:0.424, y:0.790, r:0.13,
-    label:"Your school. The red brick one, with the little tower on top." },
-  { id:"tower",  x:0.675, y:0.722, r:0.11,
-    label:"The water tower. You could see it from anywhere in town." },
-  { id:"wires",  x:0.262, y:0.563, r:0.16,
-    label:"The birds on the wire. There were always more than you could count." }
-];
-
-/* The binocular graphic is the supplied asset: a black field with two soft
-   white circles and a reticle. It is opaque, so it is used as a multiply
-   overlay — white passes the world through, black masks it out. No procedural
-   barrel, no rim, no flare. The asset plus black around it, and nothing else.
-
-   The eyepieces stay where they are, as they would if you were holding them to
-   your face, and the world moves behind them. Magnification comes up slowly, so
-   there is time to understand what you are looking at.
-*/
-const BINOC = { file:"binoculras png.avif", lensL:0.335, lensR:0.665, cy:0.500, r:0.212,
-                mask:null, built:false };
-
-/* The supplied file is a flattened export of a transparent PNG displayed on a
-   transparency checkerboard — that grey checker is baked into its pixels, so it
-   cannot be multiplied over the world as it stands. So the geometry is taken
-   from the file itself and the checker is removed: threshold the luminance to
-   separate the black surround from the open circles, blur the result to give the
-   edges their softness back, then redraw the reticle crisply on top. The design
-   is the asset's; only the checkerboard is discarded. */
-function buildBinocMask(){
-  if (BINOC.built) return BINOC.mask;
-  const im = loadImg(BINOC.file);
-  if (!imgReady(im)) return null;
-  const iw = im.naturalWidth, ih = im.naturalHeight;
-
-  const a = document.createElement("canvas"); a.width=iw; a.height=ih;
-  const ag = a.getContext("2d", { willReadFrequently:true });
-  ag.drawImage(im, 0, 0);
-  const d = ag.getImageData(0,0,iw,ih).data;
-  // the surround reads near 0; the checker squares read 179 and 255. Anything
-  // above this is open sky as far as the mask is concerned.
-  const THRESH = 90;
-  const out = ag.createImageData(iw, ih);
-  const o = out.data;
-  for (let i=0;i<d.length;i+=4){
-    const l = 0.2126*d[i] + 0.7152*d[i+1] + 0.0722*d[i+2];
-    const v = l > THRESH ? 255 : 0;
-    o[i]=o[i+1]=o[i+2]=v; o[i+3]=255;
-  }
-  /* The asset's own reticle is dark, so thresholding turns it into mask and it
-     survives as a second set of brackets. A short dilation of the open area
-     closes those thin lines while barely touching the circle edges, and then the
-     reticle is drawn once, crisply, below. Separable, so it stays cheap. */
-  const RAD = Math.max(2, Math.round(iw*0.010));
-  const lin = new Uint8Array(iw*ih);
-  for (let i=0,p2=0;i<lin.length;i++,p2+=4) lin[i] = o[p2];
-  const tmpRow = new Uint8Array(iw*ih);
-  for (let y=0;y<ih;y++){
-    const row = y*iw;
-    for (let x=0;x<iw;x++){
-      let m=0;
-      const x0=Math.max(0,x-RAD), x1=Math.min(iw-1,x+RAD);
-      for (let k=x0;k<=x1;k++){ const v=lin[row+k]; if(v>m) m=v; }
-      tmpRow[row+x]=m;
-    }
-  }
-  for (let x=0;x<iw;x++){
-    for (let y=0;y<ih;y++){
-      let m=0;
-      const y0=Math.max(0,y-RAD), y1=Math.min(ih-1,y+RAD);
-      for (let k=y0;k<=y1;k++){ const v=tmpRow[k*iw+x]; if(v>m) m=v; }
-      const i4=(y*iw+x)*4; o[i4]=o[i4+1]=o[i4+2]=m;
-    }
-  }
-  ag.putImageData(out, 0, 0);
-
-  // blur it into a soft-edged vignette. No second hard pass: multiplying the
-  // crisp version back over the blur is what made the rim stair-step.
-  const b = document.createElement("canvas"); b.width=iw; b.height=ih;
-  const bg = b.getContext("2d");
-  bg.fillStyle="#000"; bg.fillRect(0,0,iw,ih);
-  bg.filter = "blur(" + Math.max(2.5, iw*0.009) + "px)";
-  bg.drawImage(a, 0, 0);
-  bg.filter = "none";
-
-  // the reticle: corner brackets in each eyepiece and a centre crosshair,
-  // matching the asset's own layout
-  const lx = iw*BINOC.lensL, rx = iw*BINOC.lensR, cy2 = ih*BINOC.cy;
-  const R = iw*BINOC.r;
-  bg.strokeStyle = "#1a1a1a";
-  bg.lineWidth = Math.max(1.5, iw*0.0034);
-  bg.lineCap = "butt";
-  for (const cx2 of [lx, rx]){
-    const k = R*0.52, len = R*0.20;
-    for (const sx of [-1,1]) for (const sy of [-1,1]){
-      bg.beginPath();
-      bg.moveTo(cx2+sx*k, cy2+sy*k - sy*len);
-      bg.lineTo(cx2+sx*k, cy2+sy*k);
-      bg.lineTo(cx2+sx*k - sx*len, cy2+sy*k);
-      bg.stroke();
-    }
-  }
-  // the crosshair sits across the join between the two circles
-  const mid = (lx+rx)/2;
-  bg.beginPath();
-  bg.moveTo(mid - R*0.62, cy2); bg.lineTo(mid - R*0.10, cy2);
-  bg.moveTo(mid + R*0.10, cy2); bg.lineTo(mid + R*0.62, cy2);
-  bg.moveTo(mid, cy2 + R*0.30); bg.lineTo(mid, cy2 + R*0.52);
-  bg.stroke();
-
-  BINOC.mask = b; BINOC.built = true;
-  return b;
-}
-
-function drawHorizonPlate(t, dt, o){
-  o = o||{};
-  const air = cl01(o.air===undefined?0.85:o.air);
-  const pl = getPlate("town");
-  if (!pl){ ctx.fillStyle="#b8b4a6"; ctx.fillRect(0,0,W,H); return; }
-  const mask = buildBinocMask();
-
-  /* ---- where the world is aimed. Inertia, then a sway that never settles. ---- */
-  const tx = P.active ? cl((P.x/W-0.5)*2, -1, 1) : 0;
-  const ty = P.active ? cl((P.y/H-0.5)*2, -1, 1) : 0;
-  PLOOK.vx += (tx-PLOOK.ax)*dt*4.2; PLOOK.vy += (ty-PLOOK.ay)*dt*4.2;
-  PLOOK.vx *= 0.90; PLOOK.vy *= 0.90;
-  PLOOK.ax = (PLOOK.ax||0) + PLOOK.vx*dt*7;
-  PLOOK.ay = (PLOOK.ay||0) + PLOOK.vy*dt*7;
-  const swx = Math.sin(t*0.47)*0.010 + Math.sin(t*1.19)*0.004;
-  const swy = Math.cos(t*0.41)*0.008 + Math.cos(t*1.07)*0.003;
-
-  /* ---- holding still. Everything here is deliberately slow. ---- */
-  const moving = Math.hypot(PLOOK.vx, PLOOK.vy)*30;
-  const steady = cl01(1-moving) * (P.still>0.3 ? 1 : 0.2);
-  PLOOK.hold = cl01(PLOOK.hold + (steady>0.45 ? dt*0.17 : -dt*0.30));
-  PLOOK.recall = lerp(PLOOK.recall, ease.io(PLOOK.hold), 0.022);
-  PLOOK.radius = lerp(PLOOK.radius, PLOOK.recall, 0.020);
-  // magnification climbs slowly and only a little, so the view stays readable
-  PLOOK.mag = lerp(PLOOK.mag||1, 1 + 0.42*ease.io(PLOOK.hold), 0.020);
-
-  const MAG = PLOOK.mag;
-  const panX = (PLOOK.ax + swx) * W * 0.16;
-  const panY = (PLOOK.ay + swy) * H * 0.10;
-
-  /* ---- the world as it is now, and the world as it was, both magnified ---- */
-  offscreen(()=>{ drawPlate("town", { air, drift:false, camx:0, camy:0 }); });
-  const showRecall = PLOOK.recall > 0.005;
-  if (showRecall) offscreen2(()=>{ drawPlate("town", { air:0, drift:false, camx:0, camy:0 }); });
-
-  ctx.save();
-  ctx.translate(W*0.5, H*0.5);
-  ctx.scale(MAG, MAG);
-  ctx.translate(-W*0.5 - panX/MAG, -H*0.5 - panY/MAG);
-  ctx.drawImage(TMP, 0, 0);
-  ctx.restore();
-
-  /* the remembered world, returning from the middle of each eyepiece outward */
-  if (showRecall){
-    const edge = cl01(PLOOK.radius*1.30);
-    // mask TMP2 down to two blooming discs, on its own context
-    const cxL = W*BINOC.lensL, cxR = W*BINOC.lensR, mcy = H*BINOC.cy;
-    const rr = W*BINOC.r*1.02;
-    tc2.globalCompositeOperation="destination-in";
-    tc2.clearRect(0,0,0,0);
-    for (const [cxx, first] of [[cxL,true],[cxR,false]]){
-      const g2 = tc2.createRadialGradient(cxx, mcy, 0, cxx, mcy, rr);
-      g2.addColorStop(0, "rgba(255,255,255,1)");
-      g2.addColorStop(Math.max(0.02, edge*0.70), "rgba(255,255,255,1)");
-      g2.addColorStop(Math.min(0.999, edge*1.06+0.02), "rgba(255,255,255,0)");
-      g2.addColorStop(1, "rgba(255,255,255,0)");
-      tc2.globalCompositeOperation = first ? "destination-in" : "destination-atop";
-      tc2.fillStyle = g2;
-      tc2.fillRect(0,0,TMP2.width,TMP2.height);
-    }
-    tc2.globalCompositeOperation="source-over";
-    ctx.save();
-    ctx.globalAlpha = cl01(PLOOK.recall*1.4);
-    ctx.translate(W*0.5, H*0.5);
-    ctx.scale(MAG, MAG);
-    ctx.translate(-W*0.5 - panX/MAG, -H*0.5 - panY/MAG);
-    ctx.drawImage(TMP2, 0, 0);
-    ctx.restore();
-    // colour is the last thing to come back
-    if (PLOOK.recall < 0.92){
-      ctx.save();
-      ctx.globalCompositeOperation="saturation";
-      ctx.globalAlpha=(1-PLOOK.recall)*0.55;
-      ctx.fillStyle="rgb(128,128,128)";
-      ctx.fillRect(0,0,W,H);
-      ctx.restore();
-    }
-  }
-
-  /* the air in front of it all */
-  partRole = 2;
-  drawParticles(t, 0.14+air*0.55*(1-PLOOK.recall*0.7), { x:W*0.30, y:H*0.28, r:H*1.1 });
-  if (LITPOP.birds>0.05 && PLOOK.recall>0.5) drawBirds();
-
-  /* ---- the eyepieces: the asset, multiplied over everything ---- */
-  if (mask){
-    // cover the frame, keeping the asset's aspect, with a breath of sway
-    const ar = mask.width/mask.height;
-    let mw = W, mh = W/ar;
-    if (mh < H){ mh = H; mw = H*ar; }
-    mw *= 1.06; mh *= 1.06;
-    const mx = (W-mw)/2 + Math.sin(t*0.5)*W*0.0035;
-    const my = (H-mh)/2 + Math.cos(t*0.43)*H*0.0030;
-    ctx.save();
-    ctx.globalCompositeOperation="multiply";
-    ctx.drawImage(mask, mx, my, mw, mh);
-    ctx.restore();
-    // and black around it, so nothing of the frame is ever left showing
-    ctx.save();
-    ctx.fillStyle="#000";
-    if (mx>0){ ctx.fillRect(0,0,mx+1,H); ctx.fillRect(mx+mw-1,0,W-(mx+mw)+1,H); }
-    if (my>0){ ctx.fillRect(0,0,W,my+1); ctx.fillRect(0,my+mh-1,W,H-(my+mh)+1); }
-    ctx.restore();
-  } else {
-    // until it decodes, two plain black-surround circles
-    ctx.save(); ctx.fillStyle="#000";
-    ctx.beginPath(); ctx.rect(0,0,W,H);
-    ctx.arc(W*BINOC.lensL, H*BINOC.cy, W*BINOC.r, 0, TAU);
-    ctx.arc(W*BINOC.lensR, H*BINOC.cy, W*BINOC.r, 0, TAU);
-    ctx.fill("evenodd"); ctx.restore();
-  }
-
-  /* ---- what is inside the eyepieces right now ---- */
-  // a landmark's screen position, after the same pan and zoom the world got
-  const place = (m)=>({
-    x: W*0.5 + ((AP.x + m.x*AP.w) - W*0.5 - panX/MAG)*MAG,
-    y: H*0.5 + ((AP.y + m.y*AP.h) - H*0.5 - panY/MAG)*MAG
-  });
-  let onMark = null, onD = 1e9;
-  for (const m of PMARK){
-    const q = place(m);
-    m._x=q.x; m._y=q.y;
-    for (const cxx of [W*BINOC.lensL, W*BINOC.lensR]){
-      const d = Math.hypot(q.x-cxx, q.y-H*BINOC.cy);
-      const reach = W*BINOC.r*(m.r?cl(m.r/0.13,0.6,2.2):1)*0.72;
-      if (d < reach && d < onD){ onMark = m; onD = d; }
-    }
-  }
-  if (onMark && PLOOK.recall>0.55 && !PLOOK.found[onMark.id]){
-    PLOOK.found[onMark.id]=true; PLOOK.n++;
-    sfx.chime(pick([784,880,988]));
-    whisper(onMark.label);
-    if (!FOUND["mark-"+onMark.id]){ FOUND["mark-"+onMark.id]=true; }
-  }
-
-  /* the only feedback: a slim arc under the eyepieces, closing as it remembers */
-  if (PLOOK.hold>0.015 && PLOOK.hold<0.995){
-    ctx.save();
-    ctx.strokeStyle=rgba([236,230,214], 0.30);
-    ctx.lineWidth=Math.max(1.6,MIN*0.0026); ctx.lineCap="round";
-    const ay2 = H*BINOC.cy + W*BINOC.r*1.16;
-    const half = W*0.10;
-    ctx.beginPath();
-    ctx.moveTo(W*0.5-half, ay2);
-    ctx.lineTo(W*0.5-half + half*2*PLOOK.hold, ay2);
-    ctx.stroke();
-    ctx.restore();
-  }
-  cv.className = "grabbable";
-}
-
-function horizonInteractP(g, dt){
-  if (g && PLOOK.n>=3) meet(g);
-}
+/* The lookout chapter that used to live here — the binoculars — is now its own
+   file, build/06g-lookout.js. It grew past the point where it belonged in a
+   collection of plate scenes. */
 
 /* ============================================================================
    THE KITE
@@ -8968,6 +8844,877 @@ function updateStoppedPlate(t, dt){
     drawFog(AP.x+AP.w*0.30, AP.y+AP.h*0.12, AP.w*0.40, AP.h*0.50, 0.8);
   }
   fogFade(dt);
+}
+/* ============================================================================
+   THE LOOKOUT
+   A pair of binoculars, on a hill, over a whole valley.
+
+   The version this replaces was a guided minigame wearing the costume of an
+   object: the view could travel about a sixth of the frame, the magnification
+   reached 1.4x, and there were four places that counted and nowhere else to go.
+   Everything you could do, you did in the first fifteen seconds.
+
+   Three things changed.
+
+   1. THE VIEW IS A WINDOW INTO THE PAINTING, NOT A ZOOM OF THE FRAME.
+      Every other chapter draws the town plate — the painting sliced into bands
+      with parallax between them. That is right for a scene you stand in and
+      wrong for one you look at through glass: parallax is what happens when YOU
+      move, and here you do not move, the lenses turn. So this chapter ignores
+      the plate and reads a sub-rectangle straight out of the source painting at
+      its own resolution. One resample instead of two, no band seams to magnify,
+      and the pan is not a nudge of a fixed frame — it is a real window that can
+      go anywhere in the picture. At the working magnification you can put any
+      part of the valley in the eyepiece: the ridge, the school, the far side of
+      town, the flowers by your feet. Nothing is out of reach and nothing is
+      privileged.
+
+   2. HOLDING IS FOCUSING, AND FOCUSING TAKES TIME.
+      Press and the world begins to come back, in an order: sharpness first, then
+      the haze thinning, then the colour, and last the small distant things that
+      were always there and could not be resolved. Full focus is about two and a
+      half seconds away and it never arrives in one step. Let go and it goes,
+      slower than it came. In the third chapter the same hold only gets you
+      partway, and it slips faster, which is the whole argument of the piece made
+      as a control rather than as a caption.
+
+   3. EVERY PLACE ANSWERS.
+      Four of them are on a list. Seven more are not on any list, are never
+      marked, and say something anyway. A visitor who looks at the church because
+      it is a church finds that the church was waiting. That is the difference
+      between exploring and completing.
+
+   The guidance problem — the school was genuinely hard to find — is solved
+   without a single arrow. Undiscovered landmarks carry a warm bloom that is
+   brightest when the lenses are OUT of focus and fades as you arrive, so the
+   hint retreats as it succeeds; the metal on the tower and the glass in the
+   school cupola throw an occasional glint, which is what metal and glass do; the
+   birds on the wire move; a cloud shadow crosses the ridge; and if a visitor has
+   sat still for a while without pressing anything, the lenses drift very slowly
+   toward whatever they have not found yet, and stop the instant a hand arrives.
+   ========================================================================== */
+
+/* ----------------------------------------------------------------- THE FIELD
+   What you see when you put binoculars to your face is ONE soft-edged oval, not
+   two circles. This is worth being firm about, because the obvious thing to draw
+   is two.
+
+   The chapter was first built on the supplied two-circle overlay and it was wrong
+   in three ways that only showed up once there was something to aim at. The two
+   circles are 0.42 of the frame wide and their centres are 0.33 apart, so they
+   overlap across the middle and leave a seam running down the exact centre of the
+   frame — which is the one place the chapter asks the visitor to put things. Light
+   falloff, which any real lens has, cannot be drawn on two overlapping discs
+   without double-darkening the overlap, so the seam becomes a bruise. And the
+   corner brackets are a rifle sight: this is a chapter about looking at a valley,
+   not at a target.
+
+   So the field is one oval, drawn rather than loaded, slightly wider than tall the
+   way a wide-field pair looks with your eye close to the glass. A soft edge, real
+   vignetting toward the rim, a warm ring inside the edge and a cool one outside
+   because that is what glass does to the edge of a field, and a very dark blue-grey
+   surround rather than pure black, because the inside of an eyecup is not black.
+   No reticle. Nothing to read.
+
+   `lensL`/`lensR`/`r` are kept because the dormant morph file measures the two
+   lens positions off them. */
+const BINOC = { lensL:0.335, lensR:0.665, cy:0.500, r:0.212 };
+/* Nearly round, and a little smaller than the frame is tall. Both matter. At
+   ax/ay 1.41 it read as an ellipse rather than a circle, and at ay 0.472 it touched
+   within twenty pixels of the top and bottom of the frame, which leaves no
+   surround for the eye to read the shape against — it looked like a soft-edged
+   photograph rather than like looking through something. */
+const FIELD = { cy:0.500, ay:0.437, aspect:1.14, feather:0.080 };
+/* the semi-axes in pixels, which is what everything else needs */
+const fieldAy = () => H*FIELD.ay;
+const fieldAx = () => Math.min(W*0.46, H*FIELD.ay*FIELD.aspect);
+
+/* ------------------------------------------------------------------ the state
+   `cx`/`cy` are where the lenses are pointed, in pixels of the source painting.
+   `z` is how much of the painting fits in the frame: 1 is the whole thing, which
+   is exactly the framing the plate scenes use, so the chapter opens matched to
+   the one before it and then the binoculars come up to your eyes. */
+const PLOOK = {
+  ready:false,
+  cx:0, cy:0, vx:0, vy:0,          // aim, in source px, and its throw
+  z:1, lift:0,                     // magnification, and the raise-to-the-eyes
+  focus:0, recall:0,               // how long you have held, and what it looks like
+  found:Object.create(null),       // the four, ticked
+  said:Object.create(null),        // everything else, said once
+  dwell:Object.create(null),
+  n:0,
+  aim:null,                        // what is in the middle right now
+  taken:0,                         // a hand has arrived; stop helping
+  idle:0,
+  wsrc:0, hsrc:0, sx:0, sy:0,      // the window, cached for the hit test
+  beat:""
+};
+
+/* the working magnifications. Z_BASE is where the lenses settle once they are up
+   — enough that there is always somewhere to pan to — and Z_MAX is what holding
+   steady adds on top. Beyond about 2.4 the painting has no more detail to give
+   and starts to look like a photograph of a painting. */
+const Z_BASE = 1.66, Z_MAX = 2.34;
+/* the out-of-focus copy of the frame, at half resolution. Its own buffer rather
+   than the shared TMP2, because resizing a buffer that four other scenes draw
+   full-frame into is a bug waiting for the next chapter. */
+const LBLUR = document.createElement("canvas"), lbc = LBLUR.getContext("2d");
+
+/* THE TWO PAINTINGS, ALREADY MIXED.
+   The frame is a window into a blend of the clean valley and the hazed one, and
+   the naive way to draw it is two scaled drawImage calls from two 1537-pixel
+   paintings, every frame. That made this the most expensive chapter in the piece —
+   twenty frames a second against forty for the kite — because a large source
+   resampled down with smoothing is genuinely costly, and it was happening twice.
+
+   But the blend only changes when the focus does. So the two are composited once,
+   at the painting's own resolution, into a buffer that is rebuilt only when the
+   mix has moved by more than two per cent; the frame is then a single window out
+   of that. While the visitor is looking around with the focus steady — which is
+   most of this chapter — it is one resample instead of two, and the rebuild only
+   happens a few dozen times over the couple of seconds of a focus pull. */
+const LCOMP = document.createElement("canvas"), lcc = LCOMP.getContext("2d");
+let lcompAir = -1;
+function lookComposite(im, imh, air){
+  if (LCOMP.width !== im.naturalWidth || LCOMP.height !== im.naturalHeight){
+    LCOMP.width = im.naturalWidth; LCOMP.height = im.naturalHeight;
+    lcompAir = -1;
+  }
+  const q = Math.round(cl01(air)*50)/50;
+  if (q === lcompAir) return LCOMP;
+  lcompAir = q;
+  lcc.setTransform(1,0,0,1,0,0);
+  lcc.globalAlpha = 1;
+  lcc.globalCompositeOperation = "source-over";
+  lcc.drawImage(im, 0, 0);
+  if (q > 0.004 && imgReady(imh)){
+    lcc.globalAlpha = q;
+    lcc.drawImage(imh, 0, 0);
+    lcc.globalAlpha = 1;
+  }
+  return LCOMP;
+}
+/* how much of the source the frame shows at z=1: the same crop the town plate
+   uses, so the cut into this chapter is not a cut. */
+const L_HOME_H = 0.88;
+
+/* ------------------------------------------------------------------ the places
+   All coordinates are fractions of the SOURCE painting, measured off magnified
+   gridded crops of viewoftown.png rather than guessed — the last version had the
+   birds a full 1.5% of the frame below the wire they are sitting on.
+
+   `r` is how big the thing is, which is how forgiving its aim needs to be.
+   The first four are the list. The rest are not on any list, are never marked,
+   and answer anyway. */
+const LMARK = [
+  { id:"school", x:0.4250, y:0.6880, r:0.070, key:true, aud:"school",
+    tick:"My school",
+    say:"Your school. The red brick one, with the little tower on top.",
+    glint:{ x:0.4232, y:0.6560, w:0.010 } },              // the cupola glazing
+  { id:"wires",  x:0.2480, y:0.4790, r:0.062, key:true, aud:"birds",
+    tick:"The birds on the wire",
+    say:"The birds on the wire. There were always more than you could count." },
+  { id:"tower",  x:0.6752, y:0.6280, r:0.056, key:true, aud:"tower",
+    tick:"The water tower",
+    say:"The water tower. You could see it from anywhere in town.",
+    glint:{ x:0.6690, y:0.6130, w:0.013 } },              // sun on the tank
+  { id:"hills",  x:0.4550, y:0.5620, r:0.140, key:true, aud:"hills",
+    tick:"The far hills",
+    say:"The far hills. On a clear day, every one of them." },
+
+  { id:"spire",  x:0.8000, y:0.6760, r:0.048, aud:"town",
+    say:"The church. You could hear that bell all the way up here.",
+    glint:{ x:0.7995, y:0.6480, w:0.007 } },
+  { id:"lane",   x:0.2450, y:0.7130, r:0.082, aud:"town",
+    say:"Your street. Fourth along, the one with the gate that stuck." },
+  { id:"tree",   x:0.7450, y:0.6940, r:0.055, aud:"birds",
+    say:"The big tree at the crossroads. Everybody met under that tree." },
+  { id:"pole",   x:0.0970, y:0.5150, r:0.060,
+    say:"The pole at the top of the field. It hummed if you leaned on it." },
+  { id:"hall",   x:0.9280, y:0.7120, r:0.055, aud:"town",
+    say:"The town hall, and the tower you were never allowed up." },
+  { id:"clouds", x:0.1750, y:0.1450, r:0.125,
+    say:"Clouds. You used to lie back here and give them names." },
+  { id:"flowers",x:0.3050, y:0.9100, r:0.115,
+    say:"Buttercups, the whole way down the hill." }
+];
+
+/* the top wire, which is the one the birds sit on. Two measured points, and it
+   is straight enough between them that a line is honest. */
+const lookWireY = fx => 0.4755 + (fx - 0.220)*0.138;
+
+/* Birds of my own, on free stretches of wire away from the painted ones so
+   nothing doubles. They sit, they shuffle, and every so often one of them drops
+   off the wire, goes round, and comes back — which is the only thing in this
+   painting that moves on its own, and the eye finds it without being told to. */
+const LBIRD = [];
+function buildLookBirds(){
+  if (LBIRD.length) return;
+  for (const fx of [0.352, 0.487, 0.665]){
+    LBIRD.push({ home:fx, x:fx, y:lookWireY(fx), st:"sit", t:rnd(3,14),
+                 fx:0, fy:0, ph:rnd(0,TAU), flip: Math.random()<0.5 ? -1 : 1 });
+  }
+}
+function updLookBirds(dt, alive){
+  for (const b of LBIRD){
+    b.t -= dt;
+    if (b.st === "sit"){
+      b.x = b.home; b.y = lookWireY(b.home);
+      if (b.t <= 0 && alive > 0.4){
+        b.st = "fly"; b.t = rnd(3.4, 5.2); b.dur = b.t;
+        b.flip = Math.random()<0.5 ? -1 : 1;
+      }
+    } else {
+      // out and back along a shallow arc, so it always lands where it left
+      const u = 1 - cl01(b.t / b.dur);
+      const s = Math.sin(u*PI);
+      b.x = b.home + b.flip * s * 0.055;
+      b.y = lookWireY(b.home) - s*0.048 - Math.sin(u*PI*2)*0.010;
+      if (b.t <= 0){ b.st = "sit"; b.t = rnd(6, 22); }
+    }
+  }
+}
+
+/* one bird, in source-fraction space, drawn at whatever the view makes of it.
+   The painted birds on this wire are about 0.9% of the painting's width tall, so
+   these are matched to them: anything larger and a starling reads as a crow. */
+function drawLookBird(b, px, py, sc, t, dark){
+  const s = Math.max(1.0, sc*0.0042);          // body length, in screen px
+  ctx.save();
+  if (b.st === "fly"){
+    /* A bird in the air at this distance is not a body with wings attached to it,
+       it is two curves. Drawn as a filled ellipse plus two straight strokes it came
+       out as a black cartoon bat, which is what it looks like when you draw the
+       anatomy instead of the silhouette. Two arcs meeting at nothing, stroked thin,
+       is the whole bird. */
+    const beat = Math.sin(t*15 + b.ph);
+    const sp = s*0.95;
+    ctx.strokeStyle = rgba(dark, 0.85);
+    ctx.lineWidth = Math.max(0.7, sp*0.14);
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.moveTo(px - sp, py + sp*0.34*beat);
+    ctx.quadraticCurveTo(px - sp*0.45, py - sp*0.30*beat, px, py);
+    ctx.quadraticCurveTo(px + sp*0.45, py - sp*0.30*beat, px + sp, py + sp*0.34*beat);
+    ctx.stroke();
+  } else {
+    // on the wire: a body, a head, and a tail hanging off the back of it
+    ctx.fillStyle = rgba(dark, 0.9);
+    ctx.beginPath();
+    ctx.ellipse(px, py - s*0.55, s*0.40, s*0.60, 0, 0, TAU);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(px + b.flip*s*0.28, py - s*1.02, s*0.23, s*0.23, 0, 0, TAU);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(px - b.flip*s*0.44, py - s*0.24, s*0.30, s*0.12, b.flip*0.5, 0, TAU);
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
+/* ------------------------------------------------------------------ the frame */
+function resetLookout(bid){
+  const im = loadImg("viewoftown.png");
+  const SW = imgReady(im) ? im.naturalWidth : 1537;
+  const SH = imgReady(im) ? im.naturalHeight : 1023;
+  PLOOK.cx = SW*0.5;
+  PLOOK.cy = SH*L_HOME_H*0.5;
+  PLOOK.vx = PLOOK.vy = 0;
+  PLOOK.z = 1; PLOOK.lift = 0;
+  PLOOK.focus = 0; PLOOK.recall = 0;
+  PLOOK.taken = 0; PLOOK.idle = 0;
+  PLOOK.aim = null;
+  PLOOK.beat = bid || "";
+  for (const k in PLOOK.dwell) PLOOK.dwell[k] = 0;
+  buildLookBirds();
+  buildLookList();
+}
+
+/* `o.air0` is how the valley looks with the lenses out of focus, `o.air1` is the
+   most that holding can ever get back. In chapter two that second number is
+   zero: hold long enough and you have the day as it was. In chapter three it is
+   not, and no amount of holding moves it, which is the point. */
+function drawLookout(t, dt, o){
+  o = o||{};
+  apFull();
+  const im  = loadImg("viewoftown.png");
+  const imh = loadImg("viewoftownafterpollution.png");
+  if (!imgReady(im)){
+    // until it decodes, the plate, so the beat is never a blank screen
+    drawPlate("town", { air:o.air0===undefined?0.4:o.air0 });
+    return;
+  }
+  PLOOK.ready = true;
+  const SW = im.naturalWidth, SH = im.naturalHeight;
+  const air0 = o.air0===undefined ? 0.40 : o.air0;
+  const air1 = o.air1===undefined ? 0.00 : o.air1;
+  const fall = o.fall || 3.6;
+
+  /* ---------------------------------------------------------- raising them */
+  PLOOK.lift = cl01(PLOOK.lift + dt/2.1);
+  const lift = ease.io(PLOOK.lift);
+
+  /* ---------------------------------------------------------- holding still
+     Focus is what holding buys, and it is deliberately slow: a little over three
+     seconds of hold from cold, and it arrives in an order rather than all at once.
+     Sweeping the lenses hard does not stop it, it only slows it — a visitor who is
+     looking around should not be punished for looking around. */
+  const held = P.down ? 1 : 0;
+  if (held) PLOOK.taken = 1;
+  const spd  = Math.hypot(PLOOK.vx, PLOOK.vy) / Math.max(1, PLOOK.wsrc);
+  const calm = 0.35 + 0.65*cl01(1 - spd*2.0);
+  /* and the world helps, slightly, when there is something in the middle worth
+     resolving. Not a marker: the same soft focus pull a real lens gives you when
+     you happen to be pointed at something with an edge on it. */
+  const warm = (PLOOK.aim && !PLOOK.found[PLOOK.aim.id]) ? 1.15 : 1;
+  PLOOK.focus = cl01(PLOOK.focus + (held ? dt/3.20*calm*warm : -dt/fall));
+  PLOOK.recall = lerp(PLOOK.recall, ease.io(PLOOK.focus), Math.min(1, dt*2.6));
+  const rec = PLOOK.recall;
+
+  /* ---------------------------------------------------------- where they point
+     While a hand is down the world moves with it, one for one — a real object
+     does not lag behind your grip. Let go and the throw carries on and settles.
+     Under all of it, a tremor, because nobody holds binoculars still. */
+  const zTarget = Z_BASE + (Z_MAX - Z_BASE)*ease.io(PLOOK.focus);
+  PLOOK.z = lerp(PLOOK.z, lerp(1, zTarget, lift), Math.min(1, dt*1.9));
+  const wsrc = (SW*1.0) / PLOOK.z;
+  const hsrc = (SH*L_HOME_H) / PLOOK.z;
+  const kx = wsrc / W, ky = hsrc / H;              // source px per screen px
+
+  if (P.down){
+    PLOOK.cx -= P.dx * kx;
+    PLOOK.cy -= P.dy * ky;
+    if (dt > 0){
+      PLOOK.vx = lerp(PLOOK.vx, -P.dx*kx/dt, 0.30);
+      PLOOK.vy = lerp(PLOOK.vy, -P.dy*ky/dt, 0.30);
+    }
+  } else {
+    PLOOK.cx += PLOOK.vx*dt;
+    PLOOK.cy += PLOOK.vy*dt;
+    const k2 = Math.pow(0.015, dt);
+    PLOOK.vx *= k2; PLOOK.vy *= k2;
+    /* Coming up, the aim settles on the valley rather than on the sky. The plate
+       framing this chapter inherits is centred at 0.44 of the painting, which is
+       most of the way up the sky; magnify that by 1.66 about its own centre and the
+       town, the school and the tower all fall out of the bottom of the frame, so
+       raising the binoculars CROPPED AWAY everything the chapter is about. They
+       come down to the valley as they come up, which is also what a person does. */
+    if (!PLOOK.taken && PLOOK.lift < 0.999){
+      PLOOK.cy += (SH*0.585 - PLOOK.cy) * Math.min(1, dt*0.9);
+    }
+    /* Nobody has touched anything for a while. Rather than putting an arrow on
+       screen, the lenses wander — very slowly, and toward whatever has not been
+       found — which shows that they CAN wander. The moment a hand arrives this
+       never happens again. */
+    PLOOK.idle += dt;
+    if (!PLOOK.taken && PLOOK.idle > 4.5 && lift > 0.9){
+      let tgt = null;
+      for (const m of LMARK) if (m.key && !PLOOK.found[m.id]){ tgt = m; break; }
+      if (tgt){
+        const gx = tgt.x*SW, gy = tgt.y*SH;
+        PLOOK.cx += (gx - PLOOK.cx) * Math.min(1, dt*0.16);
+        PLOOK.cy += (gy - PLOOK.cy) * Math.min(1, dt*0.16);
+      }
+    }
+  }
+  // the window never leaves the painting
+  PLOOK.cx = cl(PLOOK.cx, wsrc*0.5, SW - wsrc*0.5);
+  PLOOK.cy = cl(PLOOK.cy, hsrc*0.5, SH - hsrc*0.5);
+
+  /* ---- and what that clamp does to aiming ----
+     Because the window cannot leave the painting, its centre can never get closer
+     than half a frame to any edge of it: at working magnification the leftmost the
+     centre goes is 0.21 across. The left-hand telephone pole is at 0.097 and the
+     buttercups are at 0.91, so neither can EVER be put in the middle of the field,
+     however hard the visitor drags — and judged on centre distance alone they were
+     permanently unfindable while sitting in plain view.
+
+     So when the window is pressed up against an edge of the painting, the point
+     that counts as "what you are looking at" slides that way. Pressed to the left
+     edge, you are looking at the left of the valley; there is nothing else you
+     could be looking at. It is invisible, it needs no input, and it is the reason
+     the poles and the flowers answer at all. */
+  const roomL = PLOOK.cx - wsrc*0.5, roomR = (SW - wsrc*0.5) - PLOOK.cx;
+  const roomT = PLOOK.cy - hsrc*0.5, roomB = (SH - hsrc*0.5) - PLOOK.cy;
+  const push = (a, b, span) => {
+    const near = Math.min(a, b);
+    const lim = span*0.30;
+    if (near >= lim) return 0;
+    return (a < b ? -1 : 1) * (1 - near/lim) * 0.34;
+  };
+  const aofX = push(roomL, roomR, wsrc);
+  const aofY = push(roomT, roomB, hsrc);
+
+  // the tremor is a render offset, not a change of aim, so it never accumulates
+  const trem = MIN*0.0034*(0.55 + 0.45*(1-rec));
+  const tx = (Math.sin(t*0.47) + Math.sin(t*1.19)*0.42)*trem;
+  const ty = (Math.cos(t*0.41) + Math.cos(t*1.07)*0.38)*trem*0.8;
+
+  const sx = PLOOK.cx - wsrc*0.5 + tx*kx;
+  const sy = PLOOK.cy - hsrc*0.5 + ty*ky;
+  PLOOK.wsrc = wsrc; PLOOK.hsrc = hsrc; PLOOK.sx = sx; PLOOK.sy = sy;
+  // a source fraction to a screen point, and the scale between them
+  const SCX = fx => (fx*SW - sx)/wsrc * W;
+  const SCY = fy => (fy*SH - sy)/hsrc * H;
+  /* how wide the whole painting would be on screen at this magnification. Sizes
+     given as fractions of the painting are multiplied by this to become pixels,
+     so a bird stays the same size relative to the wire it is sitting on. */
+  const spanX = W * (SW/wsrc);
+
+  /* ---------------------------------------------------------- the two worlds
+     The valley as it is, and the valley as it was, in one image: the clean
+     painting with the hazed one over the top of it, and how much of the hazed one
+     is what holding controls. The pair is framed identically, so this is a
+     dissolve between two states of the same place rather than between two
+     pictures. */
+  const airNow = lerp(air0, air1, rec);
+  const world = lookComposite(im, imh, airNow);
+  const OV = 10;                                   // overscan: see the blur note
+  offscreen(()=>{
+    ctx.drawImage(world, sx, sy, wsrc, hsrc, -OV, -OV, W+OV*2, H+OV*2);
+    /* things that are alive, drawn in here so the lens softness applies to them
+       as it does to everything else */
+    drawLookLife(t, dt, SCX, SCY, spanX, airNow, rec);
+  });
+
+  /* ---------------------------------------------------------- focus, as optics
+     Two things are soft in this frame and they are soft for different reasons.
+     The lenses are out of focus, which is the whole mechanic; and the meadow at
+     your feet is four feet away from a pair of binoculars set on a valley, which
+     no amount of holding will fix. One blurred copy serves both: drawn over the
+     whole frame while the focus is out, and again through a bottom ramp so the
+     grass never comes good.
+
+     The overscan matters. `ctx.filter` blurs the OUTPUT of a draw, and outside
+     the drawn rectangle there is transparent black, so a blur at the edge of the
+     frame pulls a dark border in. Drawing ten pixels beyond every edge puts that
+     border off-screen where it belongs. */
+  const sharp = sm(PLOOK.focus, 0.0, 0.52);
+  const soft  = 1 - sharp;
+  const meadowY = SCY(0.815);
+  const nearOn  = meadowY < H*1.02 ? 1 : 0;
+  /* Two things are soft in this frame and they are soft for different reasons: the
+     lenses are out of focus, and the meadow at your feet is four feet from a pair
+     of binoculars set on a valley, which no amount of holding will fix. One blurred
+     copy serves both — over the whole frame while the focus is out, and again
+     through a bottom ramp so the grass never comes good.
+
+     THE COST. This one pass was, on its own, the whole reason the chapter ran at
+     twenty frames a second when the kite ran at forty: `ctx.filter="blur()"` over a
+     full frame is a real gaussian, and at 1280x780 it measured 11.75 ms out of a
+     50 ms frame while everything else in the chapter added up to under one. So the
+     copy is built at a QUARTER of each dimension — a sixteenth of the pixels — with
+     a small gaussian on top of the reduction. A downsample is itself a low-pass, so
+     the two agree with each other rather than fighting, and scaling the result back
+     up adds a third one for free. Radius scales with the reduction.
+
+     And while the lenses are properly out of focus the near-ground pass is skipped
+     entirely, because a blur laid over a blur is not visible and that was the exact
+     state the chapter spent most of its time in. */
+  const NEAR_SKIP = 0.80;
+  const wantNear = nearOn && soft < NEAR_SKIP;
+  const needBlur = soft > 0.012 || wantNear;
+  const DIV = 4;
+  if (needBlur){
+    const Rb = Math.max(1.2, 0.4 + 3.6*soft, wantNear ? 2.6 : 0) / DIV;
+    const qw = Math.max(2, (W/DIV)|0), qh = Math.max(2, (H/DIV)|0);
+    if (LBLUR.width !== qw || LBLUR.height !== qh){ LBLUR.width = qw; LBLUR.height = qh; }
+    const OV2 = Math.ceil(Rb) + 2;
+    lbc.setTransform(1,0,0,1,0,0);
+    lbc.globalCompositeOperation = "source-over";
+    lbc.globalAlpha = 1;
+    lbc.imageSmoothingQuality = "high";
+    lbc.clearRect(0,0,qw,qh);
+    lbc.filter = "blur(" + Rb.toFixed(2) + "px)";
+    lbc.drawImage(TMP, -OV2, -OV2, qw+OV2*2, qh+OV2*2);
+    lbc.filter = "none";
+  }
+
+  ctx.drawImage(TMP, 0, 0);
+  if (needBlur){
+    if (soft > 0.012){
+      ctx.globalAlpha = soft;
+      ctx.drawImage(LBLUR, 0, 0, W, H);
+      ctx.globalAlpha = 1;
+    }
+    if (wantNear){
+      // mask the blurred copy down to the near ground and lay it back on. The pass
+      // above has already had its use of it, so this can be destructive.
+      const qh = LBLUR.height;
+      const y0 = Math.max(-qh, meadowY/DIV), y1 = y0 + qh*0.42;
+      const gr = lbc.createLinearGradient(0, y0, 0, y1);
+      gr.addColorStop(0, "rgba(0,0,0,0)");
+      gr.addColorStop(1, "rgba(0,0,0,1)");
+      lbc.globalCompositeOperation = "destination-in";
+      lbc.fillStyle = gr;
+      lbc.fillRect(0, 0, LBLUR.width, qh);
+      lbc.globalCompositeOperation = "source-over";
+      // ramped in so the near softness arrives with the focus rather than snapping
+      ctx.globalAlpha = cl01((NEAR_SKIP - soft)/0.22);
+      ctx.drawImage(LBLUR, 0, 0, W, H);
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  /* ---------------------------------------------------------- colour, last
+     Colour is the slowest thing to come back, because it is the slowest thing to
+     come back. Out of focus the valley is nearly grey and slightly milky, the way
+     a place is before you have properly remembered it. */
+  if (rec < 0.985){
+    const g = 1 - rec;
+    ctx.save();
+    ctx.globalCompositeOperation = "saturation";
+    ctx.globalAlpha = g*0.46;
+    ctx.fillStyle = "rgb(128,128,128)";
+    ctx.fillRect(0,0,W,H);
+    ctx.restore();
+    ctx.fillStyle = rgba(airlight(), g*0.085);
+    ctx.fillRect(0,0,W,H);
+  }
+
+  /* ---------------------------------------------------------- what you are looking at
+     "Looking at" is not "the centre pixel is on it". Two things had to be right
+     here and neither is obvious.
+
+     First, SIZE. A landmark counts once it is inside the field, near the middle,
+     and closer to the middle than anything else — so its own extent is subtracted
+     before the distance is judged. The meadow is a third of the frame across, and
+     requiring its centroid to sit on the crosshair means the visitor is looking
+     straight at a hillside of buttercups and being told they are looking at
+     nothing.
+
+     Second, THE CLAMP. The window cannot leave the painting, so at working
+     magnification its centre can never get within about a fifth of the frame of
+     the painting's own edges — which means the left-hand telephone pole, at 0.097
+     across, can never be put in the middle of the field no matter how hard you
+     drag. Judging by centre alone made a prominent object permanently unfindable.
+     Distance is measured in units of the field's own semi-axes instead, with a
+     tolerance of 0.62 of the field, so anything comfortably inside the glass
+     counts. */
+  const fax = fieldAx(), fay = fieldAy();
+  const aimX = W*0.5 + aofX*fax, aimY = H*FIELD.cy + aofY*fay;
+  let best = null, bestD = 1e9;
+  for (const m of LMARK){
+    const px = SCX(m.x), py = SCY(m.y);
+    m._x = px; m._y = py;
+    const q = Math.hypot((px-aimX)/fax, (py-aimY)/fay);
+    const own = (spanX*m.r*0.5)/fax;              // how much of the field it fills
+    const d = Math.max(0, q - own);
+    m._on = d < 0.62;
+    if (m._on && d < bestD){ best = m; bestD = d; }
+  }
+  PLOOK.aim = best;
+
+  /* Long enough is a second and three quarters of holding a focused pair of
+     lenses on the thing — not a touch, not a sweep past it. */
+  for (const m of LMARK){
+    const k = m.id;
+    /* A place that is not on the list has to be settled on, not swept past: it
+       needs more focus and more time than one that is, so that its line reads as
+       something the visitor found rather than something that went off. */
+    if (m === best && rec > (m.key ? 0.52 : 0.64)){
+      PLOOK.dwell[k] = (PLOOK.dwell[k]||0) + dt;
+      const need = m.key ? 1.75 : 1.55;
+      if (PLOOK.dwell[k] >= need){
+        if (m.key && !PLOOK.found[k]){
+          PLOOK.found[k] = true; PLOOK.n++;
+          tickLookList(k);
+          whisper(m.say);
+          if (!FOUND["mark-"+k]){ FOUND["mark-"+k] = true; foundN++; }
+        } else if (!m.key && !PLOOK.said[k]){
+          PLOOK.said[k] = true;
+          whisper(m.say);
+          if (!FOUND["look-"+k]){ FOUND["look-"+k] = true; foundN++; curiosity += 0.22; }
+        }
+      }
+    } else {
+      PLOOK.dwell[k] = Math.max(0, (PLOOK.dwell[k]||0) - dt*0.7);
+    }
+  }
+
+  /* ---------------------------------------------------------- the hints
+     Light, not markers. An undiscovered landmark carries a warm bloom that is at
+     its strongest when the lenses are out of focus and gone by the time they are
+     sharp — a hint that retreats as it works — and the metal and glass in the
+     valley throw the occasional glint, because that is what metal and glass do at
+     four in the afternoon. */
+  drawLookHints(t, dt, SCX, SCY, spanX, rec);
+
+  /* dust and pollen in the air in front of the lenses */
+  partRole = airNow > 0.5 ? 2 : 0.6;
+  drawParticles(t, 0.10 + airNow*0.42*(1-rec*0.6), { x:W*0.30, y:H*0.26, r:H*1.15 });
+
+  /* ---------------------------------------------------------- the field of view
+     Drawn over everything, and growing from small as the binoculars come up. */
+  drawField(t, lift, rec);
+
+  /* There is no readout, and there was one. A hairline under the field that filled
+     up as the focus came in: it collided with the scroll cue, and worse, it was
+     telling the visitor a thing the picture in front of them was already saying
+     better. The image coming clear IS the progress bar. */
+
+  /* The valley, and then one place in it. `bed` is how loud the wider world is
+     while nothing in particular is being remembered — quieter on the second visit,
+     because by then there is less out there making a noise. */
+  lookSound(dt, 0.95, best && best.aud, PLOOK.focus, o.bed===undefined?0.60:o.bed);
+  cv.className = P.down ? "grabbing" : "grabbable";
+}
+
+/* -------------------------------------------------------------------- the field
+   One oval, four passes, and every one of them is something a real pair of
+   binoculars does:
+     1. vignette   — light falls off toward the rim of any field of view
+     2. surround   — everything outside is the inside of the eyecup
+     3. chromatism — a warm ring just inside the edge and a cool one just outside,
+                     which is lateral colour error, and is the single detail that
+                     makes the difference between a circular crop and glass
+     4. lift       — the whole field grows from small as they come up to your face
+
+   Drawn, not loaded. The whole thing is four fills and it is exact at any size,
+   which a 740-pixel flattened PNG with a checkerboard baked into it is not. */
+function drawField(t, lift, rec){
+  const s = lerp(0.50, 1, ease.o3(lift));
+  const cx = W*0.5 + Math.sin(t*0.5)*W*0.0026;
+  const cy = H*FIELD.cy + Math.cos(t*0.43)*H*0.0022;
+  const ax = fieldAx()*s, ay = fieldAy()*s;
+  const fe = FIELD.feather;
+
+  // an ellipse is a scaled circle, so everything below works in circle space
+  const ell = (fn) => { ctx.save(); ctx.translate(cx,cy); ctx.scale(ax/ay,1);
+                        ctx.translate(-cx,-cy); fn(ay); ctx.restore(); };
+
+  /* 1. the vignette. Barely anything until 0.62 of the way out, then a real
+        falloff — and a little deeper while the lenses are out of focus, because
+        an unfocused field genuinely does lose its edges first. */
+  ell(R => {
+    const edge = 1 - rec*0.16;
+    const g = ctx.createRadialGradient(cx,cy,R*0.10, cx,cy,R*1.001);
+    g.addColorStop(0,    "rgba(255,255,255,1)");
+    g.addColorStop(0.62, "rgba(252,252,253,1)");
+    g.addColorStop(0.86, "rgba("+Math.round(214*edge+20)+","+Math.round(218*edge+20)+","+Math.round(226*edge+20)+",1)");
+    g.addColorStop(1,    "rgba("+Math.round(120*edge)+","+Math.round(128*edge)+","+Math.round(140*edge)+",1)");
+    ctx.save();
+    ctx.globalCompositeOperation = "multiply";
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(cx,cy,R*1.001,0,TAU); ctx.fill();
+    ctx.restore();
+  });
+
+  /* 2. the surround. Not pure black: the inside of a rubber eyecup with a valley
+        in front of it is a very dark blue-grey, and pure black against a painting
+        reads as a hole cut in card. The edge is feathered by laying the surround
+        down twice, once hard outside the oval and once as a soft ramp across it. */
+  ctx.save();
+  ctx.fillStyle = "#04070b";
+  ctx.beginPath();
+  ctx.rect(0,0,W,H);
+  ctx.ellipse(cx,cy,ax,ay,0,0,TAU);
+  ctx.fill("evenodd");
+  ctx.restore();
+  ell(R => {
+    const g = ctx.createRadialGradient(cx,cy,R*(1-fe), cx,cy,R*(1+fe*0.15));
+    g.addColorStop(0, "rgba(4,7,11,0)");
+    g.addColorStop(1, "rgba(4,7,11,1)");
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(cx,cy,R*(1+fe*0.15),0,TAU); ctx.fill();
+  });
+
+  /* 3. the colour at the edge of the field. Warm inside, cool just outside, both
+        at a few per cent — invisible as an effect, and the reason the oval reads
+        as something you are looking through. */
+  ell(R => {
+    ctx.save();
+    ctx.globalCompositeOperation = "screen";
+    const g = ctx.createRadialGradient(cx,cy,R*0.86, cx,cy,R*1.0);
+    g.addColorStop(0,    "rgba(255,196,132,0)");
+    g.addColorStop(0.55, "rgba(255,190,124,0.052)");
+    g.addColorStop(1,    "rgba(255,182,116,0)");
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(cx,cy,R,0,TAU); ctx.fill();
+    const b = ctx.createRadialGradient(cx,cy,R*0.985, cx,cy,R*1.07);
+    b.addColorStop(0,   "rgba(120,168,255,0)");
+    b.addColorStop(0.4, "rgba(126,170,255,0.055)");
+    b.addColorStop(1,   "rgba(120,164,255,0)");
+    ctx.fillStyle = b;
+    ctx.beginPath(); ctx.arc(cx,cy,R*1.07,0,TAU); ctx.fill();
+    ctx.restore();
+  });
+}
+
+/* ------------------------------------------------------------------ the living
+   Everything here is in source-fraction space and gets whatever the window makes
+   of it, so a bird on the wire is a speck at rest and a bird when you are looking
+   at it. */
+let lcloud = 0.12;
+function drawLookLife(t, dt, SCX, SCY, spanX, air, rec){
+  const alive = cl01(1 - air*0.85);            // the hazed valley is emptier
+
+  /* a cloud shadow crossing the ridge. The one piece of weather in a still
+     painting, slow enough that you notice it rather than see it happen. */
+  lcloud += dt*0.0075;
+  if (lcloud > 1.35) lcloud = -0.35;
+  const cxx = SCX(lcloud), cyy = SCY(0.575);
+  const cw = spanX*0.30, ch2 = spanX*0.052;
+  if (cxx > -cw && cxx < W+cw){
+    ctx.save();
+    ctx.globalCompositeOperation = "multiply";
+    const g = ctx.createRadialGradient(cxx, cyy, 0, cxx, cyy, cw);
+    const a = 0.15*(0.4+0.6*alive);
+    g.addColorStop(0, "rgba(150,158,172,"+a.toFixed(3)+")");
+    g.addColorStop(0.6, "rgba(186,192,204,"+(a*0.5).toFixed(3)+")");
+    g.addColorStop(1, "rgba(255,255,255,0)");
+    ctx.fillStyle = g;
+    ctx.save();
+    ctx.translate(cxx, cyy); ctx.scale(1, ch2/cw); ctx.translate(-cxx, -cyy);
+    ctx.beginPath(); ctx.arc(cxx, cyy, cw, 0, TAU); ctx.fill();
+    ctx.restore();
+    ctx.restore();
+  }
+
+  /* the birds on the wire */
+  updLookBirds(dt, alive);
+  /* Matched to the birds the painting already has on this wire, which are a lit
+     grey-brown rather than a silhouette — at near-black these read as a different
+     species sitting among them, and at 0.42 of the airlight they came out as mauve
+     smudges. Some of the sky, a little more of it as the air loads. */
+  const dark = mixL([46,48,50], airlight(), 0.22 + 0.30*air);
+  for (const b of LBIRD){
+    const px = SCX(b.x), py = SCY(b.y);
+    if (px < -40 || px > W+40 || py < -40 || py > H+40) continue;
+    if (b.st === "sit" && alive < 0.35) continue;      // later, most of them are not there
+    drawLookBird(b, px, py, spanX, t, dark);
+  }
+
+  /* two butterflies over the meadow, which only exist if the meadow is in the
+     frame at all — a thing to find by looking down, which nobody expects to be
+     worth doing with a pair of binoculars */
+  if (alive > 0.5){
+    for (let i=0;i<2;i++){
+      const ph = t*0.19 + i*2.7;
+      const fx = 0.20 + i*0.34 + Math.sin(ph)*0.055 + Math.sin(ph*2.3)*0.014;
+      const fy = 0.888 + Math.cos(ph*1.31)*0.016 + i*0.012;
+      const px = SCX(fx), py = SCY(fy);
+      if (px < 0 || px > W || py < 0 || py > H) continue;
+      const s = Math.max(1.4, spanX*0.0055);
+      const flap = Math.abs(Math.sin(t*7.5 + i));
+      ctx.save();
+      ctx.fillStyle = rgba([232,164,58], 0.82*alive);
+      ctx.translate(px, py);
+      ctx.beginPath();
+      ctx.ellipse(-s*0.5*flap, 0, s*0.55*flap+0.4, s*0.72, -0.3, 0, TAU);
+      ctx.ellipse( s*0.5*flap, 0, s*0.55*flap+0.4, s*0.72,  0.3, 0, TAU);
+      ctx.fill();
+      ctx.restore();
+    }
+  }
+}
+
+/* ------------------------------------------------------------------ the hints */
+const LGLINT = { t: 2.4, on:null, life:0 };
+function drawLookHints(t, dt, SCX, SCY, spanX, rec){
+  /* the bloom. Warm, wide, weak, and inversely proportional to focus: it is
+     brightest when you cannot see and gone by the time you can, which means it
+     can never be mistaken for a marker sitting on top of the world. */
+  const amp = (1 - rec*0.88);
+  if (amp > 0.02){
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    for (const m of LMARK){
+      if (!m.key || PLOOK.found[m.id]) continue;
+      const px = SCX(m.x), py = SCY(m.y);
+      const R = spanX*m.r*0.85 + MIN*0.02;
+      if (px < -R || px > W+R || py < -R || py > H+R) continue;
+      const br = 0.5 + 0.5*Math.sin(t*0.62 + m.x*11);
+      const a = 0.052*amp*(0.55 + 0.45*br);
+      const g = ctx.createRadialGradient(px, py, 0, px, py, R);
+      g.addColorStop(0, "rgba(255,232,186,"+a.toFixed(4)+")");
+      g.addColorStop(0.45, "rgba(255,224,170,"+(a*0.42).toFixed(4)+")");
+      g.addColorStop(1, "rgba(255,220,160,0)");
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(px, py, R, 0, TAU); ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  /* the glint. Metal and glazing catch the sun for about a third of a second and
+     then stop, which is long enough to turn a head and too short to be a UI. It
+     picks an unfound landmark while there is one, and after that any of them, so
+     that a glint never becomes a tell. */
+  LGLINT.t -= dt;
+  if (LGLINT.t <= 0){
+    const pool = LMARK.filter(m => m.glint && !PLOOK.found[m.id]);
+    const any  = LMARK.filter(m => m.glint);
+    LGLINT.on = pool.length ? pick(pool) : (any.length ? pick(any) : null);
+    LGLINT.life = 1;
+    LGLINT.t = pool.length ? rnd(2.6, 5.4) : rnd(7, 15);
+  }
+  if (LGLINT.life > 0){
+    LGLINT.life = Math.max(0, LGLINT.life - dt*2.9);
+    const m = LGLINT.on;
+    if (m && m.glint){
+      const px = SCX(m.glint.x), py = SCY(m.glint.y);
+      const e = Math.sin(LGLINT.life*PI);
+      const R = spanX*(m.glint.w||0.01)*(1.5 + 2.4*(1-rec));
+      if (px > -R && px < W+R && py > -R && py < H+R){
+        ctx.save();
+        ctx.globalCompositeOperation = "lighter";
+        const g = ctx.createRadialGradient(px, py, 0, px, py, R);
+        g.addColorStop(0, "rgba(255,252,238,"+(0.62*e).toFixed(3)+")");
+        g.addColorStop(0.30, "rgba(255,240,206,"+(0.22*e).toFixed(3)+")");
+        g.addColorStop(1, "rgba(255,236,196,0)");
+        ctx.fillStyle = g;
+        ctx.beginPath(); ctx.arc(px, py, R, 0, TAU); ctx.fill();
+        // the four-point flare a lens gives a point source
+        ctx.strokeStyle = "rgba(255,250,232,"+(0.30*e).toFixed(3)+")";
+        ctx.lineWidth = Math.max(0.7, R*0.055);
+        ctx.beginPath();
+        ctx.moveTo(px-R*1.5, py); ctx.lineTo(px+R*1.5, py);
+        ctx.moveTo(px, py-R*1.05); ctx.lineTo(px, py+R*1.05);
+        ctx.stroke();
+        ctx.restore();
+      }
+    }
+  }
+}
+
+/* ------------------------------------------------------------------ the gate */
+function lookoutInteract(g, dt){
+  if (g === "find"  && PLOOK.n >= 3) meetQuiet(g);
+  if (g === "rfind" && PLOOK.recall > 0.75) meetQuiet(g);
+}
+
+/* ------------------------------------------------------------------ the list
+   Four lines, top left, under the chapter mark. It is not a score and it does
+   not congratulate anybody: the box becomes a tick, over most of a second, and
+   nothing else happens. There is no sound. */
+const lookEl = document.getElementById("look");
+let lookBuilt = false;
+function buildLookList(){
+  if (lookBuilt || !lookEl) return;
+  const ul = lookEl.querySelector("ul");
+  let h = "";
+  for (const m of LMARK){
+    if (!m.key) continue;
+    h += '<li data-k="'+m.id+'">' +
+         '<svg viewBox="0 0 15 15" aria-hidden="true">' +
+         '<rect class="bx" x="1.4" y="1.4" width="12.2" height="12.2" rx="1.7"/>' +
+         '<path class="tk" d="M3.7 7.8 6.4 10.6 11.4 4.2"/></svg>' +
+         '<span>'+m.tick+'</span></li>';
+  }
+  ul.innerHTML = h;
+  lookBuilt = true;
+}
+function tickLookList(k){
+  if (!lookEl) return;
+  const li = lookEl.querySelector('li[data-k="'+k+'"]');
+  if (li) li.classList.add("got");
+}
+function showLookList(on){
+  if (!lookEl) return;
+  if (on) buildLookList();
+  lookEl.classList.toggle("on", !!on);
+  lookEl.setAttribute("aria-hidden", String(!on));
 }
 /* ============================================================================
    THE KITE
@@ -11751,10 +12498,13 @@ function render(t, dt){
       break;
     }
     case "horizon": {
-      // the binoculars belong to this chapter and nowhere else
+      /* The binoculars belong to this chapter and nowhere else. `air0` is the
+         valley with the lenses out of focus and `air1` is what holding gets you:
+         here, all of it. The day was actually like that. */
       setPop({ birds:0.8, butterflies:0.4, dragonflies:0.4, fireflies:0, seeds:0.7 });
-      horizonInteractP("find", dt);
-      drawHorizonPlate(t, dt, { air:0.10 });
+      OUTSIDE = 1;
+      lookoutInteract("find", dt);
+      drawLookout(t, dt, { air0:0.42, air1:0.0, fall:3.4, bed:0.60 });
       break;
     }
     case "drawing": {
@@ -11838,9 +12588,12 @@ function render(t, dt){
       break;
     }
     case "r-horizon": {
+      /* The same hill, the same lenses, the same hold. It only ever comes half
+         way back now, and it slips faster than it did. Nothing says so. */
       setPop({ birds:0.05, butterflies:0, dragonflies:0, fireflies:0, seeds:0.1 });
-      horizonInteractP("rfind", dt);
-      drawHorizonPlate(t, dt, { air:0.92 });
+      OUTSIDE = 1;
+      lookoutInteract("rfind", dt);
+      drawLookout(t, dt, { air0:0.97, air1:0.52, fall:2.2, bed:0.34 });
       break;
     }
     case "r-drawing": {
@@ -11944,12 +12697,14 @@ const FIN_LINES = [
 ];
 let shownFin = -1, lastCap="", lastCh=-1;
 
-/* the drawing scene and the evidence hills are light: the text has to flip */
+/* the drawing scene and the evidence hills are light: the text has to flip.
+   The lookout is not on this list and used to be: it is a valley seen through two
+   circles in a black field, so almost everything the text sits over down there is
+   the black surround. Dark text on it was invisible. */
 function isLight(){
   const b=id();
   return b==="drawing" || b==="r-drawing" || b==="e-hills" ||
-         b==="laundry" || b==="shirt" || b==="r-laundry" ||
-         (b==="horizon" && T.f<0.8) || b==="r-horizon";
+         b==="laundry" || b==="shirt" || b==="r-laundry";
 }
 function updText(now, dt){
   if (introOn){ askEl.classList.remove("on"); capEl.classList.remove("on");
@@ -12154,6 +12909,10 @@ function onEnter(bid){
   if (bid==="indoors"){ if (!IN.sheets.length) buildIndoors(); }
   if (bid==="e-stars"){ if (!GRID.length) buildGrid(); }
   if (bid==="drawing"||bid==="r-drawing"||bid==="horizon") buildPaper();
+  /* the lenses come up from nothing every time the chapter is entered, and only
+     the first visit carries the list — on the second there is nothing to tick */
+  if (bid==="horizon" || bid==="r-horizon") resetLookout(bid);
+  showLookList(bid==="horizon");
   if (bid!=="stopped" && bid!=="named") hideAQ();
   if (bid!=="stars" && bid!=="wish" && bid!=="r-stars") hideStarStory();
   if (!bid.startsWith("e-")) { showCard(null); }
@@ -12324,7 +13083,38 @@ window.__bluer = {
   kiteAudio(){ return { wind:KWIND.state, windG: KWIND.gain? +KWIND.gain.gain.value.toFixed(4):null,
                         playing:!!KWIND.src, laugh:LAUGH.state, next:+LAUGH.next.toFixed(1) }; },
   get wash(){ return PWASH; },
+  /* the lookout, in enough detail to check the window really can reach every
+     corner of the painting and that the four places are where the paint is */
+  get look(){ return PLOOK; },
+  get marks(){ return LMARK; },
+  lookAt(fx, fy){ const im=loadImg("viewoftown.png");
+    if (!imgReady(im)) return false;
+    PLOOK.cx = fx*im.naturalWidth; PLOOK.cy = fy*im.naturalHeight;
+    PLOOK.vx = PLOOK.vy = 0; PLOOK.taken = 1; return true; },
+  lookWin(){ const im=loadImg("viewoftown.png");
+    if (!imgReady(im)) return null;
+    const SW=im.naturalWidth, SH=im.naturalHeight;
+    return { z:+PLOOK.z.toFixed(3), lift:+PLOOK.lift.toFixed(3),
+             focus:+PLOOK.focus.toFixed(3), recall:+PLOOK.recall.toFixed(3),
+             x0:+(PLOOK.sx/SW).toFixed(4), x1:+((PLOOK.sx+PLOOK.wsrc)/SW).toFixed(4),
+             y0:+(PLOOK.sy/SH).toFixed(4), y1:+((PLOOK.sy+PLOOK.hsrc)/SH).toFixed(4),
+             aim:PLOOK.aim?PLOOK.aim.id:null, n:PLOOK.n,
+             found:Object.keys(PLOOK.found), said:Object.keys(PLOOK.said) }; },
+  lookAudio(){ const f=L=>({state:L.state,playing:!!L.src,
+                 g:L.gain?+L.gain.gain.value.toFixed(4):null});
+               const o={}; for (const k in LOOKA) o[k]=f(LOOKA[k]); return o; },
+  lookMarkAt(k){ const m=LMARK.find(q=>q.id===k); return m? {x:m._x,y:m._y,on:m._on}:null; },
   get f(){ return T.f; },
+  /* jump the scroll to a named beat, marking every gate before it as met, so a
+     chapter can be driven and screenshotted without playing the whole piece */
+  goto(bid, f){
+    const i = BEATS.findIndex(x => x.id === bid);
+    if (i < 0) return false;
+    for (let k=0;k<i;k++) if (BEATS[k].gate) done[BEATS[k].gate] = true;
+    const max = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
+    window.scrollTo(0, (ofs[i] + BEATS[i].len*(f===undefined?0.35:f))/TOTAL * max);
+    return true;
+  },
   intro(){ return introOn; },
   reset(){ PROOM.cL=PROOM.cR=PROOM.open=PROOM.sash=0; PROOM.nudgeTo=0;
            PROOM.idle=0; PROOM.demo=0; CORD.swing=0; CORD.swingV=0;

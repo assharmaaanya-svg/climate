@@ -348,7 +348,7 @@ const BEATS = [
     line:"There were so many it was hard to look at one." },
   { id:"wish",      ch:2, len:0.95,
     line:"" },
-  { id:"horizon",   ch:2, len:1.45, gate:"find",    ask:"Hold still to focus",
+  { id:"horizon",   ch:2, len:1.75, gate:"find",    ask:"Hold the binoculars and look around",
     line:"On a good day you could see all the way to the hills." },
   { id:"drawing",   ch:2, len:1.45, gate:"colour",  ask:"Colour it in",
     line:"You never had to think about which blue." },
@@ -359,7 +359,7 @@ const BEATS = [
     line:"" },
   { id:"r-stars",   ch:3, len:1.35, gate:"rstars",  ask:"Find the shape again",
     line:"" },
-  { id:"r-horizon", ch:3, len:1.3,  gate:"rfind",   ask:"Hold to remember",
+  { id:"r-horizon", ch:3, len:1.3,  gate:"rfind",   ask:"Hold the binoculars on the hills",
     line:"" },
   { id:"r-drawing", ch:3, len:1.3,
     line:"She kept it on the fridge for eleven years." },
@@ -422,6 +422,10 @@ function since(bid){ const k=BEATS.findIndex(b=>b.id===bid); return k<0?0:T.p-of
 const done = Object.create(null);   // gate id -> true
 function gateMet(g){ return !g || done[g]===true; }
 function meet(g){ if (g && !done[g]){ done[g]=true; ping(); } }
+/* Same thing, without the bell. The lookout's four places acknowledge themselves
+   by becoming a tick and nothing else: a chime on top of that would turn quietly
+   recognising a school into scoring a point. */
+function meetQuiet(g){ if (g && !done[g]){ done[g]=true; } }
 
 function readTimeline(dt){
   const max = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);

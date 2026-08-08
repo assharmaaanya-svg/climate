@@ -135,8 +135,18 @@ function whisper(txt, dark){
   whEl.style.opacity = ".92"; whEl.style.transform="translate(-50%,0)";
   whT = 4.2;
 }
+/* The whisper sits at 20vh and the narration at 22vh, which is close enough that
+   two lines of either put them on top of each other. It never showed before
+   because asides were rare; in the lookout the visitor triggers one every few
+   seconds, and the school's line landed straight across the chapter's own
+   sentence. So an aside now takes the floor: the narration steps back while one is
+   up and comes back when it goes. */
 function updWhisper(dt){
-  if (whT>0){ whT-=dt; if (whT<=0){ whEl.style.opacity="0"; whEl.style.transform="translate(-50%,6px)"; } }
+  if (whT>0){
+    whT-=dt;
+    if (whT<=0){ whEl.style.opacity="0"; whEl.style.transform="translate(-50%,6px)"; }
+  }
+  document.body.classList.toggle("aside", whT>0);
 }
 
 /* ------------------------------------------------------------------ AMBIENT LIFE */

@@ -485,10 +485,13 @@ function render(t, dt){
       break;
     }
     case "horizon": {
-      // the binoculars belong to this chapter and nowhere else
+      /* The binoculars belong to this chapter and nowhere else. `air0` is the
+         valley with the lenses out of focus and `air1` is what holding gets you:
+         here, all of it. The day was actually like that. */
       setPop({ birds:0.8, butterflies:0.4, dragonflies:0.4, fireflies:0, seeds:0.7 });
-      horizonInteractP("find", dt);
-      drawHorizonPlate(t, dt, { air:0.10 });
+      OUTSIDE = 1;
+      lookoutInteract("find", dt);
+      drawLookout(t, dt, { air0:0.42, air1:0.0, fall:3.4, bed:0.60 });
       break;
     }
     case "drawing": {
@@ -572,9 +575,12 @@ function render(t, dt){
       break;
     }
     case "r-horizon": {
+      /* The same hill, the same lenses, the same hold. It only ever comes half
+         way back now, and it slips faster than it did. Nothing says so. */
       setPop({ birds:0.05, butterflies:0, dragonflies:0, fireflies:0, seeds:0.1 });
-      horizonInteractP("rfind", dt);
-      drawHorizonPlate(t, dt, { air:0.92 });
+      OUTSIDE = 1;
+      lookoutInteract("rfind", dt);
+      drawLookout(t, dt, { air0:0.97, air1:0.52, fall:2.2, bed:0.34 });
       break;
     }
     case "r-drawing": {
@@ -678,12 +684,14 @@ const FIN_LINES = [
 ];
 let shownFin = -1, lastCap="", lastCh=-1;
 
-/* the drawing scene and the evidence hills are light: the text has to flip */
+/* the drawing scene and the evidence hills are light: the text has to flip.
+   The lookout is not on this list and used to be: it is a valley seen through two
+   circles in a black field, so almost everything the text sits over down there is
+   the black surround. Dark text on it was invisible. */
 function isLight(){
   const b=id();
   return b==="drawing" || b==="r-drawing" || b==="e-hills" ||
-         b==="laundry" || b==="shirt" || b==="r-laundry" ||
-         (b==="horizon" && T.f<0.8) || b==="r-horizon";
+         b==="laundry" || b==="shirt" || b==="r-laundry";
 }
 function updText(now, dt){
   if (introOn){ askEl.classList.remove("on"); capEl.classList.remove("on");
@@ -888,6 +896,10 @@ function onEnter(bid){
   if (bid==="indoors"){ if (!IN.sheets.length) buildIndoors(); }
   if (bid==="e-stars"){ if (!GRID.length) buildGrid(); }
   if (bid==="drawing"||bid==="r-drawing"||bid==="horizon") buildPaper();
+  /* the lenses come up from nothing every time the chapter is entered, and only
+     the first visit carries the list — on the second there is nothing to tick */
+  if (bid==="horizon" || bid==="r-horizon") resetLookout(bid);
+  showLookList(bid==="horizon");
   if (bid!=="stopped" && bid!=="named") hideAQ();
   if (bid!=="stars" && bid!=="wish" && bid!=="r-stars") hideStarStory();
   if (!bid.startsWith("e-")) { showCard(null); }
@@ -1058,7 +1070,38 @@ window.__bluer = {
   kiteAudio(){ return { wind:KWIND.state, windG: KWIND.gain? +KWIND.gain.gain.value.toFixed(4):null,
                         playing:!!KWIND.src, laugh:LAUGH.state, next:+LAUGH.next.toFixed(1) }; },
   get wash(){ return PWASH; },
+  /* the lookout, in enough detail to check the window really can reach every
+     corner of the painting and that the four places are where the paint is */
+  get look(){ return PLOOK; },
+  get marks(){ return LMARK; },
+  lookAt(fx, fy){ const im=loadImg("viewoftown.png");
+    if (!imgReady(im)) return false;
+    PLOOK.cx = fx*im.naturalWidth; PLOOK.cy = fy*im.naturalHeight;
+    PLOOK.vx = PLOOK.vy = 0; PLOOK.taken = 1; return true; },
+  lookWin(){ const im=loadImg("viewoftown.png");
+    if (!imgReady(im)) return null;
+    const SW=im.naturalWidth, SH=im.naturalHeight;
+    return { z:+PLOOK.z.toFixed(3), lift:+PLOOK.lift.toFixed(3),
+             focus:+PLOOK.focus.toFixed(3), recall:+PLOOK.recall.toFixed(3),
+             x0:+(PLOOK.sx/SW).toFixed(4), x1:+((PLOOK.sx+PLOOK.wsrc)/SW).toFixed(4),
+             y0:+(PLOOK.sy/SH).toFixed(4), y1:+((PLOOK.sy+PLOOK.hsrc)/SH).toFixed(4),
+             aim:PLOOK.aim?PLOOK.aim.id:null, n:PLOOK.n,
+             found:Object.keys(PLOOK.found), said:Object.keys(PLOOK.said) }; },
+  lookAudio(){ const f=L=>({state:L.state,playing:!!L.src,
+                 g:L.gain?+L.gain.gain.value.toFixed(4):null});
+               const o={}; for (const k in LOOKA) o[k]=f(LOOKA[k]); return o; },
+  lookMarkAt(k){ const m=LMARK.find(q=>q.id===k); return m? {x:m._x,y:m._y,on:m._on}:null; },
   get f(){ return T.f; },
+  /* jump the scroll to a named beat, marking every gate before it as met, so a
+     chapter can be driven and screenshotted without playing the whole piece */
+  goto(bid, f){
+    const i = BEATS.findIndex(x => x.id === bid);
+    if (i < 0) return false;
+    for (let k=0;k<i;k++) if (BEATS[k].gate) done[BEATS[k].gate] = true;
+    const max = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
+    window.scrollTo(0, (ofs[i] + BEATS[i].len*(f===undefined?0.35:f))/TOTAL * max);
+    return true;
+  },
   intro(){ return introOn; },
   reset(){ PROOM.cL=PROOM.cR=PROOM.open=PROOM.sash=0; PROOM.nudgeTo=0;
            PROOM.idle=0; PROOM.demo=0; CORD.swing=0; CORD.swingV=0;

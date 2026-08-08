@@ -192,8 +192,9 @@ function preloadPlates(){
     "moresheets.png","moresheetspolluted.png","sheetswithmother.png","sheetspollutedwithmother.png",
     "childflykite.png","childflykiteevening.png","childflykite night.png","pollutedkitefly.png",
     "stargaze.png","pollutedstargaze.png","viewoftown.png","viewoftownafterpollution.png",
-    "sheetspostpollution.png","sheetspostpollution with basket.png","bedroomopenver2.png",
-    "binoculras png.avif"];
+    "sheetspostpollution.png","sheetspostpollution with basket.png","bedroomopenver2.png"];
+  /* the binocular overlay is not here any more: the lookout draws its field of
+     view rather than loading it. See build/06g-lookout.js. */
   for (const n of order) loadImg(n);
 }
 

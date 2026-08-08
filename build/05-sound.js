@@ -95,6 +95,16 @@ function initAudio(){
     LAUGH.gain = AC.createGain(); LAUGH.gain.gain.value = 1;
     LAUGH.gain.connect(master);
 
+    /* The lookout. One layer per place, each of them silent until the visitor is
+       looking at that place through the binoculars. */
+    for (const k in LOOKA){
+      const L = LOOKA[k];
+      L.gain = AC.createGain(); L.gain.gain.value = 0;
+      L.filt = AC.createBiquadFilter(); L.filt.type = "lowpass";
+      L.filt.frequency.value = L.lp; L.filt.Q.value = 0.4;
+      L.filt.connect(L.gain); L.gain.connect(master);
+    }
+
     /* the night */
     for (const L of [CRICK, NBIRD]){
       L.gain = AC.createGain(); L.gain.gain.value = 0;
@@ -133,6 +143,42 @@ const LAUGH = { buf:null, gain:null, state:"idle", next: 4 };
    out here is insects, and one bird that only calls at night. */
 const CRICK = { buf:null, src:null, gain:null, filt:null, state:"idle" };
 const NBIRD = { buf:null, src:null, gain:null, filt:null, state:"idle" };
+/* THE LOOKOUT. Four places that remember themselves.
+
+   Everything else in this piece is scene ambience: it belongs to a chapter and it
+   plays for as long as the chapter does. These do not. Each one exists only while
+   the visitor has the binoculars on that particular place, comes up over a couple
+   of seconds so it is never an event, and goes when they look away. The intended
+   effect is not that looking triggers a sound — it is that the place has been
+   making that sound the whole time and the lenses are what let you hear it.
+
+   Levels are deliberately low. Every one of these plays UNDER the garden bed, the
+   wind bed and the birds, so it reads as something carried up the hill on the air
+   rather than something that arrived. Filters do the distance: the school is a
+   long way down and across, so it loses its top; the tank is metal, so it keeps
+   just enough. */
+const LOOKA = {
+  /* Not a place: the valley itself. The town as it sounds from a hill a couple of
+     kilometres above it — this is what is there when the visitor is not holding on
+     anything in particular, so the chapter is never silent and never announces
+     that an interaction has started.
+
+     It is also the thing that gets out of the way. When a place does come into
+     focus, this ducks almost to nothing, which is what makes a memory of one
+     place feel like one place rather than a sound added to a mix. */
+  bed:    { buf:null, src:null, gain:null, filt:null, state:"idle",
+            file:"look-valley.wav", lp:2600, vol:0.30 },
+  school: { buf:null, src:null, gain:null, filt:null, state:"idle",
+            file:"look-school.wav", lp:1900, vol:0.34 },
+  birds:  { buf:null, src:null, gain:null, filt:null, state:"idle",
+            file:"look-birds.wav",  lp:6800, vol:0.24 },
+  tower:  { buf:null, src:null, gain:null, filt:null, state:"idle",
+            file:"look-tower.wav",  lp:2400, vol:0.22 },
+  hills:  { buf:null, src:null, gain:null, filt:null, state:"idle",
+            file:"look-hills.wav",  lp:1150, vol:0.30 },
+  town:   { buf:null, src:null, gain:null, filt:null, state:"idle",
+            file:"look-town.wav",   lp:2100, vol:0.26 }
+};
 
 /* `names` may be a list: the first that decodes wins. Everything ships as
    16-bit PCM wav now, which every browser decodes, so the list is really only
@@ -174,6 +220,7 @@ function loadAmbience(){
   loadOne(LAUGH, "kite-laugh.wav");
   loadOne(CRICK, "night-crickets.wav");
   loadOne(NBIRD, "night-birds.wav");
+  for (const k in LOOKA) loadOne(LOOKA[k], LOOKA[k].file);
 }
 /* A one-shot, not a layer. The laugh is four seconds of a child and there is no
    honest way to loop that — looped laughter is a horror-film cue. So it is
@@ -301,13 +348,62 @@ function nightSound(dt, v, deep, bird){
   envGain(NBIRD.gain, v*0.26*b*nbDrift*cl01((d-0.30)/0.70), 3.0);
 }
 
+/* THE LOOKOUT MIX.
+   `place` is the key of whatever is in the middle of the lenses, or null. `focus`
+   is how far the memory has come back, because a place you have not brought into
+   focus is a place you are not really looking at yet. `open` is how loud the wider
+   world should be when nothing in particular is being remembered.
+
+   The whole chapter is one crossfade with two positions. Looking around: the
+   valley bed and the garden birds, at ordinary level, the way a hilltop sounds.
+   Holding on somewhere: everything else steps back to about a fifth of itself and
+   that one place comes up on its own. Not a mix of two things — a shift of
+   attention, which is what remembering somewhere actually feels like.
+
+   `LOOKDUCK` is how far into that second position we are, and updSound reads it so
+   the wind and leaf beds duck as well. Everything the visitor can hear is inside
+   the duck; nothing survives it at full level. */
+const LOOKQ = { t: 0 };
+let LOOKDUCK = 0;
+function lookSound(dt, v, place, focus, open){
+  LOOKQ.t = 0.3;
+  if (!AC || !soundOn) return;
+  /* a place has to be genuinely in focus before it is heard at all: the sound is
+     the reward for having held on it, not for having pointed at it */
+  const f = cl01((cl01(focus) - 0.20) / 0.58);
+  const duck = place ? f : 0;
+  // the duck itself is smoothed here rather than by a gain node, because the
+  // ambience bed and the noise beds all have to move together
+  LOOKDUCK = LOOKDUCK + (duck - LOOKDUCK) * Math.min(1, dt*0.55);
+  const away = 1 - LOOKDUCK*0.82;
+
+  for (const k in LOOKA){
+    const L = LOOKA[k];
+    if (L.state === "idle") loadOne(L, L.file);
+    if (L.state === "ready" && !L.src) startOne(L);
+    if (!L.gain) continue;
+    const want = k === "bed" ? v * L.vol * away
+                             : (place === k ? v * L.vol * f : 0);
+    /* in over two seconds, out over three: arriving should be slower than a
+       fade-in, and leaving slower still, so that a place fades out of hearing at
+       about the speed it fades out of focus */
+    envGain(L.gain, want, want > 0.0005 ? 2.1 : 3.0);
+  }
+  // the birds and the open countryside step back with everything else
+  ambience((open===undefined ? 0.6 : open) * away, 1);
+}
+
 function updSound(dt, t){
   updCC(dt);
   if (!AC || !soundOn) return;
   const h = AIR.h, night = (AIR.tod<0.14||AIR.tod>0.84)?1:0;
   const out = OUTSIDE;                                   // 0 in the room, 1 outdoors
-  envGain(BED.wind.g,    (0.030+0.052*out)*(1-h*0.55)*(1-MUFFLE*0.7), 0.7);
-  envGain(BED.leaves.g,  0.016*out*(1-h*0.7)*(1-MUFFLE*0.8), 0.7);
+  /* while a place is being remembered through the binoculars, the weather steps
+     back too. Otherwise the wind bed sits on top of the memory and nothing has
+     actually got quieter. */
+  const lk = 1 - LOOKDUCK*0.80;
+  envGain(BED.wind.g,    (0.030+0.052*out)*(1-h*0.55)*(1-MUFFLE*0.7)*lk, 0.7);
+  envGain(BED.leaves.g,  0.016*out*(1-h*0.7)*(1-MUFFLE*0.8)*lk, 0.7);
   envGain(BED.traffic.g, (0.008 + 0.062*h)*(0.45+0.55*out), 1.1);
   envGain(BED.room.g,    0.020*(1-out*0.7) + MUFFLE*0.03, 0.7);
   envGain(BED.pad.g,     0.030*(1-h*0.30), 1.4);
@@ -326,6 +422,12 @@ function updSound(dt, t){
   else if (KWIND.gain){ envGain(KWIND.gain, 0, 1.1); }
   if (NIGHTQ.t > 0){ NIGHTQ.t -= dt; }
   else if (CRICK.gain){ for (const L of [CRICK, NBIRD]) envGain(L.gain, 0, 2.0); }
+  /* a place's memory does not follow the visitor out of the chapter it belongs to */
+  if (LOOKQ.t > 0){ LOOKQ.t -= dt; }
+  else if (LOOKA.bed.gain){
+    for (const k in LOOKA) envGain(LOOKA[k].gain, 0, 1.4);
+    LOOKDUCK = Math.max(0, LOOKDUCK - dt*0.8);           // and the duck lets go
+  }
 }
 
 /* ------------------------------------------------------------------ one-shots */

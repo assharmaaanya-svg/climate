@@ -15,6 +15,7 @@ cat build/01-shell.html \
     build/06e-sheets.js \
     build/06f-kite.js \
     build/06b-plate-scenes.js \
+    build/06g-lookout.js \
     build/07-scenes-b.js \
     build/08-scenes-c.js \
     build/09-evidence.js \
