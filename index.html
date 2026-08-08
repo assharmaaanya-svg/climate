@@ -11,7 +11,12 @@
     --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
     --mono:ui-monospace,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
     --ink:#fbfaf5;
-    --sh:0 2px 30px rgba(8,12,18,.62), 0 1px 3px rgba(8,12,18,.55);
+    /* Heavy, because every line in the piece is white now and some of them sit over a
+       noon sky or a sunlit sheet. Three layers: a tight dark edge so the letterforms
+       keep their shape, a mid halo, and a wide soft one that darkens the ground the
+       type stands on without reading as a box. */
+    --sh:0 1px 2px rgba(6,10,16,.85), 0 2px 10px rgba(6,10,16,.72),
+         0 4px 40px rgba(6,10,16,.65);
   }
   *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   html{ scroll-behavior:auto; }
@@ -71,18 +76,32 @@
     max-width:92vw; line-height:1.4; transition:opacity 1s, transform 1s;
     background:linear-gradient(rgba(14,18,28,.6), rgba(8,11,19,.72));
     border:1px solid rgba(251,250,245,.24); border-radius:999px;
-    padding:.85em 1.85em .85em 1.5em;
+    /* SYMMETRIC. It was 1.85em right against 1.5em left, which put the contents of
+       the pill two pixels left of the pill itself for no reason at all. */
+    padding:.85em 1.7em;
     -webkit-backdrop-filter:blur(11px) saturate(1.15); backdrop-filter:blur(11px) saturate(1.15);
     box-shadow:0 16px 48px rgba(0,0,0,.44), 0 1px 0 rgba(255,255,255,.07) inset; }
   /* a lit dot: this is available now */
   #ask::before{ content:""; width:6px; height:6px; border-radius:50%; flex:none;
     background:#ffd9a6; box-shadow:0 0 13px rgba(255,190,110,.9);
     animation:askdot 2.8s ease-in-out infinite; }
+  /* AND ITS COUNTERWEIGHT ON THE RIGHT.
+     The dot sits in the flex row, so it takes six pixels plus a gap out of the left
+     side and shoves the WORDS that far right of the pill's centre — measured at 6.5px.
+     The pill looked centred because it was; the sentence inside it was not. An
+     invisible twin on the other side balances the row, so the text is centred and the
+     dot still sits to the left of it. Nothing else in the piece is allowed to be
+     lopsided either: `letter-spacing` puts a space after the LAST letter too, which
+     drags centred text left by half of it, so both spaced labels pull that back. */
+  #ask::after{ content:""; width:6px; flex:none; }
   @keyframes askdot{ 0%,100%{ opacity:.42; transform:scale(1) } 50%{ opacity:1; transform:scale(1.35) } }
   #ask.on{ opacity:1; transform:translate(-50%,0); }
   /* narrow screens cannot hold a long line on one row, so let it wrap there */
+  /* On a narrow screen the line has to wrap, but it was also being LEFT-aligned
+     inside a pill up to 88vw wide, which put the instruction hard against the left of
+     the screen while everything else stayed centred. Centred, wrapped. */
   @media (max-width:600px){
-    #ask{ white-space:normal; text-align:left; max-width:88vw; bottom:13vh; }
+    #ask{ white-space:normal; text-align:center; max-width:88vw; bottom:13vh; }
   }
   /* a star card is a thing to read; the narration and the prompt get out of its
      way rather than being read over the top of it */
@@ -393,11 +412,9 @@
   <p class="prize">Earth Partner Prize</p>
   <h1 class="t">Remember When</h1>
   <p class="a">Aanya Sharma</p>
-  <p class="lede">A morning you have had a thousand times, and the small things
-     that stopped happening in it.</p>
+  <p class="lede">An interactive experience about air pollution.</p>
   <p class="how">Scroll to move through it.</p>
   <button id="begin" autofocus>Begin</button>
-  <p class="fine">An interactive experience about air pollution.</p>
 </div></div>
 
 <div id="chapter" aria-hidden="true"></div>
@@ -7204,11 +7221,16 @@ function drawRoom(t, dt, o){
     ctx.restore();
   }
 
-  /* the floor: the basket, and whatever is still lying on it */
-  if (rev > 0.15){
-    toysInteract(t, dt);
-    drawToys(t, dt, 0.24 + 0.62*rev*(1-air*0.3));
-  }
+  /* THE FLOOR IS BARE, AND STAYS BARE.
+     There were four draggable toys down here. They are gone for good, not switched
+     off: the painting lights this room from one low window and four cut-out sprites
+     sitting on its boards read as stickers however carefully the alpha is measured
+     and the light is matched. The room is better with nothing on the floor, and the
+     first thing a visitor touches should be the curtains.
+
+     The code below is left in place because it is the only place in the piece that
+     solves picking a sprite up by its own drawn content rather than its file box, and
+     that is worth keeping to hand. Nothing calls it. */
 
   /* the drawing taped over the bed, years before it is handed over */
   drawTapedDrawing(t, rev, air);
@@ -8270,10 +8292,17 @@ const STARY = {
   story:null, storyT:0
 };
 /* ---------------------------------------------------------------- the cards
-   Each named star opens a card. The shape is the same every time: what it is in
-   one sentence, then what it has meant to people, then the numbers — because a
-   card that only tells you a feeling is a poster, and this is a piece about
-   something measurable.
+   TWO SENTENCES. What the star is, and what people did with it. That is the whole
+   card, and the length is the point rather than a limitation.
+
+   The first version ran to a five-line paragraph each and it was the wrong shape for
+   where it appears: the visitor is standing under a night sky in the middle of an
+   artwork, having tapped a star out of curiosity, and what arrives is an encyclopedia
+   entry. Nobody reads the fourth line of that. Two sentences get read, and a sentence
+   that gets read is worth more than a paragraph that does not.
+
+   The numbers stay, trimmed to two, because they are glanced at rather than read and
+   they keep the card from being only a feeling.
 
    Nothing here mentions the air at all. This chapter is the sky as it was, and a
    card that ended every time on what has been lost would spend the ending three
@@ -8294,26 +8323,26 @@ const STAR_CARD = {
     sub: "a naked-eye double",
     bayer: "\u03b6 & 80 Ursae Majoris",
     where: "Ursa Major \u00b7 the handle\u2019s bend",
-    lede: "Two stars in the handle of the Big Dipper, famous for having been used as a test of eyesight.",
-    body: "They sit about a fifth of a moon\u2019s width apart, close to the limit of what an unaided eye can separate. Persian astronomers wrote about the pair in the tenth century, and for centuries afterwards seeing both was used as a test of sight, one that needed no lens, no instrument and no money. Anyone under a clear sky could take it, and passing meant the same thing everywhere on Earth.",
-    facts: [["Magnitude", "2.23 \u00b7 3.99"], ["Apart", "11.8 arcminutes"], ["Distance", "83 light years"]]
+    lede: "Two stars in the handle of the Big Dipper, so close together that most people see one.",
+    body: "For centuries, telling them apart was how people tested their eyesight, a test anyone could take under a clear sky with no instrument and no money.",
+    facts: [["Apart", "11.8 arcminutes"], ["Distance", "83 light years"]]
   },
   alkaid: {
     name: "Alkaid",
     sub: null,
     bayer: "\u03b7 Ursae Majoris",
     where: "Ursa Major \u00b7 the handle\u2019s tip",
-    lede: "The star at the very end of the Big Dipper\u2019s handle, long used in navigation.",
-    body: "For most of human history the Dipper it ends was working equipment: swinging around the pole, it gave people the hour, the season and the way to north. In the nineteenth-century United States the same shape was carried in song, and \u201cFollow the Drinking Gourd\u201d gave escaping enslaved people a direction to hold to with no map and no compass.",
-    facts: [["Magnitude", "1.86"], ["Distance", "104 light years"], ["Surface", "17,000 K"]]
+    lede: "The star at the very tip of the Big Dipper\u2019s handle.",
+    body: "The shape it ends gave people the hour, the season and the way north long before there were clocks or compasses, and it was passed on in song to guide people escaping slavery.",
+    facts: [["Magnitude", "1.86"], ["Distance", "104 light years"]]
   },
   megrez: {
     name: "Megrez",
     sub: null,
     bayer: "\u03b4 Ursae Majoris",
     where: "Ursa Major \u00b7 handle meets bowl",
-    lede: "The faintest of the Big Dipper\u2019s seven stars, sitting at the joint where the handle meets the bowl.",
-    body: "It is the star the whole shape is built on, so taking it away does not make the Dipper fainter, it makes it come apart into a bowl and a handle that no longer meet. At magnitude 3.3 it is the last of the seven most people learn to pick out, which is why anyone who can name all seven has spent real time looking up.",
+    lede: "The faintest of the Big Dipper\u2019s seven stars, where the handle joins the bowl.",
+    body: "It is the joint the whole shape hangs on, so it is the one that has to be found before the Dipper can be used to find anything else.",
     facts: [["Magnitude", "3.31"], ["Distance", "58 light years"]]
   },
   alrischa: {
@@ -8321,18 +8350,18 @@ const STAR_CARD = {
     sub: null,
     bayer: "\u03b1 Piscium",
     where: "Pisces \u00b7 the knot",
-    lede: "The alpha star of Pisces, whose name means \u201cthe cord\u201d, the knot tying the constellation\u2019s two fish together.",
-    body: "Babylonian tablets already had two fish and a cord here more than two thousand years ago, and the arrangement survived through Greek, Arabic and Latin astronomy into the charts still in use today. Naming the sky is one of the oldest things people have done together, and every culture that could see stars did it, no two of them the same way.",
-    facts: [["Magnitude", "3.82"], ["Distance", "151 light years"], ["Orbit", "a pair, 700 years"]]
+    lede: "The knot tying the two fish of Pisces together, its name meaning the cord.",
+    body: "People have drawn those two fish and that cord in this same place for more than two thousand years, which makes it one of the oldest agreements humanity has kept.",
+    facts: [["Magnitude", "3.82"], ["Distance", "151 light years"]]
   },
   polaris: {
     name: "Polaris",
     sub: "the North Star",
     bayer: "\u03b1 Ursae Minoris",
     where: "Ursa Minor \u00b7 over the pole",
-    lede: "The star almost directly above Earth\u2019s north pole, used for centuries by travellers and sailors to find north.",
-    body: "It sits within three quarters of a degree of the celestial pole, so while the whole sky turns it barely moves. That made it the most useful star in the northern hemisphere: it gives direction without a compass, and because its height above the horizon equals your latitude, it gave sailors their position too.",
-    facts: [["Magnitude", "1.98"], ["Off true north", "0.7 degrees"], ["Distance", "about 450 ly"]]
+    lede: "The star that sits almost exactly above Earth\u2019s north pole.",
+    body: "Because it barely moves while the rest of the sky turns, it gave sailors north without a compass, and its height above the horizon told them how far north they had come.",
+    facts: [["Off true north", "0.7 degrees"], ["Distance", "about 450 ly"]]
   }
 };
 /* the older one-line version, still used by anything that only wants a whisper */
@@ -9172,7 +9201,7 @@ const L_HOME_H = 0.88;
    and answer anyway. */
 const LMARK = [
   { id:"school", x:0.4250, y:0.6880, r:0.070, key:true, aud:"school",
-    tick:"My school",
+    tick:"Your school",
     say:"Your school. The red brick one, with the little tower on top.",
     glint:{ x:0.4232, y:0.6560, w:0.010 } },              // the cupola glazing
   { id:"wires",  x:0.2480, y:0.4790, r:0.062, key:true, aud:"birds",
@@ -13458,15 +13487,17 @@ const FIN_LINES = [
 ];
 let shownFin = -1, lastCap="", lastCh=-1;
 
-/* the drawing scene and the evidence hills are light: the text has to flip.
-   The lookout is not on this list and used to be: it is a valley seen through two
-   circles in a black field, so almost everything the text sits over down there is
-   the black surround. Dark text on it was invisible. */
-function isLight(){
-  const b=id();
-  return b==="drawing" || b==="r-drawing" || b==="e-hills" ||
-         b==="laundry" || b==="shirt" || b==="r-laundry";
-}
+/* EVERY LINE IN THE PIECE IS WHITE.
+   This used to flip the narration to near-black over the bright scenes — the washing
+   line, the drawing, the evidence hills — on the reasoning that dark ink reads better
+   on a pale sky. It does, in isolation. What it actually produced was one voice that
+   changed colour halfway through the work: the same narrator, speaking in white for
+   two chapters and then in brown on the washing line. A voice does not change colour
+   because the weather did.
+
+   So it is white everywhere, and the shadow underneath it does the work instead —
+   see --sh, which is now heavy enough to hold white type over a noon sky. */
+function isLight(){ return false; }
 function updText(now, dt){
   if (introOn){ askEl.classList.remove("on"); capEl.classList.remove("on");
     gateEl.classList.remove("on"); sdownEl.classList.remove("on"); return; }

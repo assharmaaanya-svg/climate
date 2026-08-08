@@ -11,7 +11,12 @@
     --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
     --mono:ui-monospace,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
     --ink:#fbfaf5;
-    --sh:0 2px 30px rgba(8,12,18,.62), 0 1px 3px rgba(8,12,18,.55);
+    /* Heavy, because every line in the piece is white now and some of them sit over a
+       noon sky or a sunlit sheet. Three layers: a tight dark edge so the letterforms
+       keep their shape, a mid halo, and a wide soft one that darkens the ground the
+       type stands on without reading as a box. */
+    --sh:0 1px 2px rgba(6,10,16,.85), 0 2px 10px rgba(6,10,16,.72),
+         0 4px 40px rgba(6,10,16,.65);
   }
   *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   html{ scroll-behavior:auto; }
@@ -71,18 +76,32 @@
     max-width:92vw; line-height:1.4; transition:opacity 1s, transform 1s;
     background:linear-gradient(rgba(14,18,28,.6), rgba(8,11,19,.72));
     border:1px solid rgba(251,250,245,.24); border-radius:999px;
-    padding:.85em 1.85em .85em 1.5em;
+    /* SYMMETRIC. It was 1.85em right against 1.5em left, which put the contents of
+       the pill two pixels left of the pill itself for no reason at all. */
+    padding:.85em 1.7em;
     -webkit-backdrop-filter:blur(11px) saturate(1.15); backdrop-filter:blur(11px) saturate(1.15);
     box-shadow:0 16px 48px rgba(0,0,0,.44), 0 1px 0 rgba(255,255,255,.07) inset; }
   /* a lit dot: this is available now */
   #ask::before{ content:""; width:6px; height:6px; border-radius:50%; flex:none;
     background:#ffd9a6; box-shadow:0 0 13px rgba(255,190,110,.9);
     animation:askdot 2.8s ease-in-out infinite; }
+  /* AND ITS COUNTERWEIGHT ON THE RIGHT.
+     The dot sits in the flex row, so it takes six pixels plus a gap out of the left
+     side and shoves the WORDS that far right of the pill's centre — measured at 6.5px.
+     The pill looked centred because it was; the sentence inside it was not. An
+     invisible twin on the other side balances the row, so the text is centred and the
+     dot still sits to the left of it. Nothing else in the piece is allowed to be
+     lopsided either: `letter-spacing` puts a space after the LAST letter too, which
+     drags centred text left by half of it, so both spaced labels pull that back. */
+  #ask::after{ content:""; width:6px; flex:none; }
   @keyframes askdot{ 0%,100%{ opacity:.42; transform:scale(1) } 50%{ opacity:1; transform:scale(1.35) } }
   #ask.on{ opacity:1; transform:translate(-50%,0); }
   /* narrow screens cannot hold a long line on one row, so let it wrap there */
+  /* On a narrow screen the line has to wrap, but it was also being LEFT-aligned
+     inside a pill up to 88vw wide, which put the instruction hard against the left of
+     the screen while everything else stayed centred. Centred, wrapped. */
   @media (max-width:600px){
-    #ask{ white-space:normal; text-align:left; max-width:88vw; bottom:13vh; }
+    #ask{ white-space:normal; text-align:center; max-width:88vw; bottom:13vh; }
   }
   /* a star card is a thing to read; the narration and the prompt get out of its
      way rather than being read over the top of it */
@@ -393,11 +412,9 @@
   <p class="prize">Earth Partner Prize</p>
   <h1 class="t">Remember When</h1>
   <p class="a">Aanya Sharma</p>
-  <p class="lede">A morning you have had a thousand times, and the small things
-     that stopped happening in it.</p>
+  <p class="lede">An interactive experience about air pollution.</p>
   <p class="how">Scroll to move through it.</p>
   <button id="begin" autofocus>Begin</button>
-  <p class="fine">An interactive experience about air pollution.</p>
 </div></div>
 
 <div id="chapter" aria-hidden="true"></div>

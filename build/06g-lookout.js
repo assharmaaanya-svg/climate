@@ -161,7 +161,7 @@ const L_HOME_H = 0.88;
    and answer anyway. */
 const LMARK = [
   { id:"school", x:0.4250, y:0.6880, r:0.070, key:true, aud:"school",
-    tick:"My school",
+    tick:"Your school",
     say:"Your school. The red brick one, with the little tower on top.",
     glint:{ x:0.4232, y:0.6560, w:0.010 } },              // the cupola glazing
   { id:"wires",  x:0.2480, y:0.4790, r:0.062, key:true, aud:"birds",

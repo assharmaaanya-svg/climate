@@ -309,10 +309,17 @@ const STARY = {
   story:null, storyT:0
 };
 /* ---------------------------------------------------------------- the cards
-   Each named star opens a card. The shape is the same every time: what it is in
-   one sentence, then what it has meant to people, then the numbers — because a
-   card that only tells you a feeling is a poster, and this is a piece about
-   something measurable.
+   TWO SENTENCES. What the star is, and what people did with it. That is the whole
+   card, and the length is the point rather than a limitation.
+
+   The first version ran to a five-line paragraph each and it was the wrong shape for
+   where it appears: the visitor is standing under a night sky in the middle of an
+   artwork, having tapped a star out of curiosity, and what arrives is an encyclopedia
+   entry. Nobody reads the fourth line of that. Two sentences get read, and a sentence
+   that gets read is worth more than a paragraph that does not.
+
+   The numbers stay, trimmed to two, because they are glanced at rather than read and
+   they keep the card from being only a feeling.
 
    Nothing here mentions the air at all. This chapter is the sky as it was, and a
    card that ended every time on what has been lost would spend the ending three
@@ -333,26 +340,26 @@ const STAR_CARD = {
     sub: "a naked-eye double",
     bayer: "\u03b6 & 80 Ursae Majoris",
     where: "Ursa Major \u00b7 the handle\u2019s bend",
-    lede: "Two stars in the handle of the Big Dipper, famous for having been used as a test of eyesight.",
-    body: "They sit about a fifth of a moon\u2019s width apart, close to the limit of what an unaided eye can separate. Persian astronomers wrote about the pair in the tenth century, and for centuries afterwards seeing both was used as a test of sight, one that needed no lens, no instrument and no money. Anyone under a clear sky could take it, and passing meant the same thing everywhere on Earth.",
-    facts: [["Magnitude", "2.23 \u00b7 3.99"], ["Apart", "11.8 arcminutes"], ["Distance", "83 light years"]]
+    lede: "Two stars in the handle of the Big Dipper, so close together that most people see one.",
+    body: "For centuries, telling them apart was how people tested their eyesight, a test anyone could take under a clear sky with no instrument and no money.",
+    facts: [["Apart", "11.8 arcminutes"], ["Distance", "83 light years"]]
   },
   alkaid: {
     name: "Alkaid",
     sub: null,
     bayer: "\u03b7 Ursae Majoris",
     where: "Ursa Major \u00b7 the handle\u2019s tip",
-    lede: "The star at the very end of the Big Dipper\u2019s handle, long used in navigation.",
-    body: "For most of human history the Dipper it ends was working equipment: swinging around the pole, it gave people the hour, the season and the way to north. In the nineteenth-century United States the same shape was carried in song, and \u201cFollow the Drinking Gourd\u201d gave escaping enslaved people a direction to hold to with no map and no compass.",
-    facts: [["Magnitude", "1.86"], ["Distance", "104 light years"], ["Surface", "17,000 K"]]
+    lede: "The star at the very tip of the Big Dipper\u2019s handle.",
+    body: "The shape it ends gave people the hour, the season and the way north long before there were clocks or compasses, and it was passed on in song to guide people escaping slavery.",
+    facts: [["Magnitude", "1.86"], ["Distance", "104 light years"]]
   },
   megrez: {
     name: "Megrez",
     sub: null,
     bayer: "\u03b4 Ursae Majoris",
     where: "Ursa Major \u00b7 handle meets bowl",
-    lede: "The faintest of the Big Dipper\u2019s seven stars, sitting at the joint where the handle meets the bowl.",
-    body: "It is the star the whole shape is built on, so taking it away does not make the Dipper fainter, it makes it come apart into a bowl and a handle that no longer meet. At magnitude 3.3 it is the last of the seven most people learn to pick out, which is why anyone who can name all seven has spent real time looking up.",
+    lede: "The faintest of the Big Dipper\u2019s seven stars, where the handle joins the bowl.",
+    body: "It is the joint the whole shape hangs on, so it is the one that has to be found before the Dipper can be used to find anything else.",
     facts: [["Magnitude", "3.31"], ["Distance", "58 light years"]]
   },
   alrischa: {
@@ -360,18 +367,18 @@ const STAR_CARD = {
     sub: null,
     bayer: "\u03b1 Piscium",
     where: "Pisces \u00b7 the knot",
-    lede: "The alpha star of Pisces, whose name means \u201cthe cord\u201d, the knot tying the constellation\u2019s two fish together.",
-    body: "Babylonian tablets already had two fish and a cord here more than two thousand years ago, and the arrangement survived through Greek, Arabic and Latin astronomy into the charts still in use today. Naming the sky is one of the oldest things people have done together, and every culture that could see stars did it, no two of them the same way.",
-    facts: [["Magnitude", "3.82"], ["Distance", "151 light years"], ["Orbit", "a pair, 700 years"]]
+    lede: "The knot tying the two fish of Pisces together, its name meaning the cord.",
+    body: "People have drawn those two fish and that cord in this same place for more than two thousand years, which makes it one of the oldest agreements humanity has kept.",
+    facts: [["Magnitude", "3.82"], ["Distance", "151 light years"]]
   },
   polaris: {
     name: "Polaris",
     sub: "the North Star",
     bayer: "\u03b1 Ursae Minoris",
     where: "Ursa Minor \u00b7 over the pole",
-    lede: "The star almost directly above Earth\u2019s north pole, used for centuries by travellers and sailors to find north.",
-    body: "It sits within three quarters of a degree of the celestial pole, so while the whole sky turns it barely moves. That made it the most useful star in the northern hemisphere: it gives direction without a compass, and because its height above the horizon equals your latitude, it gave sailors their position too.",
-    facts: [["Magnitude", "1.98"], ["Off true north", "0.7 degrees"], ["Distance", "about 450 ly"]]
+    lede: "The star that sits almost exactly above Earth\u2019s north pole.",
+    body: "Because it barely moves while the rest of the sky turns, it gave sailors north without a compass, and its height above the horizon told them how far north they had come.",
+    facts: [["Off true north", "0.7 degrees"], ["Distance", "about 450 ly"]]
   }
 };
 /* the older one-line version, still used by anything that only wants a whisper */

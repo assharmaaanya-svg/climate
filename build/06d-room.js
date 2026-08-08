@@ -761,11 +761,16 @@ function drawRoom(t, dt, o){
     ctx.restore();
   }
 
-  /* the floor: the basket, and whatever is still lying on it */
-  if (rev > 0.15){
-    toysInteract(t, dt);
-    drawToys(t, dt, 0.24 + 0.62*rev*(1-air*0.3));
-  }
+  /* THE FLOOR IS BARE, AND STAYS BARE.
+     There were four draggable toys down here. They are gone for good, not switched
+     off: the painting lights this room from one low window and four cut-out sprites
+     sitting on its boards read as stickers however carefully the alpha is measured
+     and the light is matched. The room is better with nothing on the floor, and the
+     first thing a visitor touches should be the curtains.
+
+     The code below is left in place because it is the only place in the piece that
+     solves picking a sprite up by its own drawn content rather than its file box, and
+     that is worth keeping to hand. Nothing calls it. */
 
   /* the drawing taped over the bed, years before it is handed over */
   drawTapedDrawing(t, rev, air);

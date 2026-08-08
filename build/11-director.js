@@ -703,15 +703,17 @@ const FIN_LINES = [
 ];
 let shownFin = -1, lastCap="", lastCh=-1;
 
-/* the drawing scene and the evidence hills are light: the text has to flip.
-   The lookout is not on this list and used to be: it is a valley seen through two
-   circles in a black field, so almost everything the text sits over down there is
-   the black surround. Dark text on it was invisible. */
-function isLight(){
-  const b=id();
-  return b==="drawing" || b==="r-drawing" || b==="e-hills" ||
-         b==="laundry" || b==="shirt" || b==="r-laundry";
-}
+/* EVERY LINE IN THE PIECE IS WHITE.
+   This used to flip the narration to near-black over the bright scenes — the washing
+   line, the drawing, the evidence hills — on the reasoning that dark ink reads better
+   on a pale sky. It does, in isolation. What it actually produced was one voice that
+   changed colour halfway through the work: the same narrator, speaking in white for
+   two chapters and then in brown on the washing line. A voice does not change colour
+   because the weather did.
+
+   So it is white everywhere, and the shadow underneath it does the work instead —
+   see --sh, which is now heavy enough to hold white type over a noon sky. */
+function isLight(){ return false; }
 function updText(now, dt){
   if (introOn){ askEl.classList.remove("on"); capEl.classList.remove("on");
     gateEl.classList.remove("on"); sdownEl.classList.remove("on"); return; }
