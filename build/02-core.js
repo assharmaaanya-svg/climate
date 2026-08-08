@@ -361,6 +361,14 @@ const BEATS = [
      for why it is the one beat that runs on a clock rather than on the scroll. */
   { id:"onslaught", ch:7, len:1.35,
     line:"" },
+  /* THE RETURN. Chapter 7 has no name, so no chapter mark appears across either of
+     these: the visitor is supposed to recognise the room, not be told about it.
+     Both lines are empty on purpose. They have just been shown the statistics and
+     they can see out of the window; a sentence here would be the piece explaining
+     its own photograph. */
+  { id:"p-room",  ch:7, len:2.0, gate:"pcurtain",
+    ask:"Gently pull the curtains apart", line:"" },
+  { id:"p-shut",  ch:7, len:2.0, line:"" },
   /* ------------- chapter three: the change is almost invisible ------------- */
   { id:"r-laundry", ch:3, len:1.35, gate:"brush",   ask:"Brush it off",
     line:"Later. The same line, the same sheets." },
@@ -425,7 +433,11 @@ const HOLD_AT = {
   laundry: { done: () => !!SHEETS.tapped,    prog: () => SHEETS.tapped ? 1 : 0,
              pass: () => { SHEETS.tapped = 1; } },
   kite:    { done: () => gateMet("kite"),    prog: () => gateProgress("kite"),
-             pass: () => { done.kite = true; } }
+             pass: () => { done.kite = true; } },
+  /* and the curtains again, on the way back. Same reason as the first pair: a
+     visitor who scrolls past them never finds out that the room is still here. */
+  "p-room":{ done: () => gateMet("pcurtain"), prog: () => gateProgress("pcurtain"),
+             pass: () => { done.pcurtain = true; } }
 };
 
 const N = BEATS.length;

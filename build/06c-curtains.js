@@ -410,7 +410,11 @@ function curtainReach(x){
 }
 
 function bedroomInteract(g, t, dt){
-  const isCurtain = (g==="curtain" || g==="curtain2");
+  /* `pcurtain` is the same pair of curtains in the return, and it has to be on this
+     list or two things silently do not happen: the gate is never met, so the scroll
+     waits for ever, and the idle counter that brings the helping hands up never
+     runs, so a visitor who does not know what to do is offered nothing. */
+  const isCurtain = (g==="curtain" || g==="curtain2" || g==="pcurtain");
   const wasMin = Math.min(PROOM.cL, PROOM.cR);
 
   if (P.down && P.active){

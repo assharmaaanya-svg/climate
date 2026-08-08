@@ -215,6 +215,38 @@
   @media (prefers-reduced-motion:reduce){
     #look .tk{ transition:none; } #look li.got .tk{ transition:none; } }
 
+  /* ---------- THE PHONE, IN THE RETURN ----------
+     The artist's own notification, rebuilt in markup: same white pill, same emoji
+     pair, same bold line over a hairline over two lines of body text, same words.
+     Not the PNG, for two reasons. It is a flattened render on a grey field with its
+     glow baked into the pixels, so it cannot sit over a room; and the card has to
+     change what it says partway through, from the air reading to a message from her,
+     which a picture of a card cannot do.
+
+     It is a phone notification and it is styled like one rather than like this piece:
+     system sans, near-black on white, tight radius. That difference is deliberate.
+     Everything else the visitor has read has been the artwork talking. This is not
+     the artwork talking. */
+  #note{ position:fixed; right:max(18px,env(safe-area-inset-right)); bottom:5.5vh; z-index:14;
+    width:min(400px,86vw); padding:15px 18px 16px;
+    background:#fdfdfd; border-radius:17px;
+    box-shadow:0 18px 44px rgba(0,0,0,.42), 0 2px 6px rgba(0,0,0,.20);
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    color:#15171a; opacity:0; transform:translateX(28px);
+    transition:opacity .7s cubic-bezier(.2,.7,.3,1), transform .7s cubic-bezier(.2,.7,.3,1);
+    pointer-events:none; }
+  #note.on{ opacity:1; transform:none; }
+  #note .nrow{ display:flex; align-items:center; gap:.6em;
+    padding-bottom:11px; border-bottom:1px solid rgba(20,24,28,.13); }
+  #note .ni{ font-size:1.06rem; line-height:1; letter-spacing:-.06em; flex:none; }
+  #note .ni.off{ display:none; }
+  #note .nt{ font-size:1.02rem; font-weight:650; letter-spacing:-.008em; line-height:1.25; }
+  #note .nb{ margin:11px 0 0; font-size:.92rem; line-height:1.42; color:#1b1f24; }
+  /* a message from a person is a shorter card than a weather alert */
+  #note.msg{ width:min(310px,80vw); }
+  #note.msg .nb{ margin-top:9px; }
+  @media (prefers-reduced-motion:reduce){ #note{ transition:opacity .7s; transform:none; } }
+
   /* ---------- air-quality warning (chapter 5) ---------- */
   #aq{ position:fixed; left:50%; top:50%; transform:translate(-50%,-50%) scale(.96); z-index:9;
     width:min(88vw,30rem); background:rgba(20,17,14,.82); border:1px solid rgba(255,214,150,.34);
@@ -418,6 +450,12 @@
 </div></div>
 
 <div id="chapter" aria-hidden="true"></div>
+
+<!-- the phone, in the return. Content is swapped in from build/10b-return.js. -->
+<div id="note" aria-hidden="true" aria-live="polite">
+  <div class="nrow"><span class="ni">⚠️🌫️</span><span class="nt"></span></div>
+  <p class="nb"></p>
+</div>
 
 <!-- the four places, on the hill. Filled in from the landmark table. -->
 <div id="look" aria-hidden="true"><p class="hd">Look for</p><ul></ul></div>

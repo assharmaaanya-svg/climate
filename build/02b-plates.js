@@ -91,6 +91,22 @@ const PLATES = {
     crop:{ x:0.0, y:0.045, w:1.0, h:0.830 },
     bands:[ {to:0.16,p:0.015}, {to:0.62,p:0.04}, {to:0.80,p:0.09}, {to:1.0,p:0.17} ]
   },
+  /* THE SAME ROOM, AFTERWARDS.
+     The artist's painting, used as the source of truth and not touched: same shelf,
+     same bunting, same teddy, same drawing taped to the same wall, same rug. Only
+     the window has changed, and it has changed by not showing anything. It is
+     1448x1086, the same framing as bedroomOpen to within a pixel, so it takes that
+     family's crop and band cuts unaltered and every piece of geometry already
+     measured against that framing — the rod, the curtains, the window — lands where
+     it should with nothing re-measured.
+
+     No `hazed` twin. There is nothing for this to dissolve into: it is the end
+     state, and the air in it is already in the paint. */
+  roomAfter: {
+    clean:"postpollutionbedroomupdate.png",
+    crop:{ x:0.0, y:0.05, w:1.0, h:0.82 },
+    bands:[ {to:0.13,p:0.02}, {to:0.60,p:0.05}, {to:0.78,p:0.10}, {to:1.0,p:0.18} ]
+  },
   bedroomOpenAlt: {
     clean:"bedroomopenver2.png",
     crop:{ x:0.0, y:0.05, w:1.0, h:0.82 },
@@ -192,7 +208,8 @@ function preloadPlates(){
     "moresheets.png","moresheetspolluted.png","sheetswithmother.png","sheetspollutedwithmother.png",
     "childflykite.png","childflykiteevening.png","childflykite night.png","pollutedkitefly.png",
     "stargaze.png","pollutedstargaze.png","viewoftown.png","viewoftownafterpollution.png",
-    "sheetspostpollution.png","sheetspostpollution with basket.png","bedroomopenver2.png"];
+    "sheetspostpollution.png","sheetspostpollution with basket.png","bedroomopenver2.png",
+    "postpollutionbedroomupdate.png"];
   /* the binocular overlay is not here any more: the lookout draws its field of
      view rather than loading it. See build/06g-lookout.js. */
   for (const n of order) loadImg(n);

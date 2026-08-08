@@ -25,6 +25,10 @@ const AIRPLAN = {
   "wish":      { pm:[9,9],      tod:[0.965,0.985], glow:[0.06,0.06] },
   "horizon":   { pm:[10,12],    tod:[0.215,0.425], glow:[0.03,0] },
   "drawing":   { pm:[12,14],    tod:[0.440,0.465], glow:[0,0] },
+  /* the return: bad air, indoors, late afternoon. It does not improve across the
+     scene and it does not worsen, because nothing here is a trend, it is a Tuesday. */
+  "p-room":    { pm:[96,96],    tod:[0.330,0.340], glow:[0,0] },
+  "p-shut":    { pm:[96,96],    tod:[0.340,0.352], glow:[0,0] },
   /* chapter three: this is where it becomes visible, and it happens fast */
   "r-laundry": { pm:[34,48],    tod:[0.400,0.440], glow:[0,0] },
   "r-kite":    { pm:[52,68],    tod:[0.460,0.560], glow:[0,0] },
@@ -513,6 +517,22 @@ function render(t, dt){
       drawOnslaught(t, dt);
       break;
     }
+    /* -------------------------------- the return
+       Two beats, one continuous scene: the boundary between them is invisible and
+       exists only so the scroll has somewhere to go. Nothing lives outside that
+       window any more, so nothing is populated. */
+    case "p-room": {
+      setPop({ birds:0, butterflies:0, dragonflies:0, fireflies:0, seeds:0.05 });
+      bedroomInteract("pcurtain", t, dt);
+      drawReturn(t, dt, { phase:"room" });
+      break;
+    }
+    case "p-shut": {
+      setPop({ birds:0, butterflies:0, dragonflies:0, fireflies:0, seeds:0.05 });
+      // the curtains stay where they were left; only the window is live now
+      drawReturn(t, dt, { phase:"window" });
+      break;
+    }
     /* -------------------------------- chapter three */
     case "r-laundry": {
       setPop({ birds:0.15, butterflies:0.05, dragonflies:0.1, fireflies:0, seeds:0.3 });
@@ -752,7 +772,13 @@ function updText(now, dt){
      which is the same as it not existing. So a beat may also declare an optional
      action, and its instruction stays up until that action has happened. */
   const optional = OPTIONAL[bid];
-  const askTxt = (needed || (optional && !optional())) ? (B.ask||"") : "";
+  let askTxt = (needed || (optional && !optional())) ? (B.ask||"") : "";
+  /* THE RETURN SAYS NOTHING FOR A WHILE.
+     The visitor is meant to recognise the room and reach for the curtains because
+     they remember them, not because a pill told them to. So the prompt is withheld
+     through the reveal and for a good few seconds after it, and the hands on the
+     leading edges arrive first. If somebody really is stuck, the words follow. */
+  if (bid === "p-room" && (PRET.reveal < 0.999 || PROOM.idle < 5.5)) askTxt = "";
   askEl.textContent = askTxt;
   const busy = P.down || tSinceAct < 1.4;
   askEl.classList.toggle("on", !!askTxt && (T.push>0.05 || !busy || (now-beatEnter)<3600));
@@ -809,7 +835,8 @@ function updText(now, dt){
 }
 function gateProgress(g){
   switch(g){
-    case "curtain": case "curtain2": return Math.min(PROOM.cL,PROOM.cR)/CTR.need;
+    case "curtain": case "curtain2": case "pcurtain":
+      return Math.min(PROOM.cL,PROOM.cR)/CTR.need;
     case "sash":    return PROOM.sash/0.55;
     case "sheets":  return 1;
     case "shirt":   return PWASH.through/5;
@@ -928,6 +955,8 @@ function onEnter(bid){
      the first visit carries the list — on the second there is nothing to tick */
   if (bid==="horizon" || bid==="r-horizon") resetLookout(bid);
   showLookList(bid==="horizon");
+  if (bid==="p-room") resetReturn();
+  if (bid!=="p-room" && bid!=="p-shut") hideNote();
   if (bid==="onslaught") resetOnslaught();
   else { document.body.classList.remove("onslaught"); SILENCE = 0; onsNoiseStop(); }
   if (bid!=="stopped" && bid!=="named") hideAQ();
@@ -1117,6 +1146,8 @@ window.__bluer = {
   get look(){ return PLOOK; },
   get ons(){ return ONS; },
   onsSkip,
+  get ret(){ return PRET; },
+  handle(){ return returnHandleAt(); },
   /* the whole mix in one call: the master fader and the loudest thing under it, so a
      layer that forgot to get quiet cannot hide behind the ones that did */
   mix(){
@@ -1164,9 +1195,15 @@ window.__bluer = {
     if (i < 0) return false;
     for (let k=0;k<i;k++){
       if (BEATS[k].gate) done[BEATS[k].gate] = true;
-      // and the three places the scroll waits, which are not all gates
+      // and the places the scroll waits, which are not all gates
       const h = HOLD_AT[BEATS[k].id];
       if (h && h.pass) h.pass();
+      /* the statistics cannot be scrolled past until they have played, by design, so
+         jumping to anything after them counts as having seen them */
+      if (BEATS[k].id === "onslaught"){
+        ONS.played = 1; ONS.running = 0; ONS.t = ONS_END;
+        onsNoiseStop(); document.body.classList.remove("onslaught");
+      }
     }
     const max = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
     window.scrollTo(0, (ofs[i] + BEATS[i].len*(f===undefined?0.35:f))/TOTAL * max);

@@ -215,6 +215,38 @@
   @media (prefers-reduced-motion:reduce){
     #look .tk{ transition:none; } #look li.got .tk{ transition:none; } }
 
+  /* ---------- THE PHONE, IN THE RETURN ----------
+     The artist's own notification, rebuilt in markup: same white pill, same emoji
+     pair, same bold line over a hairline over two lines of body text, same words.
+     Not the PNG, for two reasons. It is a flattened render on a grey field with its
+     glow baked into the pixels, so it cannot sit over a room; and the card has to
+     change what it says partway through, from the air reading to a message from her,
+     which a picture of a card cannot do.
+
+     It is a phone notification and it is styled like one rather than like this piece:
+     system sans, near-black on white, tight radius. That difference is deliberate.
+     Everything else the visitor has read has been the artwork talking. This is not
+     the artwork talking. */
+  #note{ position:fixed; right:max(18px,env(safe-area-inset-right)); bottom:5.5vh; z-index:14;
+    width:min(400px,86vw); padding:15px 18px 16px;
+    background:#fdfdfd; border-radius:17px;
+    box-shadow:0 18px 44px rgba(0,0,0,.42), 0 2px 6px rgba(0,0,0,.20);
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    color:#15171a; opacity:0; transform:translateX(28px);
+    transition:opacity .7s cubic-bezier(.2,.7,.3,1), transform .7s cubic-bezier(.2,.7,.3,1);
+    pointer-events:none; }
+  #note.on{ opacity:1; transform:none; }
+  #note .nrow{ display:flex; align-items:center; gap:.6em;
+    padding-bottom:11px; border-bottom:1px solid rgba(20,24,28,.13); }
+  #note .ni{ font-size:1.06rem; line-height:1; letter-spacing:-.06em; flex:none; }
+  #note .ni.off{ display:none; }
+  #note .nt{ font-size:1.02rem; font-weight:650; letter-spacing:-.008em; line-height:1.25; }
+  #note .nb{ margin:11px 0 0; font-size:.92rem; line-height:1.42; color:#1b1f24; }
+  /* a message from a person is a shorter card than a weather alert */
+  #note.msg{ width:min(310px,80vw); }
+  #note.msg .nb{ margin-top:9px; }
+  @media (prefers-reduced-motion:reduce){ #note{ transition:opacity .7s; transform:none; } }
+
   /* ---------- air-quality warning (chapter 5) ---------- */
   #aq{ position:fixed; left:50%; top:50%; transform:translate(-50%,-50%) scale(.96); z-index:9;
     width:min(88vw,30rem); background:rgba(20,17,14,.82); border:1px solid rgba(255,214,150,.34);
@@ -418,6 +450,12 @@
 </div></div>
 
 <div id="chapter" aria-hidden="true"></div>
+
+<!-- the phone, in the return. Content is swapped in from build/10b-return.js. -->
+<div id="note" aria-hidden="true" aria-live="polite">
+  <div class="nrow"><span class="ni">⚠️🌫️</span><span class="nt"></span></div>
+  <p class="nb"></p>
+</div>
 
 <!-- the four places, on the hill. Filled in from the landmark table. -->
 <div id="look" aria-hidden="true"><p class="hd">Look for</p><ul></ul></div>
@@ -913,6 +951,14 @@ const BEATS = [
      for why it is the one beat that runs on a clock rather than on the scroll. */
   { id:"onslaught", ch:7, len:1.35,
     line:"" },
+  /* THE RETURN. Chapter 7 has no name, so no chapter mark appears across either of
+     these: the visitor is supposed to recognise the room, not be told about it.
+     Both lines are empty on purpose. They have just been shown the statistics and
+     they can see out of the window; a sentence here would be the piece explaining
+     its own photograph. */
+  { id:"p-room",  ch:7, len:2.0, gate:"pcurtain",
+    ask:"Gently pull the curtains apart", line:"" },
+  { id:"p-shut",  ch:7, len:2.0, line:"" },
   /* ------------- chapter three: the change is almost invisible ------------- */
   { id:"r-laundry", ch:3, len:1.35, gate:"brush",   ask:"Brush it off",
     line:"Later. The same line, the same sheets." },
@@ -977,7 +1023,11 @@ const HOLD_AT = {
   laundry: { done: () => !!SHEETS.tapped,    prog: () => SHEETS.tapped ? 1 : 0,
              pass: () => { SHEETS.tapped = 1; } },
   kite:    { done: () => gateMet("kite"),    prog: () => gateProgress("kite"),
-             pass: () => { done.kite = true; } }
+             pass: () => { done.kite = true; } },
+  /* and the curtains again, on the way back. Same reason as the first pair: a
+     visitor who scrolls past them never finds out that the room is still here. */
+  "p-room":{ done: () => gateMet("pcurtain"), prog: () => gateProgress("pcurtain"),
+             pass: () => { done.pcurtain = true; } }
 };
 
 const N = BEATS.length;
@@ -1288,6 +1338,22 @@ const PLATES = {
     crop:{ x:0.0, y:0.045, w:1.0, h:0.830 },
     bands:[ {to:0.16,p:0.015}, {to:0.62,p:0.04}, {to:0.80,p:0.09}, {to:1.0,p:0.17} ]
   },
+  /* THE SAME ROOM, AFTERWARDS.
+     The artist's painting, used as the source of truth and not touched: same shelf,
+     same bunting, same teddy, same drawing taped to the same wall, same rug. Only
+     the window has changed, and it has changed by not showing anything. It is
+     1448x1086, the same framing as bedroomOpen to within a pixel, so it takes that
+     family's crop and band cuts unaltered and every piece of geometry already
+     measured against that framing — the rod, the curtains, the window — lands where
+     it should with nothing re-measured.
+
+     No `hazed` twin. There is nothing for this to dissolve into: it is the end
+     state, and the air in it is already in the paint. */
+  roomAfter: {
+    clean:"postpollutionbedroomupdate.png",
+    crop:{ x:0.0, y:0.05, w:1.0, h:0.82 },
+    bands:[ {to:0.13,p:0.02}, {to:0.60,p:0.05}, {to:0.78,p:0.10}, {to:1.0,p:0.18} ]
+  },
   bedroomOpenAlt: {
     clean:"bedroomopenver2.png",
     crop:{ x:0.0, y:0.05, w:1.0, h:0.82 },
@@ -1389,7 +1455,8 @@ function preloadPlates(){
     "moresheets.png","moresheetspolluted.png","sheetswithmother.png","sheetspollutedwithmother.png",
     "childflykite.png","childflykiteevening.png","childflykite night.png","pollutedkitefly.png",
     "stargaze.png","pollutedstargaze.png","viewoftown.png","viewoftownafterpollution.png",
-    "sheetspostpollution.png","sheetspostpollution with basket.png","bedroomopenver2.png"];
+    "sheetspostpollution.png","sheetspostpollution with basket.png","bedroomopenver2.png",
+    "postpollutionbedroomupdate.png"];
   /* the binocular overlay is not here any more: the lookout draws its field of
      view rather than loading it. See build/06g-lookout.js. */
   for (const n of order) loadImg(n);
@@ -6327,7 +6394,11 @@ function curtainReach(x){
 }
 
 function bedroomInteract(g, t, dt){
-  const isCurtain = (g==="curtain" || g==="curtain2");
+  /* `pcurtain` is the same pair of curtains in the return, and it has to be on this
+     list or two things silently do not happen: the gate is never met, so the scroll
+     waits for ever, and the idle counter that brings the helping hands up never
+     runs, so a visitor who does not know what to do is offered nothing. */
+  const isCurtain = (g==="curtain" || g==="curtain2" || g==="pcurtain");
   const wasMin = Math.min(PROOM.cL, PROOM.cR);
 
   if (P.down && P.active){
@@ -12783,6 +12854,253 @@ function glassTo(x,y){
   if (Math.random()<0.3) sfx.crayon();
 }
 /* ============================================================================
+   THE RETURN
+   The same bedroom, afterwards. It comes straight out of the black at the end of
+   the statistics, and its whole job is recognition: this is the room the piece
+   started in, and the only thing that has changed is what is outside it.
+
+   THE PAINTING IS THE SOURCE OF TRUTH and nothing here redesigns it. No purifier,
+   no mask on the bed, no warning sign taped to the glass, no dust to wipe. The
+   artist painted a child's bedroom in bad air and the correct thing to do with it
+   is get out of its way. Everything this file adds is either something the code
+   already owned in the opening room — the rod, the curtains, the light they let in
+   — or the two interactions, and nothing else.
+
+   TWO INTERACTIONS. Pull the curtains apart. Try the window. That is all there is,
+   and the restraint is the content: the visitor should spend far more of this scene
+   looking than doing.
+
+   ATMOSPHERE BY ABSENCE. The opening room answered when it was opened: birds on the
+   wire shuffling, leaves, a gust coming through, motes turning in a shaft of light.
+   This one barely answers. There are no birds on that wire in the painting and none
+   are added; the air holds a little dust that drifts rather than dances; nothing
+   gusts, because the window does not open. The contrast is meant to land as a
+   memory of how alive the same room was an hour ago, not as a derelict set. It is
+   still somebody's ordinary bedroom, which is the whole reason it is upsetting.
+   ========================================================================== */
+
+const PRET = {
+  reveal: 0,        // 0 black, 1 the room is fully up
+  seen: 0,          // seconds with the curtains open, for pacing the window
+  hover: 0,         // the handle, under the pointer
+  tried: 0,         // how many times the window has been asked
+  give: 0,          // the millimetre it moves and comes back
+  noteT: -1,        // countdown to the notification
+  note: 0,          // 0 nothing, 1 the air reading, 2 her
+  swapT: -1
+};
+
+/* The reveal is four seconds. It is the slowest thing in the piece and it should
+   be: the visitor has just come out of the statistics into nothing at all, and
+   the room has to arrive quietly enough that recognising it is their own thought
+   rather than a cut. */
+const PRET_REVEAL = 4.0;
+
+function resetReturn(){
+  PRET.reveal = 0; PRET.seen = 0; PRET.hover = 0;
+  PRET.tried = 0; PRET.give = 0;
+  PRET.noteT = -1; PRET.note = 0; PRET.swapT = -1;
+  /* The curtains start shut, exactly as they did at the beginning. The opening
+     room's own state is reused rather than duplicated, so the drag is not a
+     lookalike of the first one, it is the same code with the same weight and the
+     same follow on the far panel. By this point the piece cannot be scrolled back
+     into the opening, so there is nothing to disturb. */
+  PROOM.cL = 0; PROOM.cR = 0; PROOM.open = 0;
+  PROOM.grab = 0; PROOM.nudgeTo = 0; PROOM.idle = 0; PROOM.demo = 0;
+  PROOM.everMoved = 0; PROOM.sash = 0; PROOM.breeze = 0;
+  hideNote();
+}
+
+/* where the casement handles are in this painting, as screen fractions after the
+   plate's crop: the pair on the mullion, a little under half way down */
+const PRET_HANDLE = { x:0.5175, y:0.428, w:0.020, h:0.052 };
+
+function returnHandleAt(){
+  const c = roomCam(CAM_WALL);
+  return { x: W*PRET_HANDLE.x + c.x, y: H*PRET_HANDLE.y + c.y,
+           rx: W*PRET_HANDLE.w, ry: H*PRET_HANDLE.h };
+}
+function onReturnHandle(x, y){
+  const h = returnHandleAt();
+  return Math.abs(x-h.x) < h.rx*1.9 && Math.abs(y-h.y) < h.ry*1.5;
+}
+
+/* --------------------------------------------------------------- the window
+   It does not open, and it is important that it does not open for the right
+   reason. Nothing is broken here: no rattle, no judder, no stuck-sash puzzle to
+   solve. The handle takes the pull, gives about a millimetre, and comes back,
+   which is what a window does when somebody on the other side of the house has
+   decided it stays shut. The explanation arrives afterwards, from her, and it is
+   one sentence long. */
+function returnWindow(t, dt, live){
+  const h = returnHandleAt();
+  const near = live && P.active && onReturnHandle(P.x, P.y);
+  PRET.hover = lerp(PRET.hover, near ? 1 : 0, Math.min(1, dt*6));
+  if (near) cv.className = P.down ? "grabbing" : "grabbable";
+
+  if (live && near && P.down){
+    PRET.give = Math.min(1, PRET.give + dt*5.5);
+    if (!PRET.tried){
+      PRET.tried = 1;
+      /* the beat before the phone. Long enough that the notification is a separate
+         event and not a reaction to the click. */
+      PRET.noteT = 1.7;
+    }
+  } else {
+    PRET.give = Math.max(0, PRET.give - dt*2.6);
+  }
+
+  /* the handle: a soft lozenge, nearly invisible until the pointer finds it, and
+     it takes the pull by moving a pixel and a half. That is the whole animation. */
+  const a = 0.05 + PRET.hover*0.16;
+  const dy = PRET.give * MIN*0.0022;
+  ctx.save();
+  ctx.translate(h.x, h.y + dy);
+  const g = ctx.createRadialGradient(0, 0, 0, 0, 0, h.ry*1.5);
+  g.addColorStop(0, rgba([255,246,226], a));
+  g.addColorStop(0.55, rgba([255,240,214], a*0.42));
+  g.addColorStop(1, rgba([255,238,210], 0));
+  ctx.fillStyle = g;
+  ctx.beginPath(); ctx.ellipse(0, 0, h.rx*1.7, h.ry*1.5, 0, 0, TAU); ctx.fill();
+  ctx.restore();
+}
+
+/* ----------------------------------------------------------------- the scene */
+function drawReturn(t, dt, o){
+  o = o||{};
+  const phase = o.phase || "room";       // "room" while the curtains are the thing
+  const pl = getPlate("roomAfter");
+  if (!pl){ ctx.fillStyle="#000"; ctx.fillRect(0,0,W,H); return; }
+
+  PRET.reveal = cl01(PRET.reveal + dt/PRET_REVEAL);
+  const rv = ease.io(PRET.reveal);
+
+  /* the room. Same air everywhere, because the air is in the paint. */
+  drawPlate("roomAfter", { air:0 });
+
+  /* the rod and the curtains, from the opening room, unchanged */
+  PROOM.open = lerp(PROOM.open, Math.min(PROOM.cL, PROOM.cR), Math.min(1, dt*3.0));
+  const rev = ease.io(cl01(PROOM.open));
+  drawRod(t, rev, 0.86);
+  curtainGeom(t, rev, 0.86);
+
+  /* the room is as dark as the curtains are still shut, exactly as before */
+  const dark = 1 - rev;
+  if (dark > 0.004){
+    const gp = curtainGap();
+    const fe = W*0.028;
+    offscreen(()=>{
+      const dg = tc.createLinearGradient(0, 0, 0, H);
+      const k0 = lerp(1, 0.40, dark), k1 = lerp(1, 0.29, dark);
+      dg.addColorStop(0,    rgb([255*k0, 244*k0, 232*k0]));
+      dg.addColorStop(0.62, rgb([255*k1, 240*k1, 230*k1]));
+      dg.addColorStop(1,    rgb([255*k1*0.92, 238*k1*0.92, 232*k1*0.92]));
+      tc.fillStyle = dg; tc.fillRect(0,0,W,H);
+      if (gp.x1-gp.x0 > 1){
+        tc.globalCompositeOperation = "destination-out";
+        const eg = tc.createLinearGradient(gp.x0-fe, 0, gp.x1+fe, 0);
+        const span = (gp.x1-gp.x0) + fe*2;
+        eg.addColorStop(0, "rgba(0,0,0,0)");
+        eg.addColorStop(cl01(fe/span),   "rgba(0,0,0,1)");
+        eg.addColorStop(cl01(1-fe/span), "rgba(0,0,0,1)");
+        eg.addColorStop(1, "rgba(0,0,0,0)");
+        tc.fillStyle = eg; tc.fillRect(gp.x0-fe, 0, span, H);
+        tc.globalCompositeOperation = "source-over";
+      }
+    });
+    ctx.save();
+    ctx.globalCompositeOperation = "multiply";
+    ctx.drawImage(TMP, 0, 0);
+    ctx.restore();
+  }
+
+  drawCurtains(t, dt, { rev, air:0.86 });
+
+  /* the window, once the curtains are actually open enough to reach it */
+  const open = Math.min(PROOM.cL, PROOM.cR);
+  const live = phase === "window" && open > 0.86 && PRET.reveal > 0.999;
+  if (open > 0.7) returnWindow(t, dt, live);
+  if (open > CTR.need) PRET.seen += dt;
+
+  /* THE AIR, MADE VISIBLE ONCE AND QUIETLY.
+     Barely anything: a slow dust that hangs rather than drifts, only in the light
+     from the window, and only when the curtains are open. It is the one atmospheric
+     addition in the scene and it is here because it is what the painting is about. */
+  if (rev > 0.1){
+    partRole = 2;
+    drawParticles(t, 0.10 + 0.16*rev, { x:W*0.52, y:H*0.34, r:H*0.85 });
+  }
+
+  /* the reveal out of the black sits over everything, so the room arrives whole */
+  if (rv < 0.999){
+    ctx.fillStyle = rgba([0,0,0], 1 - rv);
+    ctx.fillRect(0,0,W,H);
+  }
+
+  /* the hands, only after a long wait and never during the reveal */
+  if (phase === "room" && PRET.reveal > 0.999) curtainHelp(t, dt);
+
+  /* ---- the phone ---- */
+  if (PRET.noteT > 0){
+    PRET.noteT -= dt;
+    if (PRET.noteT <= 0){ PRET.note = 1; showNote(1); PRET.swapT = 3.6; }
+  }
+  if (PRET.swapT > 0){
+    PRET.swapT -= dt;
+    if (PRET.swapT <= 0){ PRET.note = 2; showNote(2); }
+  }
+
+  /* A closed room with bad air outside it. Quiet, muffled, and no gust: there is
+     nothing coming through that window. */
+  OUTSIDE = 0;
+  MUFFLE = 1;
+  ambience(0.09 + 0.05*rev, 0.10);
+  if (!live && !onReturnHandle(P.x, P.y)) cv.className = open > CTR.need ? "" : "grabbable";
+}
+
+/* ------------------------------------------------------------ the notification
+   The artist's own design, rebuilt as markup rather than drawn from the PNG. The
+   supplied file is a flattened render on a grey field with its glow baked into the
+   pixels, so it cannot be composited over a room; and more to the point the card
+   has to change what it says, from the air reading to her, which a picture of a
+   card cannot do. Same white pill, same emoji, same bold line over a hairline over
+   two lines of body text, same words.
+
+   It slides in from the right and stays. No sound: everything else in this scene
+   has been taken down to nothing and a chime here would be the loudest thing in
+   the chapter. */
+const noteEl = document.getElementById("note");
+function showNote(kind){
+  if (!noteEl) return;
+  const t = noteEl.querySelector(".nt"), b = noteEl.querySelector(".nb"),
+        ic = noteEl.querySelector(".ni");
+  if (kind === 2){
+    /* Her. No icon, because a message from your mother does not come with a weather
+       symbol, and no explanation, because the visitor has just been shown the
+       statistics and can see out of the window. "Leave it closed." is an ordinary
+       thing for a parent to send, and that is the entire point: all of that, and it
+       arrives back as one sentence about a window. */
+    ic.textContent = "";
+    ic.classList.add("off");
+    t.textContent = "Mum";
+    b.textContent = "Leave it closed.";
+    noteEl.classList.add("msg");
+  } else {
+    ic.textContent = "⚠️🌫️";
+    ic.classList.remove("off");
+    t.textContent = "Unhealthy: PM2.5 levels elevated";
+    b.textContent = "Keep windows closed. Consider limiting outdoor activity until conditions improve.";
+    noteEl.classList.remove("msg");
+  }
+  noteEl.classList.add("on");
+  noteEl.setAttribute("aria-hidden", "false");
+}
+function hideNote(){
+  if (!noteEl) return;
+  noteEl.classList.remove("on", "msg");
+  noteEl.setAttribute("aria-hidden", "true");
+}
+/* ============================================================================
    THE DIRECTOR
    Sets the air for each beat, dispatches the scene, and owns the morphs.
 
@@ -12809,6 +13127,10 @@ const AIRPLAN = {
   "wish":      { pm:[9,9],      tod:[0.965,0.985], glow:[0.06,0.06] },
   "horizon":   { pm:[10,12],    tod:[0.215,0.425], glow:[0.03,0] },
   "drawing":   { pm:[12,14],    tod:[0.440,0.465], glow:[0,0] },
+  /* the return: bad air, indoors, late afternoon. It does not improve across the
+     scene and it does not worsen, because nothing here is a trend, it is a Tuesday. */
+  "p-room":    { pm:[96,96],    tod:[0.330,0.340], glow:[0,0] },
+  "p-shut":    { pm:[96,96],    tod:[0.340,0.352], glow:[0,0] },
   /* chapter three: this is where it becomes visible, and it happens fast */
   "r-laundry": { pm:[34,48],    tod:[0.400,0.440], glow:[0,0] },
   "r-kite":    { pm:[52,68],    tod:[0.460,0.560], glow:[0,0] },
@@ -13297,6 +13619,22 @@ function render(t, dt){
       drawOnslaught(t, dt);
       break;
     }
+    /* -------------------------------- the return
+       Two beats, one continuous scene: the boundary between them is invisible and
+       exists only so the scroll has somewhere to go. Nothing lives outside that
+       window any more, so nothing is populated. */
+    case "p-room": {
+      setPop({ birds:0, butterflies:0, dragonflies:0, fireflies:0, seeds:0.05 });
+      bedroomInteract("pcurtain", t, dt);
+      drawReturn(t, dt, { phase:"room" });
+      break;
+    }
+    case "p-shut": {
+      setPop({ birds:0, butterflies:0, dragonflies:0, fireflies:0, seeds:0.05 });
+      // the curtains stay where they were left; only the window is live now
+      drawReturn(t, dt, { phase:"window" });
+      break;
+    }
     /* -------------------------------- chapter three */
     case "r-laundry": {
       setPop({ birds:0.15, butterflies:0.05, dragonflies:0.1, fireflies:0, seeds:0.3 });
@@ -13536,7 +13874,13 @@ function updText(now, dt){
      which is the same as it not existing. So a beat may also declare an optional
      action, and its instruction stays up until that action has happened. */
   const optional = OPTIONAL[bid];
-  const askTxt = (needed || (optional && !optional())) ? (B.ask||"") : "";
+  let askTxt = (needed || (optional && !optional())) ? (B.ask||"") : "";
+  /* THE RETURN SAYS NOTHING FOR A WHILE.
+     The visitor is meant to recognise the room and reach for the curtains because
+     they remember them, not because a pill told them to. So the prompt is withheld
+     through the reveal and for a good few seconds after it, and the hands on the
+     leading edges arrive first. If somebody really is stuck, the words follow. */
+  if (bid === "p-room" && (PRET.reveal < 0.999 || PROOM.idle < 5.5)) askTxt = "";
   askEl.textContent = askTxt;
   const busy = P.down || tSinceAct < 1.4;
   askEl.classList.toggle("on", !!askTxt && (T.push>0.05 || !busy || (now-beatEnter)<3600));
@@ -13593,7 +13937,8 @@ function updText(now, dt){
 }
 function gateProgress(g){
   switch(g){
-    case "curtain": case "curtain2": return Math.min(PROOM.cL,PROOM.cR)/CTR.need;
+    case "curtain": case "curtain2": case "pcurtain":
+      return Math.min(PROOM.cL,PROOM.cR)/CTR.need;
     case "sash":    return PROOM.sash/0.55;
     case "sheets":  return 1;
     case "shirt":   return PWASH.through/5;
@@ -13712,6 +14057,8 @@ function onEnter(bid){
      the first visit carries the list — on the second there is nothing to tick */
   if (bid==="horizon" || bid==="r-horizon") resetLookout(bid);
   showLookList(bid==="horizon");
+  if (bid==="p-room") resetReturn();
+  if (bid!=="p-room" && bid!=="p-shut") hideNote();
   if (bid==="onslaught") resetOnslaught();
   else { document.body.classList.remove("onslaught"); SILENCE = 0; onsNoiseStop(); }
   if (bid!=="stopped" && bid!=="named") hideAQ();
@@ -13901,6 +14248,8 @@ window.__bluer = {
   get look(){ return PLOOK; },
   get ons(){ return ONS; },
   onsSkip,
+  get ret(){ return PRET; },
+  handle(){ return returnHandleAt(); },
   /* the whole mix in one call: the master fader and the loudest thing under it, so a
      layer that forgot to get quiet cannot hide behind the ones that did */
   mix(){
@@ -13948,9 +14297,15 @@ window.__bluer = {
     if (i < 0) return false;
     for (let k=0;k<i;k++){
       if (BEATS[k].gate) done[BEATS[k].gate] = true;
-      // and the three places the scroll waits, which are not all gates
+      // and the places the scroll waits, which are not all gates
       const h = HOLD_AT[BEATS[k].id];
       if (h && h.pass) h.pass();
+      /* the statistics cannot be scrolled past until they have played, by design, so
+         jumping to anything after them counts as having seen them */
+      if (BEATS[k].id === "onslaught"){
+        ONS.played = 1; ONS.running = 0; ONS.t = ONS_END;
+        onsNoiseStop(); document.body.classList.remove("onslaught");
+      }
     }
     const max = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
     window.scrollTo(0, (ofs[i] + BEATS[i].len*(f===undefined?0.35:f))/TOTAL * max);
