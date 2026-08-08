@@ -402,6 +402,20 @@ const CH_NAME = { 1:"i · the world came inside", 2:"ii · life happened outdoor
                   3:"iii · the change is almost invisible", 4:"iv · habits change first",
                   5:"v · recognition", 6:"the evidence", 7:"" };
 
+/* WHERE SKIP IS NOT OFFERED.
+   Skip means "move on without doing this", and for the first few interactions that
+   is the wrong thing to put in front of somebody. The opening two are how a visitor
+   learns that this piece is a thing you touch at all — a curtain you pull apart and
+   a cord you pull down — and a button that says you need not bother teaches the
+   opposite. The washing line and the kite are the two moments the memory is actually
+   made of: her humming, and the thing he put into the sky. Offering to skip those is
+   offering to skip the work.
+
+   From the stars onward it is there, because by then the visitor knows what they are
+   doing and it is their time. Scrolling was never restricted on any of these — the
+   button is simply not held out. */
+const NO_SKIP = { dark:1, light:1, breathe:1, laundry:1, shirt:1, kite:1, onslaught:1 };
+
 const N = BEATS.length;
 let ofs = [0]; for (let i=0;i<N;i++) ofs.push(ofs[i]+BEATS[i].len);
 const TOTAL = ofs[N];
@@ -409,7 +423,8 @@ const TOTAL = ofs[N];
 const T = {
   p: 0,          // eased position along the timeline, in beat-length units
   target: 0,     // where scroll wants us
-  ceil: 0,       // furthest we're allowed while a gate is unmet
+  ceil: 0,       // furthest we're allowed (only the onslaught uses this now)
+  floor: 0,      // and the furthest BACK, once the statistics have been seen
   i: 0,          // current beat index
   f: 0,          // fraction through current beat
   blocked: false,
@@ -481,6 +496,18 @@ function readTimeline(dt){
     const start = ofs[oi] + 0.02;
     if (T.p < start && want > start) want = start;
   }
+
+  /* AND ONCE THEY HAVE BEEN SEEN, THERE IS NO GOING BACK TO THE CLEAN WORLD.
+     After the statistics the piece is on the other side of something. Being able to
+     scroll back up into the kite and the buttercups would make the whole middle of
+     the work a slideshow the visitor can rewind, and it would undo the one thing the
+     black screen is for. The furthest back is the first scene after it. Everything
+     from there on is still free in both directions. */
+  T.floor = 0;
+  if (oi >= 0 && onsPlayed() && oi+1 < N){
+    T.floor = ofs[oi+1];
+    if (want < T.floor) want = T.floor;
+  }
   const over = T.target - T.ceil;
   T.blocked = over > 0.03;
   T.push = cl01(over/0.5);
@@ -495,9 +522,15 @@ function readTimeline(dt){
   T.f = cl01((T.p - ofs[T.i]) / BEATS[T.i].len);
 }
 /* when blocked, hold the scrollbar near the gate so the page doesn't feel broken */
+/* Hold the scrollbar itself against whichever limit is in force, so the page never
+   feels like it has come unstuck from the thing on screen. */
 function clampScroll(){
-  if (!T.blocked) return;
   const max = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
+  if (T.floor > 0){
+    const y0 = (T.floor/TOTAL) * max;
+    if (window.scrollY < y0){ window.scrollTo(0, y0); return; }
+  }
+  if (!T.blocked) return;
   const y = (T.ceil + 0.34)/TOTAL * max;
   if (window.scrollY > y) window.scrollTo(0, y);
 }

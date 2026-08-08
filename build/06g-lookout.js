@@ -870,3 +870,15 @@ function showLookList(on){
   lookEl.classList.toggle("on", !!on);
   lookEl.setAttribute("aria-hidden", String(!on));
 }
+/* Restart clears it rather than letting the rows sit there ticked until the chapter
+   is next entered. Nothing looks at them in the meantime, but "nothing looks at it"
+   is not the same as "it is not there". */
+function resetLookList(){
+  lookBuilt = false;
+  if (lookEl){
+    const ul = lookEl.querySelector("ul");
+    if (ul) ul.innerHTML = "";
+    lookEl.classList.remove("on");
+    lookEl.setAttribute("aria-hidden", "true");
+  }
+}

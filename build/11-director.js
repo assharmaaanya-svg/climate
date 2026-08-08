@@ -766,6 +766,13 @@ function updText(now, dt){
   sdownEl.setAttribute("aria-hidden", String(!cue));
   askEl.classList.toggle("urge", T.push>0.3);
 
+  /* Skip is not offered while the visitor is still learning that this is something
+     you touch, or during the two interactions the memory is made of. */
+  const skippable = !NO_SKIP[bid];
+  bSkip.classList.toggle("off", !skippable);
+  bSkip.setAttribute("aria-hidden", String(!skippable));
+  bSkip.tabIndex = skippable ? 0 : -1;
+
   /* the gate marker */
   gateEl.classList.toggle("on", T.blocked && !!needed);
   if (T.blocked && needed){
@@ -1059,6 +1066,16 @@ document.getElementById("restart").addEventListener("click", ()=>{
   EV.lifted=0; EV.lift=0; EV.mag=0; EV.pull=0; EV.revealed=0; EV.gather=0;
   FIN.cL=FIN.cR=0; FIN.latchHold=0; FIN.memory=0; FIN.memPeak=0;
   FIN.opened=0; FIN.sash=0; FIN.sashPulls=0; FIN.crayon=false; FIN.patch=0; FIN.seen=0;
+  /* The statistics have to be un-seen, or Restart does nothing at all: the one-way
+     floor they leave behind sits at the first post-pollution beat, so scrollTo(0,0)
+     would be snapped straight back and the button would look broken. */
+  ONS.played = 0; ONS.running = 0; ONS.t = 0; T.floor = 0;
+  document.body.classList.remove("onslaught");
+  SILENCE = 0; onsNoiseStop();
+  /* and the lookout starts over: an unticked list, and none of the eleven places
+     already spoken for */
+  PLOOK.found = Object.create(null); PLOOK.said = Object.create(null); PLOOK.n = 0;
+  resetLookList();
   gc.clearRect(0,0,GLASS.width,GLASS.height);
   paperBuilt=false; buildPaper();
   buildWash(); buildIndoors(); resetKite();
@@ -1135,6 +1152,8 @@ window.__bluer = {
                const o={}; for (const k in LOOKA) o[k]=f(LOOKA[k]); return o; },
   lookMarkAt(k){ const m=LMARK.find(q=>q.id===k); return m? {x:m._x,y:m._y,on:m._on}:null; },
   get f(){ return T.f; },
+  get p(){ return T.p; },
+  get floor(){ return T.floor; },
   /* jump the scroll to a named beat, marking every gate before it as met, so a
      chapter can be driven and screenshotted without playing the whole piece */
   goto(bid, f){
