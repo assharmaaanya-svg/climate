@@ -507,6 +507,12 @@ function render(t, dt){
       else drawDrawing(t, {});
       break;
     }
+    case "onslaught": {
+      // no life, no air, no weather. The memory has stopped.
+      setPop({ birds:0, butterflies:0, dragonflies:0, fireflies:0, seeds:0 });
+      drawOnslaught(t, dt);
+      break;
+    }
     /* -------------------------------- chapter three */
     case "r-laundry": {
       setPop({ birds:0.15, butterflies:0.05, dragonflies:0.1, fireflies:0, seeds:0.3 });
@@ -667,11 +673,18 @@ function render(t, dt){
   drawFlashes();
   drawMoth(t);
   drawSpotHints(t);
-  // the post pass: bloom first, so light spills before the frame is darkened
-  const night = (AIR.tod<0.14||AIR.tod>0.86);
-  bloom(autoLow ? 0.16 : (night ? 0.34 : 0.26 + AIR.h*0.18), night);
-  vignette();
-  drawGrain(REDUCE?0.02:0.055);
+  /* The post pass, except during the onslaught, where black has to mean black.
+     The vignette lays a warm 34%-opacity gradient into the corners of every frame,
+     which is invisible over a painting and is a pair of brown smudges over an empty
+     screen — and the sequence has a good deal of empty screen in it. It brings its
+     own static instead. */
+  if (bid !== "onslaught"){
+    // bloom first, so light spills before the frame is darkened
+    const night = (AIR.tod<0.14||AIR.tod>0.86);
+    bloom(autoLow ? 0.16 : (night ? 0.34 : 0.26 + AIR.h*0.18), night);
+    vignette();
+    drawGrain(REDUCE?0.02:0.055);
+  }
   lastId = bid;
 }
 
@@ -906,6 +919,8 @@ function onEnter(bid){
      the first visit carries the list — on the second there is nothing to tick */
   if (bid==="horizon" || bid==="r-horizon") resetLookout(bid);
   showLookList(bid==="horizon");
+  if (bid==="onslaught") resetOnslaught();
+  else { document.body.classList.remove("onslaught"); SILENCE = 0; onsNoiseStop(); }
   if (bid!=="stopped" && bid!=="named") hideAQ();
   if (bid!=="stars" && bid!=="wish" && bid!=="r-stars") hideStarStory();
   if (!bid.startsWith("e-")) { showCard(null); }
@@ -1079,6 +1094,8 @@ window.__bluer = {
   /* the lookout, in enough detail to check the window really can reach every
      corner of the painting and that the four places are where the paint is */
   get look(){ return PLOOK; },
+  get ons(){ return ONS; },
+  onsSkip,
   get marks(){ return LMARK; },
   lookAt(fx, fy){ const im=loadImg("viewoftown.png");
     if (!imgReady(im)) return false;

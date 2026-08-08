@@ -263,6 +263,7 @@ function startOne(layer){
 }
 /* `v` is how loud, `open` is how little is in the way */
 function ambience(v, open){
+  v = v * (1 - SILENCE);                 // the onslaught takes the world with it
   AMB.vol = v; AMB.open = open;
   if (!AC || !soundOn || !AMB.gain) return;
   if (AMB.state === "ready" && !AMB.src) startOne(AMB);
@@ -371,6 +372,13 @@ function nightSound(dt, v, deep, bird){
    the duck; nothing survives it at full level. */
 const LOOKQ = { t: 0 };
 let LOOKDUCK = 0;
+/* THE ONSLAUGHT TAKES EVERYTHING WITH IT.
+   The statistics sequence is not a scene with its own ambience laid over the last
+   one — the morning stops. Every bed, every layer and the garden itself go to
+   nothing over about a second and a half as the picture goes to black, leaving
+   only the static, and after the cut not even that. One number does it, so there
+   is no chance of a layer surviving into a sequence that is supposed to be silent. */
+let SILENCE = 0;
 function lookSound(dt, v, place, focus, open){
   LOOKQ.t = 0.3;
   if (!AC || !soundOn) return;
@@ -407,7 +415,7 @@ function updSound(dt, t){
   /* while a place is being remembered through the binoculars, the weather steps
      back too. Otherwise the wind bed sits on top of the memory and nothing has
      actually got quieter. */
-  const lk = 1 - LOOKDUCK*0.80;
+  const lk = (1 - LOOKDUCK*0.80) * (1 - SILENCE);
   envGain(BED.wind.g,    (0.030+0.052*out)*(1-h*0.55)*(1-MUFFLE*0.7)*lk, 0.7);
   envGain(BED.leaves.g,  0.016*out*(1-h*0.7)*(1-MUFFLE*0.8)*lk, 0.7);
   envGain(BED.traffic.g, (0.008 + 0.062*h)*(0.45+0.55*out), 1.1);

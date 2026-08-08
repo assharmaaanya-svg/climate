@@ -94,6 +94,27 @@
   body.pacing #cap, body.pacing #ask, body.pacing #gate, body.pacing #sdown,
   body.pacing #chapter, body.pacing #look, body.pacing .ctl{
     opacity:0 !important; transition:opacity .8s; }
+  /* THE ONSLAUGHT OWNS THE WHOLE SCREEN.
+     Black means black. Not black with a scroll cue on it, or a chapter mark, or a
+     Skip button in the corner — the sequence asks the visitor for nothing and
+     offering them a control in the middle of it would say otherwise. Escape leaves
+     if somebody needs to. Everything comes back on its own afterwards.
+
+     `opacity:0 !important` is NOT enough here, which cost a while to work out. The
+     scroll cue's idle pulse animates `opacity`, so Chromium promotes it to its own
+     compositor layer and keeps painting the animated value: getComputedStyle
+     correctly reported 0 while the screenshot still showed SCROLL sitting on the
+     black. An important declaration outranks an animation in the cascade, but a
+     running composited animation is not re-read from the cascade. So the animation
+     is cancelled and visibility is taken away too, neither of which the compositor
+     can carry on by itself. */
+  body.onslaught #cap, body.onslaught #ask, body.onslaught #gate,
+  body.onslaught #sdown, body.onslaught #chapter, body.onslaught #look,
+  body.onslaught #cc, body.onslaught .ctl, body.onslaught #whisper,
+  body.onslaught #sdown svg, body.onslaught #ask::before, body.onslaught #gate .chev{
+    opacity:0 !important; visibility:hidden !important; animation:none !important;
+    pointer-events:none; }
+  body.onslaught{ background:#000; }
   #ask.dark{ color:#17222c; border-color:rgba(20,30,40,.22);
     background:linear-gradient(rgba(255,253,246,.78), rgba(255,250,238,.68));
     box-shadow:0 14px 44px rgba(90,60,20,.2), 0 1px 0 rgba(255,255,255,.5) inset; }

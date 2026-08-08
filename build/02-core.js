@@ -355,6 +355,12 @@ const BEATS = [
     line:"On a good day you could see all the way to the hills." },
   { id:"drawing",   ch:2, len:1.45, gate:"colour",  ask:"Colour it in",
     line:"You never had to think about which blue." },
+  /* The hinge. Chapter 7 has no name, which is deliberate: this sequence gets no
+     chapter mark, no narration and no instruction, because it is not part of the
+     memory and it is not asking the visitor for anything. See build/09b-onslaught.js
+     for why it is the one beat that runs on a clock rather than on the scroll. */
+  { id:"onslaught", ch:7, len:1.35,
+    line:"" },
   /* ------------- chapter three: the change is almost invisible ------------- */
   { id:"r-laundry", ch:3, len:1.35, gate:"brush",   ask:"Brush it off",
     line:"Later. The same line, the same sheets." },
@@ -447,8 +453,34 @@ function readTimeline(dt){
      `T.blocked` and `T.push` feed the resistance, the gate marker and the scroll
      cue, and all three now resolve to "not blocked" on their own. */
   T.ceil = TOTAL;
+  /* The single exception, and it is not a gate. The onslaught is a shot with a
+     length: it waits for nothing, asks for nothing, and lets go by itself after
+     about twenty-eight seconds. Scrolling through it at speed would turn eleven
+     facts into three, so the scroll is pinned for exactly as long as it is running
+     and released the moment it stops. */
+  const oi = typeof onsBeatIndex === "function" ? onsBeatIndex() : -1;
+  if (oi >= 0 && onslaughtHolding()){
+    T.ceil = ofs[oi] + BEATS[oi].len*0.55;
+  }
 
-  const want = Math.min(T.target, T.ceil);
+  let want = Math.min(T.target, T.ceil);
+
+  /* AND IT CANNOT BE JUMPED OVER.
+     The pin above only exists once the sequence has started, and the sequence starts
+     when the beat is entered — which assumes the playhead visits every beat. It does
+     not. T.p eases toward the target by about a sixth of the remaining distance each
+     frame, so a hard flick of a trackpad moves it several beat-lengths in one step
+     and can step straight across a beat 1.35 long: the whole hinge of the piece,
+     skipped, silently, without ever having been entered. Found by sweeping the piece
+     quickly and noticing the beat list came back one short.
+
+     So the playhead is not allowed to cross the start of it in a single step. It
+     lands just inside instead, the beat is entered properly, the clock starts and
+     the pin takes over from there. Once it has played it is free ground again. */
+  if (oi >= 0 && !onsPlayed()){
+    const start = ofs[oi] + 0.02;
+    if (T.p < start && want > start) want = start;
+  }
   const over = T.target - T.ceil;
   T.blocked = over > 0.03;
   T.push = cl01(over/0.5);
@@ -517,6 +549,9 @@ cv.addEventListener("touchmove", e=>{ if (P.down && needsDrag()) e.preventDefaul
 window.addEventListener("keydown", e=>{
   KEY[e.key]=true; KEY[e.key.toLowerCase()]=true;
   const k=e.key;
+  /* the way out of the statistics, for anyone who needs one. It is the only key
+     that does anything there, so nothing ends it by accident. */
+  if (k==="Escape" && typeof onsSkip==="function" && onsSkip()){ e.preventDefault(); return; }
   if (k===" "||k==="PageDown"){ window.scrollBy(0,H*0.85); e.preventDefault(); }
   else if (k==="PageUp"){ window.scrollBy(0,-H*0.85); e.preventDefault(); }
   else if (k==="ArrowDown"){ window.scrollBy(0,H*0.28); e.preventDefault(); }

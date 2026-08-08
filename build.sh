@@ -19,6 +19,7 @@ cat build/01-shell.html \
     build/07-scenes-b.js \
     build/08-scenes-c.js \
     build/09-evidence.js \
+    build/09b-onslaught.js \
     build/10-finale.js \
     build/11-director.js > index.html
 printf '</script>\n</body>\n</html>\n' >> index.html
