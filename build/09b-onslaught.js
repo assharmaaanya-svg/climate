@@ -42,8 +42,30 @@ const ONS_T = {
   peakFor:  2.0,
   blackFor: 2.8
 };
-/* how long one sentence takes to go from white to entirely red, on its own clock */
+/* how long one sentence takes to redden as far as it is going to, on its own clock */
 const ONS_REDDEN = 3.5;
+
+/* HOW FAR THE RED GETS, which is the whole difference between a realisation and a
+   scare. The first fact must read as a plain white sentence on black — the feeling
+   wanted there is "wait, this is real", and a sentence that turns red the moment it
+   lands says "something frightening is happening" instead. So the red does not
+   simply run on a per-sentence clock: how deep into a sentence it can reach at all
+   depends on how far into the sequence that sentence is.
+
+     the first fact   reach 0.10   only the figure, and only after a second and a half
+     the middle       reach ~0.5   the figure and the words that carry it
+     the last         reach 1.05   everything
+
+   `esc` is fixed to where the sentence sits in the sequence, not to the live clock,
+   so the sentences that arrived early keep most of their white for good. That is what
+   leaves white and red colliding at the climax rather than a uniformly red screen. */
+function onsRed(tk, prog, esc){
+  const reach = 0.10 + 0.95*esc;
+  if (tk.thr > reach) return 0;
+  // the figure itself holds off at the start and is immediate by the end
+  const thr = tk.cls==="n" ? 0.42*(1-esc) : tk.thr;
+  return cl01((prog - thr)/0.13);
+}
 const ONS_CUT = ONS_T.factsAt + ONS_T.factsFor + ONS_T.peakFor;   // 24.1
 const ONS_END = ONS_CUT + ONS_T.blackFor;                         // 26.9
 
@@ -55,7 +77,6 @@ const ONS = {
   facts: [],        // one laid-out body per fact
   slots: [],        // every placement of every fact, in arrival order
   noise: null,
-  dropT: 0, drop: 0,
   tear: 0
 };
 
@@ -127,12 +148,19 @@ function drawOnsStatic(a, coarse){
 }
 
 const ONS_SERIF = "'Iowan Old Style','Palatino Linotype',Palatino,'Book Antiqua',Georgia,serif";
-/* Near-white rather than white, and a red that starts as old blood and ends hot.
-   The colour escalates as well as spreading: at the beginning red is something
-   that has already happened, and by the end it is something happening now. */
+/* THE RED IS GRIEF, NOT AN ALARM.
+   The first version ran from a blood red to a hot [255,48,28], and that is the
+   colour of a warning light: it made the sequence frightening, which is the one
+   thing it must not be. What is happening here is a realisation, and the visitor
+   should feel the weight of it rather than be startled by it.
+
+   So it starts as a dusty, desaturated red — the colour of something that has
+   already happened and been left out in the weather — and ends as a clear red that
+   is unmistakably red without ever fluorescing. Nothing in this sequence is the
+   colour of blood or of a siren. */
 const ONS_INK  = [242,240,235];
-const ONS_RED0 = [150,20,14];
-const ONS_RED1 = [255,48,28];
+const ONS_RED0 = [166,74,62];
+const ONS_RED1 = [206,46,36];
 
 /* ------------------------------------------------------------------- layout
    Each fact is measured and wrapped once per screen size. Later facts are set
@@ -177,17 +205,11 @@ function onsLayout(){
     for (const tk of toks){
       ctx.font = (tk.cls==="n" ? "700 " : "400 ") + size + "px " + ONS_SERIF;
       tk.w = ctx.measureText(tk.text).width;
-      /* WHERE IN ITS OWN THREE AND A HALF SECONDS THIS WORD TURNS.
-         Each sentence flashes up white and is entirely red by the end of its own
-         window — but not all at once, and not in reading order. The figure goes
-         first, because the figure is what the sentence is; then the words that
-         carry it; then everything else, each at its own moment. So the red crosses
-         the sentence in patches rather than sweeping through it, which is what
-         something spreading looks like and what a wipe does not.
-
-         Because the last facts land less than a second apart, four or five
-         sentences are always mid-transition at once, and the pile is a gradient
-         from white at the front to fully red behind. */
+      /* WHERE IN ITS OWN WINDOW THIS WORD WOULD TURN, if the red gets that far into
+         the sentence at all — which for the early facts it does not. See onsRed().
+         The figure goes first, because the figure is what the sentence is; then the
+         words that carry it; then everything else, each at its own moment, so the red
+         crosses a sentence in patches rather than sweeping through it. */
       tk.thr = tk.cls==="n" ? 0
              : tk.cls==="k" ? 0.24 + srnd()*0.14
              :                0.42 + srnd()*0.46;
@@ -225,10 +247,12 @@ function onsLayout(){
   ONS.slots = [];
   const nf = ONS_FACTS.length;
   for (let i=0;i<nf;i++){
-    /* spawn times: the same fifteen seconds, but the gaps shrink from about two and
-       a half seconds down to three quarters of one, so the last few land before the
-       eye has finished the one before */
-    const at = ONS_T.factsAt + ONS_T.factsFor * Math.pow(i/nf, 0.72);
+    /* The gaps run from about FOUR seconds down to three quarters of one. The first
+       sentence needs to be alone on the screen long enough to be read properly and
+       believed — the whole sequence turns on the visitor accepting that first one as
+       true — and the last few need to land before the eye has finished the one
+       before. Same fifteen seconds either way; the curve is what does it. */
+    const at = ONS_T.factsAt + ONS_T.factsFor * Math.pow(i/nf, 0.62);
     const esc = i/(nf-1);
     ONS.slots.push({
       f:i, at, main:1, sc:1, dim:1,
@@ -241,15 +265,18 @@ function onsLayout(){
       jit: srnd()*TAU
     });
   }
-  for (let e=0;e<26;e++){
-    const u = e/25;
+  /* The echoes do not begin until the sequence is nearly half through. Before that
+     the screen has to stay open: one sentence, plenty of black around it, nothing
+     accumulating. They arrive faint and get less faint, so the pile thickens rather
+     than appears. */
+  for (let e=0;e<24;e++){
+    const u = e/23;
     const f = (srnd()*nf)|0;
     ONS.slots.push({
       f, main:0,
-      // from a third of the way in, and still coming while everything shakes
-      at: ONS_T.factsAt + ONS_T.factsFor*(0.34 + 0.70*u),
+      at: ONS_T.factsAt + ONS_T.factsFor*(0.46 + 0.58*u),
       sc: 0.58 + srnd()*0.72,
-      dim: 0.13 + srnd()*0.20,
+      dim: (0.10 + srnd()*0.16) * (0.55 + 0.45*u),
       cx: W*(0.10 + srnd()*0.80),
       cy: H*(0.08 + srnd()*0.84),
       rot: (srnd()*2-1)*0.075,
@@ -286,10 +313,14 @@ function onsNoise(level, cut){
     try{ n.g.gain.cancelScheduledValues(now); n.g.gain.setValueAtTime(0, now); }catch(_){}
     return;
   }
+  /* PRESSURE, NOT FEAR. At 0.115 through a filter opening to 7.5 kHz this was a
+     hiss, and a rising hiss is the sound of something going wrong in a film. Kept
+     under 1.6 kHz and at half the level it is a soft wash that thickens as the type
+     thickens: something building up rather than something coming. */
   const L = cl01(level);
   try{
-    n.g.gain.setTargetAtTime(0.0009 + L*L*0.115, now, 0.22);
-    n.f.frequency.setTargetAtTime(380 + L*L*7200, now, 0.30);
+    n.g.gain.setTargetAtTime(0.0006 + L*L*0.055, now, 0.30);
+    n.f.frequency.setTargetAtTime(340 + L*L*1250, now, 0.40);
   }catch(_){}
 }
 function onsNoiseStop(){
@@ -303,7 +334,7 @@ function onsNoiseStop(){
 function resetOnslaught(){
   ONS.t = 0;
   ONS.running = ONS.played ? 0 : 1;
-  ONS.drop = 0; ONS.dropT = 0; ONS.tear = 0;
+  ONS.tear = 0;
   onsNoiseStop();
 }
 /* Escape leaves. Nothing else does, because a stray click during the one sequence
@@ -312,28 +343,23 @@ function onsSkip(){
   if (!ONS.running) return false;
   ONS.t = ONS_END; ONS.running = 0; ONS.played = 1;
   onsNoiseStop();
-  onsHandOff();
+  document.body.classList.remove("onslaught");
   return true;
 }
 
-/* THE PIECE PUTS THE VISITOR DOWN SOMEWHERE, RATHER THAN LETTING GO ON BLACK.
-   The last three seconds are a held black with the scroll locked, which is the
-   intended effect and is also indistinguishable from a page that has crashed. So
-   when the clock runs out the sequence does not just unlock and wait to be scrolled
-   out of — it moves the playhead into the next beat itself, and the visitor finds
-   they are somewhere again. Scrolling is theirs from that moment.
+/* WHAT HAPPENS AT THE END IS NOTHING, AND THAT IS THE POINT.
+   The sequence ends on black and goes nowhere. It used to move the playhead into the
+   next beat by itself, which solved the right problem the wrong way: the held silence
+   after all that information is the most important thing in the sequence, and
+   arriving somewhere is exactly what must not happen while it lasts. What follows it
+   is one ordinary child's bedroom, and that contrast is the whole argument — so
+   nothing may follow it until there is a bedroom to follow it with.
 
-   The scroll position and the eased playhead are both set: leaving T.p to glide
-   there on its own would drift through several more seconds of black first, which
-   is the problem this is meant to solve. */
-function onsHandOff(){
-  const oi = onsBeatIndex();
-  if (oi < 0 || oi+1 >= N) return;
-  const target = ofs[oi+1] + BEATS[oi+1].len*0.10;
-  const max = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
-  window.scrollTo(0, (target/TOTAL) * max);
-  T.p = target; T.target = target;
-}
+   The problem it solved was real though: a locked black screen is indistinguishable
+   from a page that has crashed. That is handled by releasing at the right moment
+   instead. During the held silence there is no scroll and no cue, because the visitor
+   is meant to be sitting in it. The instant the silence is over, the scroll comes back
+   and so does the cue, on the black, and the visitor moves on when they are ready. */
 /* what the timeline asks, every frame, to know whether to hold the playhead and
    whether the sequence is still ahead of the visitor */
 function onslaughtHolding(){ return !!ONS.running && ONS.t < ONS_END; }
@@ -348,9 +374,11 @@ function onsBeatIndex(){
 function drawOnslaught(t, dt){
   onsLayout();
   if (ONS.played && !ONS.running){
-    // been here before: it does not replay, it is simply black
+    /* Over. It does not replay, and it does not become anything: it is black, and the
+       scroll and its cue are back, so the visitor leaves it under their own steam.
+       The body class is off, which is what lets the cue return. */
     ctx.fillStyle = "#000"; ctx.fillRect(0,0,W,H);
-    document.body.classList.add("onslaught");
+    document.body.classList.remove("onslaught");
     return;
   }
   document.body.classList.add("onslaught");
@@ -360,7 +388,7 @@ function drawOnslaught(t, dt){
   const after = ONS_END*slow;
   if (T0 >= after && ONS.running){
     ONS.running = 0; ONS.played = 1; onsNoiseStop();
-    onsHandOff();
+    document.body.classList.remove("onslaught");
   }
 
   /* ---- the world goes, and it is gone before the picture is ----
@@ -409,13 +437,17 @@ function drawOnslaught(t, dt){
      its own schedule */
   const g = cl01((T0/slow - ONS_T.factsAt) / (ONS_T.factsFor + ONS_T.peakFor));
   const peak = cl01((T0/slow - (ONS_T.factsAt + ONS_T.factsFor)) / ONS_T.peakFor);
-  onsNoise(0.05 + g*0.75 + peak*0.25, false);
+  onsNoise(0.03 + g*0.62 + peak*0.20, false);
 
-  const shakeAmt = REDUCE ? 0 : (MIN*0.004*g*g + MIN*0.012*peak);
-  const sx = Math.sin(T0*47)*shakeAmt + Math.sin(T0*23.3)*shakeAmt*0.6;
-  const sy = Math.cos(T0*41)*shakeAmt*0.8 + Math.cos(T0*19.7)*shakeAmt*0.5;
+  /* THE SHAKE IS ALMOST NOTHING, and that is on purpose. It ran at up to sixteen
+     pixels before, which is a horror film. What is wanted is the sense that the
+     frame is under load — about two pixels at the very peak, below the threshold at
+     which anyone would call it shaking, and felt rather than seen. */
+  const shakeAmt = REDUCE ? 0 : (MIN*0.0013*g*g + MIN*0.0028*peak);
+  const sx = Math.sin(T0*23)*shakeAmt + Math.sin(T0*11.3)*shakeAmt*0.6;
+  const sy = Math.cos(T0*19)*shakeAmt*0.8 + Math.cos(T0*8.7)*shakeAmt*0.5;
 
-  /* the red of the moment: old blood at first, hot at the end */
+  // dusty at first, clearly red by the end, never a warning light
   const redNow = mixL(ONS_RED0, ONS_RED1, cl01(g*1.1));
 
   ctx.save();
@@ -443,19 +475,21 @@ function drawOnslaught(t, dt){
     let a;
     if (S.main){ mi++; a = lerp(1, 0.28, cl01((mains - mi)/4.5)); }
     else       { a = S.dim * (0.55 + 0.45*g); }
-    /* Its own clock. Every sentence flashes up white and takes three and a half
-       seconds to go completely red, wherever it is in the sequence and whether it is
-       the first appearance or one of the echoes. */
+    /* Its own clock for the timing, and its place in the sequence for how far the red
+       is allowed to get. An echo takes the escalation of the moment it arrives at
+       rather than of the fact it is a copy of, so late echoes are the thing carrying
+       the red across the screen. */
     const prog = cl01((now - S.at) / ONS_REDDEN);
+    const esc = S.main ? F.esc : cl01(g*1.05);
 
     ctx.save();
     ctx.translate(S.cx, S.cy);
     if (S.rot) ctx.rotate(S.rot);
     if (S.sc !== 1) ctx.scale(S.sc, S.sc);
-    // at the peak each block gets its own tremor, so they collide with each other
+    // at the peak each block drifts a pixel or two of its own, so they graze
     if (peak > 0 && !REDUCE){
-      ctx.translate(Math.sin(T0*31 + S.jit)*MIN*0.009*peak/S.sc,
-                    Math.cos(T0*27 + S.jit)*MIN*0.007*peak/S.sc);
+      ctx.translate(Math.sin(T0*13 + S.jit)*MIN*0.0026*peak/S.sc,
+                    Math.cos(T0*11 + S.jit)*MIN*0.0020*peak/S.sc);
     }
     const y0 = -F.blockH*0.5 + F.lead*0.78;
     for (let li=0; li<F.lines.length; li++){
@@ -465,7 +499,7 @@ function drawOnslaught(t, dt){
       for (const tk of ln.toks){
         ctx.font = (tk.cls==="n" ? "700 " : "400 ") + F.size + "px " + ONS_SERIF;
         // each word crosses over on its own, quickly but not instantly
-        const r = cl01((prog - tk.thr)/0.11);
+        const r = onsRed(tk, prog, esc);
         const col = r<=0 ? ONS_INK : mixL(ONS_INK, redNow, r);
         ctx.fillStyle = rgba(col, a);
         ctx.fillText(tk.text, x, y);
@@ -485,8 +519,23 @@ function drawOnslaught(t, dt){
      the dropout interval negative — so instead of the frame flickering out now and
      then, it dropped out on every single frame and the climax of the whole piece
      was a permanent 72% black veil over its own text. */
+  /* THE INFORMATION is what should overwhelm the visitor. Not the effects.
+     This part was doing the opposite: the frame dropped out to 72% black on a random
+     flicker, bands slid five per cent of the screen sideways, and between that and a
+     sixteen-pixel shake the sequence read as a horror title card with some statistics
+     in it. A visitor who is being startled is not being moved.
+
+     The dropouts are gone entirely. A screen that flashes to black at random is a
+     jump scare with a delay on it, and it also competes with the one real cut this
+     sequence has: nothing else in it is allowed to go black, so that the moment
+     everything does means something.
+
+     What is left is a slow shear — a few bands of the frame a few pixels out of line,
+     and only in the last third. It reads as a page that cannot quite be set rather
+     than as a signal breaking up, which is the right kind of failure. The failure is
+     that this will not fit, not that something is coming for you. */
   const fail = cl01(g*g*0.85 + peak*0.80);
-  if (fail > 0.05 && !REDUCE && !autoLow){
+  if (fail > 0.42 && !REDUCE && !autoLow){
     if (ONSBUF.width !== (W|0) || ONSBUF.height !== (H|0)){
       ONSBUF.width = Math.max(2,W|0); ONSBUF.height = Math.max(2,H|0);
     }
@@ -495,13 +544,14 @@ function drawOnslaught(t, dt){
     onsc.clearRect(0,0,ONSBUF.width,ONSBUF.height);
     onsc.drawImage(cv, 0,0, cv.width, cv.height, 0,0, W, H);
 
-    const bands = Math.min(14, Math.round(1 + fail*13));
-    ONS.tear += dt*(0.6 + fail*3.2);
+    const load = cl01((fail-0.42)/0.58);
+    const bands = Math.min(6, Math.round(1 + load*5));
+    ONS.tear += dt*(0.25 + load*0.9);
     for (let b=0;b<bands;b++){
-      const u = ((ONS.tear*0.21 + b*0.137) % 1);
+      const u = ((ONS.tear*0.13 + b*0.181) % 1);
       const by = u*H;
-      const bh = H*(0.006 + 0.030*((b*37%11)/11));
-      const off = (((b*53)%17)/17*2-1) * W * (0.008 + 0.055*fail);
+      const bh = H*(0.010 + 0.026*((b*37%11)/11));
+      const off = (((b*53)%17)/17*2-1) * W * (0.003 + 0.015*load);
       /* black the band out before sliding the copy in. Drawing the offset copy
          straight over the top leaves the original showing at both ends, which
          reads as a double exposure; clearing first makes it a displacement. */
@@ -509,18 +559,7 @@ function drawOnslaught(t, dt){
       ctx.fillRect(0, by, W, bh);
       ctx.drawImage(ONSBUF, 0, by, W, bh, off, by, W, bh);
     }
-    // and the frame drops out altogether, more and more often
-    ONS.dropT -= dt;
-    if (ONS.dropT <= 0){
-      // a floor on the gap, so this stays a flicker and never becomes a veil
-      ONS.dropT = Math.max(0.16, rnd(0.32, 1.55) * (1 - fail*0.60));
-      ONS.drop = rnd(0.045, 0.11);
-    }
-    if (ONS.drop > 0){
-      ONS.drop -= dt;
-      ctx.fillStyle = rgba([0,0,0], 0.72*Math.min(1, fail*1.6));
-      ctx.fillRect(0,0,W,H);
-    }
   }
-  drawOnsStatic(0.02 + fail*0.30, fail > 0.55);
+  /* and the grain, which starts below the level at which anyone would notice it */
+  drawOnsStatic(0.006 + fail*0.185, fail > 0.62);
 }

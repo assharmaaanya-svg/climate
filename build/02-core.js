@@ -402,19 +402,31 @@ const CH_NAME = { 1:"i · the world came inside", 2:"ii · life happened outdoor
                   3:"iii · the change is almost invisible", 4:"iv · habits change first",
                   5:"v · recognition", 6:"the evidence", 7:"" };
 
-/* WHERE SKIP IS NOT OFFERED.
-   Skip means "move on without doing this", and for the first few interactions that
-   is the wrong thing to put in front of somebody. The opening two are how a visitor
-   learns that this piece is a thing you touch at all — a curtain you pull apart and
-   a cord you pull down — and a button that says you need not bother teaches the
-   opposite. The washing line and the kite are the two moments the memory is actually
-   made of: her humming, and the thing he put into the sky. Offering to skip those is
-   offering to skip the work.
+/* THE THREE PLACES THE SCROLL WAITS.
+   Scrolling is free through the whole piece, with three exceptions, and each one is
+   there for its own reason rather than as a difficulty.
 
-   From the stars onward it is there, because by then the visitor knows what they are
-   doing and it is their time. Scrolling was never restricted on any of these — the
-   button is simply not held out. */
-const NO_SKIP = { dark:1, light:1, breathe:1, laundry:1, shirt:1, kite:1, onslaught:1 };
+   The curtains are the first thing anyone touches, and a visitor who scrolls
+   straight past them has not learned that this piece is a thing you touch at all —
+   everything after that reads as a slideshow, because they were never shown
+   otherwise. Her humming and the kite are the two moments the memory is actually
+   made of: the sound of her, and the thing he put into the sky. Somebody who misses
+   those has been through the chapters without being in them.
+
+   Everywhere else the scroll never waits. And Skip is offered here as everywhere
+   else, so nobody is trapped by an interaction they cannot work out — the wait is
+   an invitation to try, not a lock.
+
+   `prog` only feeds the little progress mark under the prompt. The washing line has
+   no gate of its own to measure, because the chapter never waited for her before. */
+const HOLD_AT = {
+  dark:    { done: () => gateMet("curtain"), prog: () => gateProgress("curtain"),
+             pass: () => { done.curtain = true; } },
+  laundry: { done: () => !!SHEETS.tapped,    prog: () => SHEETS.tapped ? 1 : 0,
+             pass: () => { SHEETS.tapped = 1; } },
+  kite:    { done: () => gateMet("kite"),    prog: () => gateProgress("kite"),
+             pass: () => { done.kite = true; } }
+};
 
 const N = BEATS.length;
 let ofs = [0]; for (let i=0;i<N;i++) ofs.push(ofs[i]+BEATS[i].len);
@@ -468,14 +480,20 @@ function readTimeline(dt){
      `T.blocked` and `T.push` feed the resistance, the gate marker and the scroll
      cue, and all three now resolve to "not blocked" on their own. */
   T.ceil = TOTAL;
-  /* The single exception, and it is not a gate. The onslaught is a shot with a
-     length: it waits for nothing, asks for nothing, and lets go by itself after
-     about twenty-eight seconds. Scrolling through it at speed would turn eleven
-     facts into three, so the scroll is pinned for exactly as long as it is running
-     and released the moment it stops. */
+  /* the three places the scroll waits: the first beat in the piece whose interaction
+     has not happened yet, and no further */
+  for (let i=0;i<N;i++){
+    const h = HOLD_AT[BEATS[i].id];
+    if (h && !h.done()){ T.ceil = ofs[i] + BEATS[i].len*0.86; break; }
+  }
+  /* And the onslaught, which is a different kind of wait: not a gate at all. It is a
+     shot with a length — it waits for nothing, asks for nothing, and lets go by
+     itself after about twenty-eight seconds. Scrolling through it at speed would turn
+     eleven facts into three, so the playhead is pinned for exactly as long as it is
+     running and released the moment it stops. */
   const oi = typeof onsBeatIndex === "function" ? onsBeatIndex() : -1;
   if (oi >= 0 && onslaughtHolding()){
-    T.ceil = ofs[oi] + BEATS[oi].len*0.55;
+    T.ceil = Math.min(T.ceil, ofs[oi] + BEATS[oi].len*0.55);
   }
 
   let want = Math.min(T.target, T.ceil);
@@ -500,12 +518,19 @@ function readTimeline(dt){
   /* AND ONCE THEY HAVE BEEN SEEN, THERE IS NO GOING BACK TO THE CLEAN WORLD.
      After the statistics the piece is on the other side of something. Being able to
      scroll back up into the kite and the buttercups would make the whole middle of
-     the work a slideshow the visitor can rewind, and it would undo the one thing the
-     black screen is for. The furthest back is the first scene after it. Everything
-     from there on is still free in both directions. */
+     the work a slideshow the visitor can rewind, and would undo the one thing the
+     black screen is for.
+
+     The floor sits on the black at the end of the sequence, NOT on the beat after it.
+     That distinction turned out to matter a great deal: a floor one beat further on
+     does not only stop the visitor going back, it PUSHES them forward, because the
+     playhead is clamped up to it from below. The held silence ended and the piece
+     immediately threw them into the next scene — the exact opposite of ending on
+     black. Here they are left on the black, free to go on when they choose and unable
+     to go back before it. */
   T.floor = 0;
-  if (oi >= 0 && onsPlayed() && oi+1 < N){
-    T.floor = ofs[oi+1];
+  if (oi >= 0 && onsPlayed()){
+    T.floor = ofs[oi] + BEATS[oi].len*0.55;
     if (want < T.floor) want = T.floor;
   }
   const over = T.target - T.ceil;

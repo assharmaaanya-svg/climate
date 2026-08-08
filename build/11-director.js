@@ -755,29 +755,29 @@ function updText(now, dt){
   const busy = P.down || tSinceAct < 1.4;
   askEl.classList.toggle("on", !!askTxt && (T.push>0.05 || !busy || (now-beatEnter)<3600));
 
+  /* Is this one of the three places the scroll waits? That is not the same question
+     as "does this beat have a gate". The washing line's own gate is met the instant
+     the scene draws, and the thing actually being waited on there is her humming,
+     which was never a gate at all. */
+  const hold = HOLD_AT[bid];
+  const holding = !!(hold && !hold.done());
+
   /* the scroll arrow: small, and there the whole way, because scrolling is the
      one thing the visitor has to know and the only thing the card tells them */
   const moreToGo = T.p < TOTAL-0.35 && bid!=="f-end";
-  /* not while the gate is up: one says carry on down and the other says you have
-     something to do here first, and they were sitting on top of each other */
-  const cue = moreToGo && !introOn && !(T.blocked && !!needed);
+  /* not while the scroll is waiting: one says carry on down and the other says you
+     have something to do here first, and they were sitting on top of each other */
+  const cue = moreToGo && !introOn && !(T.blocked && holding);
   sdownEl.classList.toggle("on", cue);
   sdownEl.classList.toggle("dark", light);
   sdownEl.setAttribute("aria-hidden", String(!cue));
   askEl.classList.toggle("urge", T.push>0.3);
 
-  /* Skip is not offered while the visitor is still learning that this is something
-     you touch, or during the two interactions the memory is made of. */
-  const skippable = !NO_SKIP[bid];
-  bSkip.classList.toggle("off", !skippable);
-  bSkip.setAttribute("aria-hidden", String(!skippable));
-  bSkip.tabIndex = skippable ? 0 : -1;
-
-  /* the gate marker */
-  gateEl.classList.toggle("on", T.blocked && !!needed);
-  if (T.blocked && needed){
+  /* the mark that says the scroll is waiting, and roughly how far in you are */
+  gateEl.classList.toggle("on", T.blocked && holding);
+  if (T.blocked && holding){
     gateTxt.textContent = "";
-    gateBar.style.width = Math.round(gateProgress(g)*100)+"%";
+    gateBar.style.width = Math.round(cl01(hold.prog())*100)+"%";
   }
 
   /* chapter label, on arrival only */
@@ -1154,12 +1154,18 @@ window.__bluer = {
   get f(){ return T.f; },
   get p(){ return T.p; },
   get floor(){ return T.floor; },
+  get blocked(){ return T.blocked; },
   /* jump the scroll to a named beat, marking every gate before it as met, so a
      chapter can be driven and screenshotted without playing the whole piece */
   goto(bid, f){
     const i = BEATS.findIndex(x => x.id === bid);
     if (i < 0) return false;
-    for (let k=0;k<i;k++) if (BEATS[k].gate) done[BEATS[k].gate] = true;
+    for (let k=0;k<i;k++){
+      if (BEATS[k].gate) done[BEATS[k].gate] = true;
+      // and the three places the scroll waits, which are not all gates
+      const h = HOLD_AT[BEATS[k].id];
+      if (h && h.pass) h.pass();
+    }
     const max = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
     window.scrollTo(0, (ofs[i] + BEATS[i].len*(f===undefined?0.35:f))/TOTAL * max);
     return true;
