@@ -63,7 +63,7 @@ function updWind(dt){
   if (gustT<=0){
     gustT = rnd(4.5, 11);
     AIR.gustTarget = rnd(0.15, 0.55) * (1-AIR.h*0.4);
-    if (!REDUCE && Math.random()<0.55 && OUTSIDE>0.4){ gustLeaves(ri(3,9)); sfx.gust(); }
+    if (!REDUCE && Math.random()<0.55 && OUTSIDE>0.4 && SILENCE<0.02){ gustLeaves(ri(3,9)); sfx.gust(); }
   }
   AIR.gust = lerp(AIR.gust, AIR.gustTarget||0, 0.02);
   if (Math.random()<0.008) AIR.gustTarget = rnd(0, 0.3);
@@ -967,7 +967,9 @@ function frame(now){
   updParticles(dt,t); updClouds(dt); updBirds(dt,t); updBugs(dt,t);
   updTrain(dt); updPlane(dt); updLeaves(dt); updMoth(dt,t);
   updFlashes(dt); updWhisper(dt); updSound(dt,t); updFireflies(dt,t); updPace(dt);
-  if (soundOn && AIR.h<0.5 && OUTSIDE>0.4 && Math.random()<0.011*(1-AIR.h)*dt*60) sfx.bird();
+  // and no new bird starts once the world has been taken away
+  if (soundOn && SILENCE<0.02 && AIR.h<0.5 && OUTSIDE>0.4 &&
+      Math.random()<0.011*(1-AIR.h)*dt*60) sfx.bird();
   curiosity = Math.max(0, curiosity - dt*0.02);
 
   render(t, dt);
@@ -1096,6 +1098,24 @@ window.__bluer = {
   get look(){ return PLOOK; },
   get ons(){ return ONS; },
   onsSkip,
+  /* the whole mix in one call: the master fader and the loudest thing under it, so a
+     layer that forgot to get quiet cannot hide behind the ones that did */
+  mix(){
+    if (!AC || !master) return { master:null, loud:null };
+    const L = { garden:AMB, open:AMB2, cloth:RUS, gust:RUS2, hum:HUM,
+                kwind:KWIND, laugh:LAUGH, crick:CRICK, nbird:NBIRD };
+    for (const k in LOOKA) L["look_"+k] = LOOKA[k];
+    let loud = "-", lv = 0;
+    for (const k in L){
+      const g = L[k] && L[k].gain ? L[k].gain.gain.value : 0;
+      if (g > lv){ lv = g; loud = k; }
+    }
+    for (const k in BED){
+      const g = BED[k] && BED[k].g ? BED[k].g.gain.value : 0;
+      if (g > lv){ lv = g; loud = "bed_"+k; }
+    }
+    return { master:+master.gain.value.toFixed(4), loud:loud+"="+lv.toFixed(4) };
+  },
   get marks(){ return LMARK; },
   lookAt(fx, fy){ const im=loadImg("viewoftown.png");
     if (!imgReady(im)) return false;

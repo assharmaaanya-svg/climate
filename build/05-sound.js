@@ -6,7 +6,7 @@
    The traffic bed and the wind bed trade places as the air loads: you hear the
    change before you notice you are hearing it.
    ========================================================================== */
-let AC = null, soundOn = false, ccOn = false, master = null;
+let AC = null, soundOn = false, ccOn = false, master = null, postBus = null;
 const BED = {};
 const ccEl = document.getElementById("cc");
 let ccT = 0;
@@ -40,6 +40,9 @@ function initAudio(){
     const comp = AC.createDynamicsCompressor();
     comp.threshold.value=-22; comp.ratio.value=3.2;
     master.connect(comp); comp.connect(AC.destination);
+    /* Downstream of the master fader. The onslaught's static needs to be audible
+       while the master is being taken to nothing, so it hangs off here instead. */
+    postBus = comp;
 
     BED.wind    = bed(AC, master, "bandpass", 520, 0.55, 0.0);
     BED.leaves  = bed(AC, master, "bandpass", 2600, 1.1, 0.0);
@@ -410,6 +413,14 @@ function lookSound(dt, v, place, focus, open){
 function updSound(dt, t){
   updCC(dt);
   if (!AC || !soundOn) return;
+  /* THE ONSLAUGHT SILENCES THE MASTER, NOT THE LAYERS.
+     Scaling each bed by SILENCE individually left birdsong on the black screen,
+     because a layer only gets quiet if something calls it, and a scene that has been
+     left behind stops calling anything — its gain node simply holds the last value
+     it was given. Chasing that layer by layer is a game you lose the next time a
+     layer is added. So the whole mix comes down at the fader, which nothing can be
+     forgotten out of, and the static hangs off the bus below it. */
+  envGain(master, 0.85*(1-SILENCE), SILENCE > 0.02 ? 0.22 : 0.9);
   const h = AIR.h, night = (AIR.tod<0.14||AIR.tod>0.84)?1:0;
   const out = OUTSIDE;                                   // 0 in the room, 1 outdoors
   /* while a place is being remembered through the binoculars, the weather steps

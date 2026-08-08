@@ -272,7 +272,9 @@ function onsNoise(level, cut){
       const f = AC.createBiquadFilter(); f.type = "lowpass"; f.frequency.value = 380; f.Q.value = 0.6;
       const hp = AC.createBiquadFilter(); hp.type = "highpass"; hp.frequency.value = 120;
       const g = AC.createGain(); g.gain.value = 0;
-      s.connect(hp); hp.connect(f); f.connect(g); g.connect(master); s.start();
+      s.connect(hp); hp.connect(f); f.connect(g);
+      // below the master fader, which is on its way to zero
+      g.connect(postBus || AC.destination); s.start();
       ONS.noise = { s, f, g };
     }catch(_){ ONS.noise = { dead:1 }; }
   }
@@ -310,7 +312,27 @@ function onsSkip(){
   if (!ONS.running) return false;
   ONS.t = ONS_END; ONS.running = 0; ONS.played = 1;
   onsNoiseStop();
+  onsHandOff();
   return true;
+}
+
+/* THE PIECE PUTS THE VISITOR DOWN SOMEWHERE, RATHER THAN LETTING GO ON BLACK.
+   The last three seconds are a held black with the scroll locked, which is the
+   intended effect and is also indistinguishable from a page that has crashed. So
+   when the clock runs out the sequence does not just unlock and wait to be scrolled
+   out of — it moves the playhead into the next beat itself, and the visitor finds
+   they are somewhere again. Scrolling is theirs from that moment.
+
+   The scroll position and the eased playhead are both set: leaving T.p to glide
+   there on its own would drift through several more seconds of black first, which
+   is the problem this is meant to solve. */
+function onsHandOff(){
+  const oi = onsBeatIndex();
+  if (oi < 0 || oi+1 >= N) return;
+  const target = ofs[oi+1] + BEATS[oi+1].len*0.10;
+  const max = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
+  window.scrollTo(0, (target/TOTAL) * max);
+  T.p = target; T.target = target;
 }
 /* what the timeline asks, every frame, to know whether to hold the playhead and
    whether the sequence is still ahead of the visitor */
@@ -336,10 +358,16 @@ function drawOnslaught(t, dt){
   const T0 = ONS.t;
   const slow = REDUCE ? 1.35 : 1;              // reduced motion gets more reading time
   const after = ONS_END*slow;
-  if (T0 >= after){ ONS.running = 0; ONS.played = 1; onsNoiseStop(); }
+  if (T0 >= after && ONS.running){
+    ONS.running = 0; ONS.played = 1; onsNoiseStop();
+    onsHandOff();
+  }
 
-  /* ---- the world goes ---- */
-  SILENCE = cl01(T0 / 1.4);
+  /* ---- the world goes, and it is gone before the picture is ----
+     A second, so the mix is already silent by the time the screen finishes going
+     black at 1.8. Any slower and a bird lands on the black. */
+  SILENCE = cl01(T0 / 1.0);
+  OUTSIDE = 0;
   if (T0 < ONS_T.fadeEnd){
     /* the last thing the visitor was looking at, going out. It is the valley the
        drawing was a drawing of, which is where the previous beat left them. */
@@ -357,24 +385,18 @@ function drawOnslaught(t, dt){
     return;
   }
 
-  /* ---- the dots, where the narration usually is ---- */
-  const dIn = cl01((T0 - ONS_T.dotsIn)/0.9);
-  const dOut = 1 - cl01((T0 - ONS_T.dotsOut)/0.5);
-  const da = dIn*dOut;
-  if (da > 0.004){
+  /* ---- the dots, where the narration usually is ----
+     The narration's own face at the narration's own size and the narration's own
+     place, so it reads as the piece pausing rather than as a new element arriving.
+     On instantly and off instantly, like everything else in this sequence: there is
+     nothing to ease in a held breath. The size is the CSS clamp #cap uses,
+     evaluated here because canvas needs a number. */
+  if (T0 >= ONS_T.dotsIn && T0 < ONS_T.dotsOut){
     ctx.save();
-    /* Set at the narration's own size a period is about five pixels across, and
-       three of them on an empty screen read as dust rather than as a pause. These
-       are drawn as circles at a size chosen for the shape they make, spaced by hand:
-       ctx.letterSpacing is recent and not everywhere, and being silently ignored
-       would give a cramped ellipsis in the one frame that is nothing but one. */
-    const r = MIN*0.0072, gap = MIN*0.036, y = H - H*0.22;
-    // a slow breath, so it reads as a held pause rather than as a frozen frame
-    const br = 0.58 + 0.30*Math.sin(T0*0.85);
-    ctx.fillStyle = rgba(ONS_INK, da*br);
-    for (let i=-1;i<=1;i++){
-      ctx.beginPath(); ctx.arc(W*0.5 + i*gap, y, r, 0, TAU); ctx.fill();
-    }
+    ctx.font = "400 " + cl(W*0.035, 17.6, 28) + "px " + ONS_SERIF;
+    ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
+    ctx.fillStyle = rgba(ONS_INK, 0.82);
+    ctx.fillText("...", W*0.5, H - H*0.22);
     ctx.restore();
   }
 
