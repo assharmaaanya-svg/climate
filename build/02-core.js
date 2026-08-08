@@ -435,10 +435,30 @@ const HOLD_AT = {
   kite:    { done: () => gateMet("kite"),    prog: () => gateProgress("kite"),
              pass: () => { done.kite = true; } },
   /* and the curtains again, on the way back. Same reason as the first pair: a
-     visitor who scrolls past them never finds out that the room is still here. */
-  "p-room":{ done: () => gateMet("pcurtain"), prog: () => gateProgress("pcurtain"),
+     visitor who scrolls past them never finds out that the room is still here.
+
+     AND IT LETS GO IF THERE IS NO ROOM TO OPEN. This hold is the one that stranded a
+     reviewer completely: the bedroom painting was missing from their copy of the file,
+     so the scene drew as a black rectangle, so there were no curtains to pull, so the
+     gate could never be met, so the scroll waited on a black screen for ever. Asking
+     somebody to interact with a scene that failed to load is not a wait, it is a dead
+     end, and it must be impossible by construction rather than by the asset list
+     happening to be right. */
+  "p-room":{ done: () => gateMet("pcurtain") || !getPlate("roomAfter"),
+             prog: () => gateProgress("pcurtain"),
              pass: () => { done.pcurtain = true; } }
 };
+
+/* AND NO HOLD MAY EVER BECOME A WALL, whatever goes wrong behind it.
+   The three deliberate waits are all satisfiable and all show a pair of hands after a
+   few idle seconds, so nobody who is engaging with them will ever reach this. It is
+   here for everything I have not thought of: a plate that fails, a pointer event that
+   never lands, a touch device that cannot make the gesture. Time spent actively
+   pushing against a hold is counted, and it only counts while pushing — a nudge does
+   not accumulate, and letting go bleeds it away — so this cannot fire on somebody who
+   is simply taking their time in a scene. Once a hold has let go it stays let go. */
+const HOLD_PATIENCE = 25;
+const holdFreed = Object.create(null);
 
 const N = BEATS.length;
 let ofs = [0]; for (let i=0;i<N;i++) ofs.push(ofs[i]+BEATS[i].len);
@@ -452,7 +472,9 @@ const T = {
   i: 0,          // current beat index
   f: 0,          // fraction through current beat
   blocked: false,
-  push: 0        // 0..1 how hard the visitor is pushing against a closed gate
+  push: 0,       // 0..1 how hard the visitor is pushing against a closed gate
+  wait: 0,       // seconds spent pushing, so a hold can never become permanent
+  inT: -1e9      // when scroll input last arrived
 };
 const spine = document.getElementById("spine");
 function layoutSpine(){ if (spine) spine.style.height = (TOTAL*H*0.92 + H) + "px"; }
@@ -491,12 +513,20 @@ function readTimeline(dt){
      `T.ceil` is left in place at the end of the piece rather than deleted, because
      `T.blocked` and `T.push` feed the resistance, the gate marker and the scroll
      cue, and all three now resolve to "not blocked" on their own. */
+  /* how long they have been leaning on whatever is in front of them: blocked AND
+     actually scrolling, this instant. Sitting still bleeds it away again, so the clock
+     only runs for somebody repeatedly asking to leave and getting nowhere. */
+  const pushing = T.blocked && (performance.now() - T.inT) < 400;
+  if (pushing) T.wait += dt; else T.wait = Math.max(0, T.wait - dt*0.7);
+
   T.ceil = TOTAL;
   /* the three places the scroll waits: the first beat in the piece whose interaction
      has not happened yet, and no further */
   for (let i=0;i<N;i++){
-    const h = HOLD_AT[BEATS[i].id];
-    if (h && !h.done()){ T.ceil = ofs[i] + BEATS[i].len*0.86; break; }
+    const b = BEATS[i], h = HOLD_AT[b.id];
+    if (!h || h.done() || holdFreed[b.id]) continue;
+    if (T.wait > HOLD_PATIENCE){ holdFreed[b.id] = 1; continue; }
+    T.ceil = ofs[i] + b.len*0.86; break;
   }
   /* And the onslaught, which is a different kind of wait: not a gate at all. It is a
      shot with a length — it waits for nothing, asks for nothing, and lets go by
@@ -618,6 +648,21 @@ cv.addEventListener("pointerleave", ()=>{ if(!P.down) P.active=false; }, {passiv
 
 /* touch: let vertical swipes scroll, but never while a scene needs the drag */
 cv.addEventListener("touchmove", e=>{ if (P.down && needsDrag()) e.preventDefault(); }, {passive:false});
+
+/* WHEN THE VISITOR IS ACTUALLY ASKING TO GO ON.
+   `T.blocked` cannot answer this. Once the scroll has been clamped the scrollbar rests
+   a little past the ceiling — that slack is deliberate, it is what gives the wait some
+   give instead of feeling dead — and the resting position on its own is far enough past
+   to keep `blocked` true for ever, with nobody touching anything. So the patience timer
+   read as if a hold were being leaned on the whole time a visitor sat quietly working
+   out the curtains, which is the opposite of what it is for. Real input is stamped here
+   instead, and only real input runs the clock. */
+const stamp = () => { T.inT = performance.now(); };
+window.addEventListener("wheel", stamp, {passive:true});
+window.addEventListener("touchmove", stamp, {passive:true});
+window.addEventListener("keydown", e=>{
+  if (e.key===" "||e.key==="PageDown"||e.key==="PageUp"||e.key==="ArrowDown"||e.key==="ArrowUp") stamp();
+}, {passive:true});
 
 window.addEventListener("keydown", e=>{
   KEY[e.key]=true; KEY[e.key.toLowerCase()]=true;

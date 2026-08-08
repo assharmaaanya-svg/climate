@@ -1102,6 +1102,8 @@ document.getElementById("restart").addEventListener("click", ()=>{
      would be snapped straight back and the button would look broken. */
   ONS.played = 0; ONS.running = 0; ONS.t = 0; T.floor = 0;
   PRET.begun = 0; resetReturn();
+  /* and the waits come back, including any that gave up on the last time through */
+  T.wait = 0; for (const k in holdFreed) delete holdFreed[k];
   document.body.classList.remove("onslaught");
   SILENCE = 0; onsNoiseStop();
   /* and the lookout starts over: an unticked list, and none of the eleven places
@@ -1189,6 +1191,21 @@ window.__bluer = {
   get p(){ return T.p; },
   get floor(){ return T.floor; },
   get blocked(){ return T.blocked; },
+  get wait(){ return T.wait; },
+  /* the whole clamp in one call. Both limits, the beat each one belongs to, and the
+     scroll positions they translate to, because a scroll that will not move is always
+     two limits disagreeing and you cannot see that from either one alone. */
+  tl(){
+    const max = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
+    const at = v => { let i=N-1; for (let j=0;j<N;j++){ if (v < ofs[j+1]){ i=j; break; } } return BEATS[i].id; };
+    return { beat:id(), p:+T.p.toFixed(3), target:+T.target.toFixed(3),
+             ceil:+T.ceil.toFixed(3), ceilAt:at(T.ceil),
+             floor:+T.floor.toFixed(3), floorAt:T.floor>0?at(T.floor):null,
+             blocked:T.blocked, y:Math.round(window.scrollY),
+             yCeil:Math.round((T.ceil+0.12)/TOTAL*max),
+             yFloor:T.floor>0?Math.round(T.floor/TOTAL*max):null,
+             hold:BEATS.filter(b=>HOLD_AT[b.id]&&!HOLD_AT[b.id].done()).map(b=>b.id) };
+  },
   /* jump the scroll to a named beat, marking every gate before it as met, so a
      chapter can be driven and screenshotted without playing the whole piece */
   goto(bid, f){
