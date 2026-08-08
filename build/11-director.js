@@ -805,6 +805,37 @@ function onDrag(x,y){
 }
 function onMove(){}
 function onUp(){ DRAW.on=false; }
+/* ---------------------------------------------------------------- the pace card
+   It is up for a few seconds after Begin and then it goes, and it goes early if
+   the visitor is already scrolling — somebody who has started does not need to
+   be told to start. It is deliberately not a dialogue and cannot be clicked
+   through, because there is nothing in it to agree to: it sets a speed and makes
+   a promise, and then the piece gets on with it. */
+const paceEl = document.getElementById("pace");
+let paceT = 0, paceGone = false;
+function showPace(){
+  if (!paceEl || paceGone) return;
+  paceEl.classList.add("on");
+  document.body.classList.add("pacing");
+  paceEl.setAttribute("aria-hidden", "false");
+  paceT = 6.5;
+}
+function hidePace(){
+  if (!paceEl || paceGone) return;
+  paceGone = true; paceT = 0;
+  paceEl.classList.remove("on");
+  document.body.classList.remove("pacing");
+  paceEl.setAttribute("aria-hidden", "true");
+}
+function updPace(dt){
+  if (paceGone || paceT <= 0) return;
+  /* any real scroll takes it away at once. A couple of hundred pixels, so a
+     trackpad twitch or a bounce does not count as having started. */
+  if (window.scrollY > 180){ hidePace(); return; }
+  paceT -= dt;
+  if (paceT <= 0) hidePace();
+}
+
 function onKey(k){
   const b=id();
   if (k==="Enter"){
@@ -888,7 +919,7 @@ function frame(now){
   updPlateCam(dt, t);
   updParticles(dt,t); updClouds(dt); updBirds(dt,t); updBugs(dt,t);
   updTrain(dt); updPlane(dt); updLeaves(dt); updMoth(dt,t);
-  updFlashes(dt); updWhisper(dt); updSound(dt,t); updFireflies(dt,t);
+  updFlashes(dt); updWhisper(dt); updSound(dt,t); updFireflies(dt,t); updPace(dt);
   if (soundOn && AIR.h<0.5 && OUTSIDE>0.4 && Math.random()<0.011*(1-AIR.h)*dt*60) sfx.bird();
   curiosity = Math.max(0, curiosity - dt*0.02);
 
@@ -942,6 +973,12 @@ function boot(){
       beatEnter = performance.now();
       PROOM.idle = 3.2;   // the card explains nothing, so the scene must, and soon
       try{ beginEl.blur(); }catch(_){}
+      startSound();          // Begin is the gesture the audio context needs
+      /* After the way-in card has actually gone. Its own fade is 1.6s, and at
+         780ms it was still half there and sitting on a higher layer, so you were
+         reading one through the other. The wait is not dead time either: the room
+         is already up behind it. */
+      setTimeout(showPace, 1750);
     };
     beginEl.addEventListener("click", go);
 

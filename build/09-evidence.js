@@ -16,32 +16,27 @@ const EV_CARDS = [
     h:"This is what had been landing on the windowsill.",
     p:"Soot, brake and tyre dust, smoke, road grit, and particles that form in the air itself out of "+
        "exhaust gases. The mixture is measured by size. PM2.5 means everything under 2.5 micrometres "+
-       "across — small enough to pass the nose and throat entirely and reach the deepest part of the lung.",
-    src:'Definitions and health effects: <a href="https://www.who.int/news-room/fact-sheets/detail/ambient-(outdoor)-air-quality-and-health" target="_blank" rel="noopener">WHO — Ambient air quality and health</a> · '+
-        '<a href="https://www.epa.gov/pm-pollution/particulate-matter-pm-basics" target="_blank" rel="noopener">US EPA — Particulate matter basics</a>' },
+       "across — small enough to pass the nose and throat entirely and reach the deepest part of the lung."
+  },
 
   { id:"e-hills", tag:"how far you could see", lit:true,
     h:"The hills never moved.",
     p:"Fine particles scatter light. That scattered light fills in the space between you and anything "+
        "distant, and contrast falls away with distance — so the farthest things go first, and the sky "+
-       "turns from blue to white. Hold the air clean and the hills come back. They were always there.",
-    src:'The visibility distance shown here is computed with the Koschmieder relation used in air-quality '+
-        'monitoring — <a href="https://www.epa.gov/visibility/basic-information-about-visibility" target="_blank" rel="noopener">US EPA — Visibility &amp; haze</a> · '+
-        'why particles whiten the sky: <a href="https://earthobservatory.nasa.gov/features/Aerosols" target="_blank" rel="noopener">NASA Earth Observatory — Aerosols</a>' },
+       "turns from blue to white. Hold the air clean and the hills come back. They were always there."
+  },
 
   { id:"e-stars", tag:"who this happens to", lit:false,
     h:"Ninety-nine of every hundred people.",
-    p:"99% of the world's population breathes air that exceeds WHO guideline levels, and outdoor air "+
+    p:"99% of the world's population breathes air that exceeds recommended guideline levels, and outdoor air "+
        "pollution is linked to around 4.2 million premature deaths a year. Children take in more air for "+
        "their body weight than adults, breathe faster, and are still growing the lungs they will use for "+
        "the rest of their lives.<br><br><em>The stars are a separate story.</em> Most of the ones this work "+
        "took away are lost to artificial light at night, not to dust — night skies are brightening by "+
        "roughly 9.6% a year, which would take a place with 250 visible stars down to about 100 over a "+
        "childhood. Haze makes it worse by scattering that light back down, but the two causes are not "+
-       "the same and this work does not merge them.",
-    src:'<a href="https://www.who.int/news-room/fact-sheets/detail/ambient-(outdoor)-air-quality-and-health" target="_blank" rel="noopener">WHO — 99%, 4.2 million</a> · '+
-        '<a href="https://www.unicef.org/media/123156/file/Childhood_Air_Pollution_Key_Messages_2022.pdf" target="_blank" rel="noopener">UNICEF — why children</a> · '+
-        '<a href="https://www.science.org/doi/10.1126/science.abq7781" target="_blank" rel="noopener">Kyba et al. 2023, <em>Science</em> — 9.6%/yr, 250→100 stars</a>' }
+       "the same and this work does not merge them."
+  }
 ];
 
 function buildEvidenceCards(){
@@ -51,7 +46,7 @@ function buildEvidenceCards(){
   for (const c of EV_CARDS){
     const d = document.createElement("div");
     d.className = "card" + (c.lit?" lit":"");
-    d.innerHTML = '<span class="tag">'+c.tag+'</span><h2>'+c.h+'</h2><p>'+c.p+'</p><p class="src">'+c.src+'</p>';
+    d.innerHTML = '<span class="tag">'+c.tag+'</span><h2>'+c.h+'</h2><p>'+c.p+'</p>';
     host.appendChild(d);
     EV.cards[c.id]=d;
   }
@@ -315,7 +310,7 @@ function evStars(t, dt, f){
     ctx.font=(MIN*0.019|0)+"px "+MONO;
     ctx.fillStyle=rgba([226,232,244], a*0.7);
     ctx.fillText("of every hundred people breathe air", W*0.5, gy+gw+MIN*0.062);
-    ctx.fillText("above WHO guideline levels", W*0.5, gy+gw+MIN*0.090);
+    ctx.fillText("above recommended guideline levels", W*0.5, gy+gw+MIN*0.090);
     ctx.restore();
   } else {
     /* --- 250 → 100, and this one is light --- */

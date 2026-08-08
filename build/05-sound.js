@@ -386,18 +386,26 @@ let MUFFLE = 0;      // 1 = wrapped in cloth
 function ping(){ sfx.found(); }
 
 /* ---- buttons ---- */
-const bSound = document.getElementById("bSound"), bCC = document.getElementById("bCC"), bSkip = document.getElementById("bSkip");
-bSound.addEventListener("click", async ()=>{
-  if (!AC){ if (!initAudio()){ bSound.style.display="none"; return; } }
-  if (AC.state==="suspended"){ try{ await AC.resume(); }catch(_){} }
-  soundOn = !soundOn;
-  bSound.setAttribute("aria-pressed", String(soundOn));
-  bSound.textContent = soundOn ? "Sound on" : "Sound";
-  bSound.setAttribute("aria-label", soundOn?"Turn sound off":"Turn sound on");
-  envGain(master, soundOn?0.85:0, 0.6);
-  if (soundOn && AC){ if (AC.state==="suspended") AC.resume(); if (AMB.state==="idle") loadAmbience(); }
-  if (soundOn && !ccOn) cc("");
-});
+const bCC = document.getElementById("bCC"), bSkip = document.getElementById("bSkip");
+
+/* Sound is not optional and there is no switch for it. Half of this work is in
+   the ambience: the room behind glass, the cloth, her humming, the field, the
+   crickets. A visitor who never finds the button experiences a different, worse
+   piece, and one who turns it off is not choosing between two versions, they are
+   choosing the one that does not work.
+
+   It is started from the Begin press rather than on load, because a browser will
+   not let an audio context run until somebody has clicked something, and Begin
+   is the click. */
+async function startSound(){
+  if (soundOn) return true;
+  if (!AC){ if (!initAudio()) return false; }
+  if (AC.state === "suspended"){ try{ await AC.resume(); }catch(_){} }
+  soundOn = true;
+  envGain(master, 0.85, 1.2);
+  if (AMB.state === "idle") loadAmbience();
+  return true;
+}
 bCC.addEventListener("click", ()=>{
   ccOn = !ccOn;
   bCC.setAttribute("aria-pressed", String(ccOn));

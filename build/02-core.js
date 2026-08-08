@@ -8,7 +8,7 @@
      [3] ATMOSPHERE — the whole piece is driven by one number: pm (µg/m³ PM2.5).
          Everything visible derives from it through real optics:
            extinction  σ = 3·pm + σ_rayleigh   (Mm⁻¹, dry fine-mode approximation)
-           visual range Vr = 3.912 / σ         (Koschmieder)
+           visual range Vr = 3.912 / σ         (standard visibility relation)
            transmission T(d) = exp(−σ·d)       (Beer–Lambert)
          Distant things are blended toward AIRLIGHT, never toward flat grey.
          This is why the polluted view has depth: each layer loses contrast by
@@ -151,7 +151,7 @@ const MASS_EFF = 3.0;            // m²/g — dry fine-mode mass scattering effi
 
 function airFromPM(pm){
   const sigma = MASS_EFF*pm + SIG_RAYLEIGH;      // Mm⁻¹
-  const vr = 3.912 / (sigma*1e-6) / 1000;        // km  (Koschmieder)
+  const vr = 3.912 / (sigma*1e-6) / 1000;        // km
   return { sigma, vr };
 }
 function updateAir(){
@@ -329,9 +329,9 @@ function ph(L, fh){ return fh*AP.h*CAM.zoom; }
    ========================================================================= */
 const BEATS = [
   /* ---------------- chapter one: the world came inside ---------------- */
-  { id:"dark",      ch:1, len:1.5,  gate:"curtain", ask:"Take hold of a curtain and drag it aside",
+  { id:"dark",      ch:1, len:1.5,  gate:"curtain", ask:"Drag a curtain aside",
     line:"Before you were awake, someone was already up." },
-  { id:"light",     ch:1, len:1.4,  gate:"sash",    ask:"Pull the brass ball down — it lifts the window",
+  { id:"light",     ch:1, len:1.4,  gate:"sash",    ask:"Pull that down",
     line:"She always opened it first." },
   { id:"breathe",   ch:1, len:1.1,
     line:"And the whole outside came in at once." },
@@ -340,7 +340,7 @@ const BEATS = [
     line:"Sheets that had been in the sun all morning." },
   { id:"shirt",     ch:2, len:1.0,  gate:"shirt",   ask:"",
     line:"" },
-  { id:"kite",      ch:2, len:1.6,  gate:"kite",    ask:"Hold to bring it down · let go and it climbs",
+  { id:"kite",      ch:2, len:1.6,  gate:"kite",    ask:"Hold to pull the kite in",
     line:"You put it up into all of that." },
   { id:"climb",     ch:2, len:1.25,
     line:"" },
@@ -348,9 +348,9 @@ const BEATS = [
     line:"There were so many it was hard to look at one." },
   { id:"wish",      ch:2, len:0.95,
     line:"" },
-  { id:"horizon",   ch:2, len:1.45, gate:"find",    ask:"Move to look · hold still to focus",
+  { id:"horizon",   ch:2, len:1.45, gate:"find",    ask:"Hold still to focus",
     line:"On a good day you could see all the way to the hills." },
-  { id:"drawing",   ch:2, len:1.45, gate:"colour",  ask:"Colour it in — the blue crayon is already worn down",
+  { id:"drawing",   ch:2, len:1.45, gate:"colour",  ask:"Colour it in",
     line:"You never had to think about which blue." },
   /* ------------- chapter three: the change is almost invisible ------------- */
   { id:"r-laundry", ch:3, len:1.35, gate:"brush",   ask:"Brush it off",
@@ -359,7 +359,7 @@ const BEATS = [
     line:"" },
   { id:"r-stars",   ch:3, len:1.35, gate:"rstars",  ask:"Find the shape again",
     line:"" },
-  { id:"r-horizon", ch:3, len:1.3,  gate:"rfind",   ask:"Hold still · then hold to remember",
+  { id:"r-horizon", ch:3, len:1.3,  gate:"rfind",   ask:"Hold to remember",
     line:"" },
   { id:"r-drawing", ch:3, len:1.3,
     line:"She kept it on the fridge for eleven years." },
@@ -377,15 +377,15 @@ const BEATS = [
      Four beats, not seven. Each is a memory from the work that turns into its
      own evidence, and each is built to be felt before it is read. The physics
      stays in the renderer where it belongs; here it only ever gets one line. */
-  { id:"e-dust",    ch:6, len:1.4, gate:"lift",  ask:"Lift what settled on the sill" },
-  { id:"e-hills",   ch:6, len:1.9, gate:"pull",  ask:"Pull the air clean · then let go" },
+  { id:"e-dust",    ch:6, len:1.4, gate:"lift",  ask:"Lift the dust" },
+  { id:"e-hills",   ch:6, len:1.9, gate:"pull",  ask:"Pull the air clean" },
   { id:"e-stars",   ch:6, len:1.6 },
   { id:"e-ledger",  ch:6, len:1.6 },
   /* ---------------- the ending ---------------- */
   { id:"f-curtain", ch:7, len:1.2, gate:"fcurtain", ask:"Part them" },
   { id:"f-both",    ch:7, len:1.6, gate:"fhold",    ask:"Hold the latch" },
   { id:"f-open",    ch:7, len:1.3, gate:"fopen",    ask:"You can still open it" },
-  { id:"f-crayon",  ch:7, len:1.9, gate:"fdraw",    ask:"One small patch of blue, on the glass" },
+  { id:"f-crayon",  ch:7, len:1.9, gate:"fdraw",    ask:"Draw on the glass" },
   { id:"f-rest",    ch:7, len:1.5 },
   { id:"f-end",     ch:7, len:1.7 }
 ];

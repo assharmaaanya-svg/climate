@@ -55,6 +55,10 @@
      way rather than being read over the top of it */
   body.reading #cap, body.reading #ask, body.reading #gate{
     opacity:0 !important; transition:opacity .45s; }
+  /* and while the pace card is up, nothing else on screen competes with it */
+  body.pacing #cap, body.pacing #ask, body.pacing #gate, body.pacing #sdown,
+  body.pacing #chapter, body.pacing .ctl{
+    opacity:0 !important; transition:opacity .8s; }
   #ask.dark{ color:#17222c; background:rgba(255,253,246,.66); border-color:rgba(20,30,40,.2);
     box-shadow:0 10px 40px rgba(90,60,20,.18); }
   #ask.urge{ animation:urge 2.6s ease-in-out infinite; }
@@ -195,19 +199,82 @@
      the whole way through, and a second thing that advances the story invites
      an accidental press to skip a moment the visitor had not finished. One way
      through, said clearly and permanently. Skip, top right, is the escape. */
-  #sdown{ position:fixed; left:50%; bottom:2.2vh; transform:translateX(-50%); z-index:11;
-    display:flex; flex-direction:column; align-items:center; gap:.45em;
-    font-family:var(--mono); font-size:.62rem; letter-spacing:.22em; text-transform:uppercase;
-    color:var(--ink); text-shadow:var(--sh); opacity:0; transition:opacity 1s, transform .25s;
-    background:none; border:0; padding:.5em 1.1em; pointer-events:none; }
-  #sdown.on{ opacity:.62; }
+  /* The one thing the visitor has to keep doing, so it is the one piece of
+     furniture that is allowed to be large. It also swells every few seconds
+     rather than animating continuously: a thing that never stops moving becomes
+     wallpaper within a minute, and a thing that moves only now and then keeps
+     catching the eye for the length of a whole piece. */
+  #sdown{ position:fixed; left:50%; bottom:2.4vh; transform:translateX(-50%); z-index:11;
+    display:flex; flex-direction:column; align-items:center; gap:.5em;
+    font-family:var(--mono); font-size:.7rem; letter-spacing:.26em; text-transform:uppercase;
+    color:var(--ink); text-shadow:var(--sh); opacity:0; transition:opacity 1s;
+    padding:.6em 1.3em; pointer-events:none; }
+  #sdown.on{ opacity:.9; animation:spulse 7s ease-in-out infinite; }
   #sdown.dark{ color:#1d2a36; text-shadow:0 1px 12px rgba(255,255,255,.85); }
-  #sdown i{ width:12px; height:12px; border-right:2px solid currentColor;
-    border-bottom:2px solid currentColor; transform:rotate(45deg);
+  #sdown i{ width:20px; height:20px; border-right:2.5px solid currentColor;
+    border-bottom:2.5px solid currentColor; transform:rotate(45deg);
     animation:sbob 2.6s ease-in-out infinite; }
-  @keyframes sbob{ 0%,100%{ transform:rotate(45deg) translate(0,0); opacity:.6 }
-                   50%{ transform:rotate(45deg) translate(3px,3px); opacity:1 } }
-  @media (prefers-reduced-motion: reduce){ #sdown i{ animation:none; } }
+  @keyframes sbob{ 0%,100%{ transform:rotate(45deg) translate(0,0); opacity:.55 }
+                   50%{ transform:rotate(45deg) translate(4px,4px); opacity:1 } }
+  @keyframes spulse{ 0%,72%,100%{ opacity:.9; transform:translateX(-50%) scale(1) }
+                     82%{ opacity:1; transform:translateX(-50%) scale(1.14) } }
+  @media (prefers-reduced-motion: reduce){
+    #sdown i{ animation:none; } #sdown.on{ animation:none; } }
+
+  /* ---------- the pace card ----------
+     It comes up once, after Begin, and it is not a tutorial: it says how fast to
+     go and promises that nothing will be missed, then gets out of the way. It
+     leaves on its own after a few seconds, or the instant the visitor starts
+     scrolling, whichever comes first. */
+  #pace{ position:fixed; inset:0; z-index:15; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; gap:1.5rem; text-align:center;
+    padding:2rem; opacity:0; visibility:hidden; pointer-events:none;
+    background:radial-gradient(60% 50% at 50% 48%, rgba(6,10,20,.72), rgba(4,7,15,.9) 78%);
+    -webkit-backdrop-filter:blur(3px); backdrop-filter:blur(3px);
+    transition:opacity 1.5s cubic-bezier(.4,0,.2,1), visibility 0s linear 1.5s; }
+  #pace.on{ opacity:1; visibility:visible; transition-delay:0s,0s; }
+  #pace h2{ margin:0; max-width:22ch; font-weight:400;
+    font-size:clamp(1.85rem,5.6vw,3.4rem); line-height:1.12; letter-spacing:-.018em;
+    color:#fdfcf8; text-wrap:balance;
+    text-shadow:0 2px 46px rgba(0,0,0,.7), 0 0 90px rgba(150,180,240,.18); }
+  #pace p{ margin:0; max-width:44ch; font-size:clamp(.9rem,2.4vw,1.02rem); line-height:1.7;
+    color:#d5ddec; text-wrap:pretty; text-shadow:0 1px 24px rgba(0,0,0,.75); }
+  /* the wheel: a mouse in outline with something moving down inside it */
+  #pace .wheel{ width:30px; height:48px; border:2px solid rgba(240,246,255,.55);
+    border-radius:16px; position:relative; }
+  #pace .wheel::after{ content:""; position:absolute; left:50%; top:8px; width:3px; height:10px;
+    margin-left:-1.5px; border-radius:2px; background:#fdfcf8;
+    animation:wheel 2.1s cubic-bezier(.4,0,.2,1) infinite; }
+  @keyframes wheel{ 0%{ transform:translateY(0); opacity:0 } 22%{ opacity:1 }
+                    72%{ transform:translateY(20px); opacity:0 } 100%{ opacity:0 } }
+  #pace .arrows{ display:flex; flex-direction:column; align-items:center; gap:4px; }
+  #pace .arrows i{ width:13px; height:13px; border-right:2px solid rgba(240,246,255,.75);
+    border-bottom:2px solid rgba(240,246,255,.75); transform:rotate(45deg);
+    animation:pchev 2.1s ease-in-out infinite; }
+  /* Half of this work is the sound, and there is no switch to turn it on with,
+     so the one thing worth saying out loud is: turn it up. */
+  #pace .vol{ margin:.1rem 0 0; max-width:none;
+    display:flex; align-items:center; gap:.7em;
+    font-family:var(--mono); font-size:clamp(.86rem,2.5vw,1.08rem);
+    letter-spacing:.16em; text-transform:uppercase; color:#ffdfae;
+    padding:.72em 1.5em; border:1px solid rgba(255,206,140,.34); border-radius:999px;
+    background:rgba(58,36,14,.34); -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px);
+    text-shadow:0 0 34px rgba(255,190,110,.45), 0 1px 18px rgba(0,0,0,.8);
+    box-shadow:0 0 44px rgba(190,120,40,.16) inset; }
+  #pace .vol svg{ width:1.5em; height:1.5em; flex:none; fill:currentColor; stroke:none;
+    overflow:visible; }
+  #pace .vol svg path.w1, #pace .vol svg path.w2{ fill:none; stroke:currentColor;
+    stroke-width:1.9; stroke-linecap:round; }
+  #pace .vol svg path.w1{ animation:volw 2s ease-in-out infinite; }
+  #pace .vol svg path.w2{ animation:volw 2s ease-in-out .22s infinite; }
+  @keyframes volw{ 0%,100%{ opacity:.2 } 45%{ opacity:1 } }
+  #pace .cue{ display:flex; align-items:center; gap:1.1rem; margin-top:.4rem; }
+  #pace .arrows i:nth-child(2){ animation-delay:.18s; opacity:.6 }
+  #pace .arrows i:nth-child(3){ animation-delay:.36s; opacity:.3 }
+  @keyframes pchev{ 0%,100%{ opacity:.25; transform:rotate(45deg) translate(0,0) }
+                    50%{ opacity:1; transform:rotate(45deg) translate(2px,2px) } }
+  @media (prefers-reduced-motion: reduce){
+    #pace .wheel::after, #pace .arrows i{ animation:none; } }
 
   .sr{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
 
@@ -231,13 +298,12 @@
      that stopped happening in it.</p>
   <p class="how">Scroll to move through it.</p>
   <button id="begin" autofocus>Begin</button>
-  <p class="fine">sound and captions, top right</p>
+  <p class="fine">captions for sound, top right</p>
 </div></div>
 
 <div id="chapter" aria-hidden="true"></div>
 
 <div class="ctl">
-  <button id="bSound" aria-pressed="false" aria-label="Turn sound on">Sound</button>
   <button id="bCC" aria-pressed="false" aria-label="Turn captions for sound on">CC</button>
   <button id="bSkip" aria-label="Skip this interaction and continue">Skip&nbsp;▸</button>
 </div>
@@ -246,7 +312,19 @@
 <div id="ask" aria-live="polite"></div>
 <div id="gate" aria-hidden="true"><span id="gateTxt"></span><span class="bar"><i id="gateBar"></i></span><span class="chev"></span></div>
 <div id="cc" aria-hidden="true"></div>
-<div id="sdown" aria-hidden="true"><span>scroll</span><i></i></div>
+<div id="sdown" aria-hidden="true"><span>keep scrolling</span><i></i></div>
+
+<div id="pace" aria-hidden="true">
+  <h2>Scroll slowly to begin your journey.</h2>
+  <p>Interactions appear on their own as you go. Whenever there is something to explore,
+     you will be shown. Afterwards, keep scrolling slowly and the next memory arrives.</p>
+  <p class="vol">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h3.2L12 5v14l-4.8-4H4z"/>
+      <path class="w1" d="M16 9.4a4 4 0 0 1 0 5.2"/><path class="w2" d="M18.7 7a7.6 7.6 0 0 1 0 10"/></svg>
+    Turn your volume up
+  </p>
+  <div class="cue"><div class="wheel"></div><div class="arrows"><i></i><i></i><i></i></div></div>
+</div>
 
 <div id="aq" role="status" aria-hidden="true">
   <div class="row">
@@ -256,8 +334,7 @@
   </div>
   <p><strong>Very unhealthy.</strong> Keep windows closed. Avoid outdoor exertion — children, older adults
      and people with heart or lung conditions are affected first.</p>
-  <p class="src">Thresholds after the WHO 2021 guideline (annual PM2.5: 5&nbsp;µg/m³; 24-hour: 15&nbsp;µg/m³) —
-    <a href="https://www.who.int/publications/i/item/9789240034228" target="_blank" rel="noopener">WHO Global Air Quality Guidelines</a></p>
+  <p class="src">Recommended limits: 5&nbsp;µg/m³ as an annual average, 15&nbsp;µg/m³ over 24&nbsp;hours.</p>
 </div>
 
 <div id="ev" aria-hidden="true"></div>
@@ -271,8 +348,8 @@
         alone would give you. Contrast falls off exponentially with distance, which is why the farthest things
         vanish first.</dd>
     <dt>Measured</dt>
-    <dd>Every visibility distance in this work is computed with the Koschmieder relation — the same equation used
-        in air-quality monitoring — from a PM2.5 concentration you can set yourself.</dd>
+    <dd>Every visibility distance in this work is computed from the standard relation used in air-quality
+        monitoring, from a PM2.5 concentration you can set yourself.</dd>
     <dt>Documented</dt>
     <dd>Guidance that moves children indoors above certain pollution levels. Health agencies publish these
         thresholds, and schools act on them.</dd>
@@ -284,24 +361,7 @@
     <dd>The mother. The kite. The blue crayon. The small yellow shirt. Those are invented, and they belong to
         everyone who recognises them.</dd>
   </dl>
-  <p class="fine">Sources:
-    <a href="https://www.who.int/news-room/fact-sheets/detail/ambient-(outdoor)-air-quality-and-health" target="_blank" rel="noopener">WHO — Ambient air quality and health</a> ·
-    <a href="https://earthobservatory.nasa.gov/features/Aerosols" target="_blank" rel="noopener">NASA Earth Observatory — Aerosols</a> ·
-    <a href="https://www.epa.gov/visibility/basic-information-about-visibility" target="_blank" rel="noopener">US EPA — Visibility &amp; haze</a> ·
-    <a href="https://www.science.org/doi/10.1126/science.abq7781" target="_blank" rel="noopener">Kyba et&nbsp;al. 2023, <em>Science</em> — star visibility</a> ·
-    <a href="https://www.unicef.org/media/123156/file/Childhood_Air_Pollution_Key_Messages_2022.pdf" target="_blank" rel="noopener">UNICEF — childhood air pollution</a> ·
-    <a href="https://www.airnow.gov/sites/default/files/2018-09/air-quality-and-outdoor-activity-guidance-2014.pdf" target="_blank" rel="noopener">US EPA AirNow — school outdoor activity guidance</a>
-  </p>
-  <p class="fine">Every painting in this work is by Aanya Sharma, as are the recordings of the washing line and
-    the humming. Everything else you hear is synthesised in the browser except two outdoor ambiences, used under
-    Creative&nbsp;Commons&nbsp;0 from <a href="https://freesound.org/" target="_blank" rel="noopener">Freesound</a>:
-    <em>Maasai camp nature sounds, Africa</em> by <strong>selcukartut</strong> (#504694) ·
-    <em>Birds songs — blackcap and oak jay</em> by <strong>sachajulien</strong> (#734530) ·
-    <em>Kite, seaside</em> by <strong>heigh hoo</strong> (#60661) ·
-    <em>Boy or young child laughing</em> by <strong>obxjohn</strong> (#365632) ·
-    <em>Crickets chirping at night</em> (#383275) ·
-    <em>Whip-poor-wills at night</em> by <strong>mycompasstv</strong> (#572768).
-  </p>
+  <p class="fine">Every painting, recording and word in this work is by Aanya Sharma.</p>
 </div></div>
 
 <div id="title" aria-hidden="true">
@@ -348,15 +408,14 @@
   <h2>The evidence</h2>
   <p>The memories themselves become the evidence. Soot from the windowsill is magnified until PM2.5 can be compared
   with a grain of sand, a human hair and a red blood cell. A slider sets the concentration of fine particles in the
-  air, and the hills you searched for advance and retreat in response — the distance computed with the Koschmieder
-  relation, visual range equals 3.912 divided by the extinction coefficient, the same equation used in air-quality
+  air, and the hills you searched for advance and retreat in response — the distance computed from
+  visual range equals 3.912 divided by the extinction coefficient, the standard relation used in air-quality
   monitoring. Two spheres of light show why molecules make a blue sky and larger particles make a white one. The
   blue crayon draws a graph of visibility against concentration. The constellation rearranges into the finding that
-  99 percent of the world's population breathes air exceeding WHO guideline levels, and separately into the finding
+  99 percent of the world's population breathes air exceeding recommended guideline levels, and separately into the finding
   that night skies are brightening about 9.6 percent a year — which is light pollution, not dust. A breath traces
   where particles of different sizes stop inside the airway, and why a child, breathing faster and taking in more
-  air for their body weight, receives a larger dose. Sources: the World Health Organization, NASA Earth Observatory,
-  the US Environmental Protection Agency, UNICEF, and Kyba and colleagues in Science, 2023.</p>
+  air for their body weight, receives a larger dose.</p>
   <h2>The ending</h2>
   <p>Morning again, in the first bedroom. You part the curtains and everything from the whole work is out there at
   once, in one view, altered: the washing line, the rooftops, the hills where the hills used to be. You reach for the

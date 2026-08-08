@@ -55,6 +55,10 @@
      way rather than being read over the top of it */
   body.reading #cap, body.reading #ask, body.reading #gate{
     opacity:0 !important; transition:opacity .45s; }
+  /* and while the pace card is up, nothing else on screen competes with it */
+  body.pacing #cap, body.pacing #ask, body.pacing #gate, body.pacing #sdown,
+  body.pacing #chapter, body.pacing .ctl{
+    opacity:0 !important; transition:opacity .8s; }
   #ask.dark{ color:#17222c; background:rgba(255,253,246,.66); border-color:rgba(20,30,40,.2);
     box-shadow:0 10px 40px rgba(90,60,20,.18); }
   #ask.urge{ animation:urge 2.6s ease-in-out infinite; }
@@ -195,19 +199,82 @@
      the whole way through, and a second thing that advances the story invites
      an accidental press to skip a moment the visitor had not finished. One way
      through, said clearly and permanently. Skip, top right, is the escape. */
-  #sdown{ position:fixed; left:50%; bottom:2.2vh; transform:translateX(-50%); z-index:11;
-    display:flex; flex-direction:column; align-items:center; gap:.45em;
-    font-family:var(--mono); font-size:.62rem; letter-spacing:.22em; text-transform:uppercase;
-    color:var(--ink); text-shadow:var(--sh); opacity:0; transition:opacity 1s, transform .25s;
-    background:none; border:0; padding:.5em 1.1em; pointer-events:none; }
-  #sdown.on{ opacity:.62; }
+  /* The one thing the visitor has to keep doing, so it is the one piece of
+     furniture that is allowed to be large. It also swells every few seconds
+     rather than animating continuously: a thing that never stops moving becomes
+     wallpaper within a minute, and a thing that moves only now and then keeps
+     catching the eye for the length of a whole piece. */
+  #sdown{ position:fixed; left:50%; bottom:2.4vh; transform:translateX(-50%); z-index:11;
+    display:flex; flex-direction:column; align-items:center; gap:.5em;
+    font-family:var(--mono); font-size:.7rem; letter-spacing:.26em; text-transform:uppercase;
+    color:var(--ink); text-shadow:var(--sh); opacity:0; transition:opacity 1s;
+    padding:.6em 1.3em; pointer-events:none; }
+  #sdown.on{ opacity:.9; animation:spulse 7s ease-in-out infinite; }
   #sdown.dark{ color:#1d2a36; text-shadow:0 1px 12px rgba(255,255,255,.85); }
-  #sdown i{ width:12px; height:12px; border-right:2px solid currentColor;
-    border-bottom:2px solid currentColor; transform:rotate(45deg);
+  #sdown i{ width:20px; height:20px; border-right:2.5px solid currentColor;
+    border-bottom:2.5px solid currentColor; transform:rotate(45deg);
     animation:sbob 2.6s ease-in-out infinite; }
-  @keyframes sbob{ 0%,100%{ transform:rotate(45deg) translate(0,0); opacity:.6 }
-                   50%{ transform:rotate(45deg) translate(3px,3px); opacity:1 } }
-  @media (prefers-reduced-motion: reduce){ #sdown i{ animation:none; } }
+  @keyframes sbob{ 0%,100%{ transform:rotate(45deg) translate(0,0); opacity:.55 }
+                   50%{ transform:rotate(45deg) translate(4px,4px); opacity:1 } }
+  @keyframes spulse{ 0%,72%,100%{ opacity:.9; transform:translateX(-50%) scale(1) }
+                     82%{ opacity:1; transform:translateX(-50%) scale(1.14) } }
+  @media (prefers-reduced-motion: reduce){
+    #sdown i{ animation:none; } #sdown.on{ animation:none; } }
+
+  /* ---------- the pace card ----------
+     It comes up once, after Begin, and it is not a tutorial: it says how fast to
+     go and promises that nothing will be missed, then gets out of the way. It
+     leaves on its own after a few seconds, or the instant the visitor starts
+     scrolling, whichever comes first. */
+  #pace{ position:fixed; inset:0; z-index:15; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; gap:1.5rem; text-align:center;
+    padding:2rem; opacity:0; visibility:hidden; pointer-events:none;
+    background:radial-gradient(60% 50% at 50% 48%, rgba(6,10,20,.72), rgba(4,7,15,.9) 78%);
+    -webkit-backdrop-filter:blur(3px); backdrop-filter:blur(3px);
+    transition:opacity 1.5s cubic-bezier(.4,0,.2,1), visibility 0s linear 1.5s; }
+  #pace.on{ opacity:1; visibility:visible; transition-delay:0s,0s; }
+  #pace h2{ margin:0; max-width:22ch; font-weight:400;
+    font-size:clamp(1.85rem,5.6vw,3.4rem); line-height:1.12; letter-spacing:-.018em;
+    color:#fdfcf8; text-wrap:balance;
+    text-shadow:0 2px 46px rgba(0,0,0,.7), 0 0 90px rgba(150,180,240,.18); }
+  #pace p{ margin:0; max-width:44ch; font-size:clamp(.9rem,2.4vw,1.02rem); line-height:1.7;
+    color:#d5ddec; text-wrap:pretty; text-shadow:0 1px 24px rgba(0,0,0,.75); }
+  /* the wheel: a mouse in outline with something moving down inside it */
+  #pace .wheel{ width:30px; height:48px; border:2px solid rgba(240,246,255,.55);
+    border-radius:16px; position:relative; }
+  #pace .wheel::after{ content:""; position:absolute; left:50%; top:8px; width:3px; height:10px;
+    margin-left:-1.5px; border-radius:2px; background:#fdfcf8;
+    animation:wheel 2.1s cubic-bezier(.4,0,.2,1) infinite; }
+  @keyframes wheel{ 0%{ transform:translateY(0); opacity:0 } 22%{ opacity:1 }
+                    72%{ transform:translateY(20px); opacity:0 } 100%{ opacity:0 } }
+  #pace .arrows{ display:flex; flex-direction:column; align-items:center; gap:4px; }
+  #pace .arrows i{ width:13px; height:13px; border-right:2px solid rgba(240,246,255,.75);
+    border-bottom:2px solid rgba(240,246,255,.75); transform:rotate(45deg);
+    animation:pchev 2.1s ease-in-out infinite; }
+  /* Half of this work is the sound, and there is no switch to turn it on with,
+     so the one thing worth saying out loud is: turn it up. */
+  #pace .vol{ margin:.1rem 0 0; max-width:none;
+    display:flex; align-items:center; gap:.7em;
+    font-family:var(--mono); font-size:clamp(.86rem,2.5vw,1.08rem);
+    letter-spacing:.16em; text-transform:uppercase; color:#ffdfae;
+    padding:.72em 1.5em; border:1px solid rgba(255,206,140,.34); border-radius:999px;
+    background:rgba(58,36,14,.34); -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px);
+    text-shadow:0 0 34px rgba(255,190,110,.45), 0 1px 18px rgba(0,0,0,.8);
+    box-shadow:0 0 44px rgba(190,120,40,.16) inset; }
+  #pace .vol svg{ width:1.5em; height:1.5em; flex:none; fill:currentColor; stroke:none;
+    overflow:visible; }
+  #pace .vol svg path.w1, #pace .vol svg path.w2{ fill:none; stroke:currentColor;
+    stroke-width:1.9; stroke-linecap:round; }
+  #pace .vol svg path.w1{ animation:volw 2s ease-in-out infinite; }
+  #pace .vol svg path.w2{ animation:volw 2s ease-in-out .22s infinite; }
+  @keyframes volw{ 0%,100%{ opacity:.2 } 45%{ opacity:1 } }
+  #pace .cue{ display:flex; align-items:center; gap:1.1rem; margin-top:.4rem; }
+  #pace .arrows i:nth-child(2){ animation-delay:.18s; opacity:.6 }
+  #pace .arrows i:nth-child(3){ animation-delay:.36s; opacity:.3 }
+  @keyframes pchev{ 0%,100%{ opacity:.25; transform:rotate(45deg) translate(0,0) }
+                    50%{ opacity:1; transform:rotate(45deg) translate(2px,2px) } }
+  @media (prefers-reduced-motion: reduce){
+    #pace .wheel::after, #pace .arrows i{ animation:none; } }
 
   .sr{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
 
@@ -231,13 +298,12 @@
      that stopped happening in it.</p>
   <p class="how">Scroll to move through it.</p>
   <button id="begin" autofocus>Begin</button>
-  <p class="fine">sound and captions, top right</p>
+  <p class="fine">captions for sound, top right</p>
 </div></div>
 
 <div id="chapter" aria-hidden="true"></div>
 
 <div class="ctl">
-  <button id="bSound" aria-pressed="false" aria-label="Turn sound on">Sound</button>
   <button id="bCC" aria-pressed="false" aria-label="Turn captions for sound on">CC</button>
   <button id="bSkip" aria-label="Skip this interaction and continue">Skip&nbsp;▸</button>
 </div>
@@ -246,7 +312,19 @@
 <div id="ask" aria-live="polite"></div>
 <div id="gate" aria-hidden="true"><span id="gateTxt"></span><span class="bar"><i id="gateBar"></i></span><span class="chev"></span></div>
 <div id="cc" aria-hidden="true"></div>
-<div id="sdown" aria-hidden="true"><span>scroll</span><i></i></div>
+<div id="sdown" aria-hidden="true"><span>keep scrolling</span><i></i></div>
+
+<div id="pace" aria-hidden="true">
+  <h2>Scroll slowly to begin your journey.</h2>
+  <p>Interactions appear on their own as you go. Whenever there is something to explore,
+     you will be shown. Afterwards, keep scrolling slowly and the next memory arrives.</p>
+  <p class="vol">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h3.2L12 5v14l-4.8-4H4z"/>
+      <path class="w1" d="M16 9.4a4 4 0 0 1 0 5.2"/><path class="w2" d="M18.7 7a7.6 7.6 0 0 1 0 10"/></svg>
+    Turn your volume up
+  </p>
+  <div class="cue"><div class="wheel"></div><div class="arrows"><i></i><i></i><i></i></div></div>
+</div>
 
 <div id="aq" role="status" aria-hidden="true">
   <div class="row">
@@ -256,8 +334,7 @@
   </div>
   <p><strong>Very unhealthy.</strong> Keep windows closed. Avoid outdoor exertion — children, older adults
      and people with heart or lung conditions are affected first.</p>
-  <p class="src">Thresholds after the WHO 2021 guideline (annual PM2.5: 5&nbsp;µg/m³; 24-hour: 15&nbsp;µg/m³) —
-    <a href="https://www.who.int/publications/i/item/9789240034228" target="_blank" rel="noopener">WHO Global Air Quality Guidelines</a></p>
+  <p class="src">Recommended limits: 5&nbsp;µg/m³ as an annual average, 15&nbsp;µg/m³ over 24&nbsp;hours.</p>
 </div>
 
 <div id="ev" aria-hidden="true"></div>
@@ -271,8 +348,8 @@
         alone would give you. Contrast falls off exponentially with distance, which is why the farthest things
         vanish first.</dd>
     <dt>Measured</dt>
-    <dd>Every visibility distance in this work is computed with the Koschmieder relation — the same equation used
-        in air-quality monitoring — from a PM2.5 concentration you can set yourself.</dd>
+    <dd>Every visibility distance in this work is computed from the standard relation used in air-quality
+        monitoring, from a PM2.5 concentration you can set yourself.</dd>
     <dt>Documented</dt>
     <dd>Guidance that moves children indoors above certain pollution levels. Health agencies publish these
         thresholds, and schools act on them.</dd>
@@ -284,24 +361,7 @@
     <dd>The mother. The kite. The blue crayon. The small yellow shirt. Those are invented, and they belong to
         everyone who recognises them.</dd>
   </dl>
-  <p class="fine">Sources:
-    <a href="https://www.who.int/news-room/fact-sheets/detail/ambient-(outdoor)-air-quality-and-health" target="_blank" rel="noopener">WHO — Ambient air quality and health</a> ·
-    <a href="https://earthobservatory.nasa.gov/features/Aerosols" target="_blank" rel="noopener">NASA Earth Observatory — Aerosols</a> ·
-    <a href="https://www.epa.gov/visibility/basic-information-about-visibility" target="_blank" rel="noopener">US EPA — Visibility &amp; haze</a> ·
-    <a href="https://www.science.org/doi/10.1126/science.abq7781" target="_blank" rel="noopener">Kyba et&nbsp;al. 2023, <em>Science</em> — star visibility</a> ·
-    <a href="https://www.unicef.org/media/123156/file/Childhood_Air_Pollution_Key_Messages_2022.pdf" target="_blank" rel="noopener">UNICEF — childhood air pollution</a> ·
-    <a href="https://www.airnow.gov/sites/default/files/2018-09/air-quality-and-outdoor-activity-guidance-2014.pdf" target="_blank" rel="noopener">US EPA AirNow — school outdoor activity guidance</a>
-  </p>
-  <p class="fine">Every painting in this work is by Aanya Sharma, as are the recordings of the washing line and
-    the humming. Everything else you hear is synthesised in the browser except two outdoor ambiences, used under
-    Creative&nbsp;Commons&nbsp;0 from <a href="https://freesound.org/" target="_blank" rel="noopener">Freesound</a>:
-    <em>Maasai camp nature sounds, Africa</em> by <strong>selcukartut</strong> (#504694) ·
-    <em>Birds songs — blackcap and oak jay</em> by <strong>sachajulien</strong> (#734530) ·
-    <em>Kite, seaside</em> by <strong>heigh hoo</strong> (#60661) ·
-    <em>Boy or young child laughing</em> by <strong>obxjohn</strong> (#365632) ·
-    <em>Crickets chirping at night</em> (#383275) ·
-    <em>Whip-poor-wills at night</em> by <strong>mycompasstv</strong> (#572768).
-  </p>
+  <p class="fine">Every painting, recording and word in this work is by Aanya Sharma.</p>
 </div></div>
 
 <div id="title" aria-hidden="true">
@@ -348,15 +408,14 @@
   <h2>The evidence</h2>
   <p>The memories themselves become the evidence. Soot from the windowsill is magnified until PM2.5 can be compared
   with a grain of sand, a human hair and a red blood cell. A slider sets the concentration of fine particles in the
-  air, and the hills you searched for advance and retreat in response — the distance computed with the Koschmieder
-  relation, visual range equals 3.912 divided by the extinction coefficient, the same equation used in air-quality
+  air, and the hills you searched for advance and retreat in response — the distance computed from
+  visual range equals 3.912 divided by the extinction coefficient, the standard relation used in air-quality
   monitoring. Two spheres of light show why molecules make a blue sky and larger particles make a white one. The
   blue crayon draws a graph of visibility against concentration. The constellation rearranges into the finding that
-  99 percent of the world's population breathes air exceeding WHO guideline levels, and separately into the finding
+  99 percent of the world's population breathes air exceeding recommended guideline levels, and separately into the finding
   that night skies are brightening about 9.6 percent a year — which is light pollution, not dust. A breath traces
   where particles of different sizes stop inside the airway, and why a child, breathing faster and taking in more
-  air for their body weight, receives a larger dose. Sources: the World Health Organization, NASA Earth Observatory,
-  the US Environmental Protection Agency, UNICEF, and Kyba and colleagues in Science, 2023.</p>
+  air for their body weight, receives a larger dose.</p>
   <h2>The ending</h2>
   <p>Morning again, in the first bedroom. You part the curtains and everything from the whole work is out there at
   once, in one view, altered: the washing line, the rooftops, the hills where the hills used to be. You reach for the
@@ -381,7 +440,7 @@
      [3] ATMOSPHERE — the whole piece is driven by one number: pm (µg/m³ PM2.5).
          Everything visible derives from it through real optics:
            extinction  σ = 3·pm + σ_rayleigh   (Mm⁻¹, dry fine-mode approximation)
-           visual range Vr = 3.912 / σ         (Koschmieder)
+           visual range Vr = 3.912 / σ         (standard visibility relation)
            transmission T(d) = exp(−σ·d)       (Beer–Lambert)
          Distant things are blended toward AIRLIGHT, never toward flat grey.
          This is why the polluted view has depth: each layer loses contrast by
@@ -524,7 +583,7 @@ const MASS_EFF = 3.0;            // m²/g — dry fine-mode mass scattering effi
 
 function airFromPM(pm){
   const sigma = MASS_EFF*pm + SIG_RAYLEIGH;      // Mm⁻¹
-  const vr = 3.912 / (sigma*1e-6) / 1000;        // km  (Koschmieder)
+  const vr = 3.912 / (sigma*1e-6) / 1000;        // km
   return { sigma, vr };
 }
 function updateAir(){
@@ -702,9 +761,9 @@ function ph(L, fh){ return fh*AP.h*CAM.zoom; }
    ========================================================================= */
 const BEATS = [
   /* ---------------- chapter one: the world came inside ---------------- */
-  { id:"dark",      ch:1, len:1.5,  gate:"curtain", ask:"Take hold of a curtain and drag it aside",
+  { id:"dark",      ch:1, len:1.5,  gate:"curtain", ask:"Drag a curtain aside",
     line:"Before you were awake, someone was already up." },
-  { id:"light",     ch:1, len:1.4,  gate:"sash",    ask:"Pull the brass ball down — it lifts the window",
+  { id:"light",     ch:1, len:1.4,  gate:"sash",    ask:"Pull that down",
     line:"She always opened it first." },
   { id:"breathe",   ch:1, len:1.1,
     line:"And the whole outside came in at once." },
@@ -713,7 +772,7 @@ const BEATS = [
     line:"Sheets that had been in the sun all morning." },
   { id:"shirt",     ch:2, len:1.0,  gate:"shirt",   ask:"",
     line:"" },
-  { id:"kite",      ch:2, len:1.6,  gate:"kite",    ask:"Hold to bring it down · let go and it climbs",
+  { id:"kite",      ch:2, len:1.6,  gate:"kite",    ask:"Hold to pull the kite in",
     line:"You put it up into all of that." },
   { id:"climb",     ch:2, len:1.25,
     line:"" },
@@ -721,9 +780,9 @@ const BEATS = [
     line:"There were so many it was hard to look at one." },
   { id:"wish",      ch:2, len:0.95,
     line:"" },
-  { id:"horizon",   ch:2, len:1.45, gate:"find",    ask:"Move to look · hold still to focus",
+  { id:"horizon",   ch:2, len:1.45, gate:"find",    ask:"Hold still to focus",
     line:"On a good day you could see all the way to the hills." },
-  { id:"drawing",   ch:2, len:1.45, gate:"colour",  ask:"Colour it in — the blue crayon is already worn down",
+  { id:"drawing",   ch:2, len:1.45, gate:"colour",  ask:"Colour it in",
     line:"You never had to think about which blue." },
   /* ------------- chapter three: the change is almost invisible ------------- */
   { id:"r-laundry", ch:3, len:1.35, gate:"brush",   ask:"Brush it off",
@@ -732,7 +791,7 @@ const BEATS = [
     line:"" },
   { id:"r-stars",   ch:3, len:1.35, gate:"rstars",  ask:"Find the shape again",
     line:"" },
-  { id:"r-horizon", ch:3, len:1.3,  gate:"rfind",   ask:"Hold still · then hold to remember",
+  { id:"r-horizon", ch:3, len:1.3,  gate:"rfind",   ask:"Hold to remember",
     line:"" },
   { id:"r-drawing", ch:3, len:1.3,
     line:"She kept it on the fridge for eleven years." },
@@ -750,15 +809,15 @@ const BEATS = [
      Four beats, not seven. Each is a memory from the work that turns into its
      own evidence, and each is built to be felt before it is read. The physics
      stays in the renderer where it belongs; here it only ever gets one line. */
-  { id:"e-dust",    ch:6, len:1.4, gate:"lift",  ask:"Lift what settled on the sill" },
-  { id:"e-hills",   ch:6, len:1.9, gate:"pull",  ask:"Pull the air clean · then let go" },
+  { id:"e-dust",    ch:6, len:1.4, gate:"lift",  ask:"Lift the dust" },
+  { id:"e-hills",   ch:6, len:1.9, gate:"pull",  ask:"Pull the air clean" },
   { id:"e-stars",   ch:6, len:1.6 },
   { id:"e-ledger",  ch:6, len:1.6 },
   /* ---------------- the ending ---------------- */
   { id:"f-curtain", ch:7, len:1.2, gate:"fcurtain", ask:"Part them" },
   { id:"f-both",    ch:7, len:1.6, gate:"fhold",    ask:"Hold the latch" },
   { id:"f-open",    ch:7, len:1.3, gate:"fopen",    ask:"You can still open it" },
-  { id:"f-crayon",  ch:7, len:1.9, gate:"fdraw",    ask:"One small patch of blue, on the glass" },
+  { id:"f-crayon",  ch:7, len:1.9, gate:"fdraw",    ask:"Draw on the glass" },
   { id:"f-rest",    ch:7, len:1.5 },
   { id:"f-end",     ch:7, len:1.7 }
 ];
@@ -4447,18 +4506,26 @@ let MUFFLE = 0;      // 1 = wrapped in cloth
 function ping(){ sfx.found(); }
 
 /* ---- buttons ---- */
-const bSound = document.getElementById("bSound"), bCC = document.getElementById("bCC"), bSkip = document.getElementById("bSkip");
-bSound.addEventListener("click", async ()=>{
-  if (!AC){ if (!initAudio()){ bSound.style.display="none"; return; } }
-  if (AC.state==="suspended"){ try{ await AC.resume(); }catch(_){} }
-  soundOn = !soundOn;
-  bSound.setAttribute("aria-pressed", String(soundOn));
-  bSound.textContent = soundOn ? "Sound on" : "Sound";
-  bSound.setAttribute("aria-label", soundOn?"Turn sound off":"Turn sound on");
-  envGain(master, soundOn?0.85:0, 0.6);
-  if (soundOn && AC){ if (AC.state==="suspended") AC.resume(); if (AMB.state==="idle") loadAmbience(); }
-  if (soundOn && !ccOn) cc("");
-});
+const bCC = document.getElementById("bCC"), bSkip = document.getElementById("bSkip");
+
+/* Sound is not optional and there is no switch for it. Half of this work is in
+   the ambience: the room behind glass, the cloth, her humming, the field, the
+   crickets. A visitor who never finds the button experiences a different, worse
+   piece, and one who turns it off is not choosing between two versions, they are
+   choosing the one that does not work.
+
+   It is started from the Begin press rather than on load, because a browser will
+   not let an audio context run until somebody has clicked something, and Begin
+   is the click. */
+async function startSound(){
+  if (soundOn) return true;
+  if (!AC){ if (!initAudio()) return false; }
+  if (AC.state === "suspended"){ try{ await AC.resume(); }catch(_){} }
+  soundOn = true;
+  envGain(master, 0.85, 1.2);
+  if (AMB.state === "idle") loadAmbience();
+  return true;
+}
 bCC.addEventListener("click", ()=>{
   ccOn = !ccOn;
   bCC.setAttribute("aria-pressed", String(ccOn));
@@ -7851,16 +7918,19 @@ const STARY = {
    card that only tells you a feeling is a poster, and this is a piece about
    something measurable.
 
-   The figures are real: magnitudes are V-band, distances are from Hipparcos and
-   Gaia parallaxes, rounded.
+   Nothing here mentions the air at all. This chapter is the sky as it was, and a
+   card that ended every time on what has been lost would spend the ending three
+   chapters early. The loss gets said once, later, by the same sky with most of
+   it missing.
 
-   Nothing here mentions what the air is doing to any of it. This chapter is the
-   sky as it was, and a card that ended every time on what has been lost would
-   spend the ending three chapters early. The loss gets said once, later, by the
-   same sky with most of it missing.
+   No em dashes either. They are a writer's tic and they read as an aside every
+   time; a comma says the same thing without stopping the sentence.
 
    Mizar and Alcor share one card, because separating them would be the one
-   mistake that ruins the pair — the point of Mizar is Alcor. */
+   mistake that ruins the pair — the point of Mizar is Alcor.
+
+   No citations, no links, no organisations named: this is an artwork, not a
+   paper, and a card that ends in a row of logos stops being part of the sky. */
 const STAR_CARD = {
   mizar: {
     name: "Mizar & Alcor",
@@ -7868,7 +7938,7 @@ const STAR_CARD = {
     bayer: "\u03b6 & 80 Ursae Majoris",
     where: "Ursa Major \u00b7 the handle\u2019s bend",
     lede: "Two stars in the handle of the Big Dipper, famous for having been used as a test of eyesight.",
-    body: "They sit about a fifth of a moon\u2019s width apart, close to the limit of what an unaided eye can separate. Persian astronomers wrote about the pair in the tenth century, and for centuries afterwards seeing both was used as a test of sight \u2014 one that needed no lens, no instrument and no money, and meant the same thing everywhere on Earth.",
+    body: "They sit about a fifth of a moon\u2019s width apart, close to the limit of what an unaided eye can separate. Persian astronomers wrote about the pair in the tenth century, and for centuries afterwards seeing both was used as a test of sight, one that needed no lens, no instrument and no money. Anyone under a clear sky could take it, and passing meant the same thing everywhere on Earth.",
     facts: [["Magnitude", "2.23 \u00b7 3.99"], ["Apart", "11.8 arcminutes"], ["Distance", "83 light years"]]
   },
   alkaid: {
@@ -7877,7 +7947,7 @@ const STAR_CARD = {
     bayer: "\u03b7 Ursae Majoris",
     where: "Ursa Major \u00b7 the handle\u2019s tip",
     lede: "The star at the very end of the Big Dipper\u2019s handle, long used in navigation.",
-    body: "For most of human history the Dipper it ends was working equipment: swinging around the pole, it gave people the hour, the season and the way to north. In the nineteenth-century United States the same shape was carried in song \u2014 \u201cFollow the Drinking Gourd\u201d gave escaping enslaved people a direction to hold to with no map and no compass.",
+    body: "For most of human history the Dipper it ends was working equipment: swinging around the pole, it gave people the hour, the season and the way to north. In the nineteenth-century United States the same shape was carried in song, and \u201cFollow the Drinking Gourd\u201d gave escaping enslaved people a direction to hold to with no map and no compass.",
     facts: [["Magnitude", "1.86"], ["Distance", "104 light years"], ["Surface", "17,000 K"]]
   },
   megrez: {
@@ -7885,17 +7955,17 @@ const STAR_CARD = {
     sub: null,
     bayer: "\u03b4 Ursae Majoris",
     where: "Ursa Major \u00b7 handle meets bowl",
-    lede: "The faintest star of the Big Dipper, and usually the first of the seven to disappear in hazy or light-polluted skies.",
-    body: "It sits at the hinge where the handle meets the bowl, so it is the star the whole shape is built on \u2014 take it away and the Dipper comes apart into a bowl and a handle that no longer meet. At magnitude 3.3 it is over four times fainter than Alkaid at the far end, and the last of the seven most people learn to pick out.",
-    facts: [["Magnitude", "3.31"], ["Vs Alkaid", "4\u00d7 fainter"], ["Distance", "58 light years"]]
+    lede: "The faintest of the Big Dipper\u2019s seven stars, sitting at the joint where the handle meets the bowl.",
+    body: "It is the star the whole shape is built on, so taking it away does not make the Dipper fainter, it makes it come apart into a bowl and a handle that no longer meet. At magnitude 3.3 it is the last of the seven most people learn to pick out, which is why anyone who can name all seven has spent real time looking up.",
+    facts: [["Magnitude", "3.31"], ["Distance", "58 light years"]]
   },
   alrischa: {
     name: "Alrischa",
     sub: null,
     bayer: "\u03b1 Piscium",
     where: "Pisces \u00b7 the knot",
-    lede: "The alpha star of Pisces, whose name means \u201cthe cord\u201d \u2014 the knot tying the constellation\u2019s two fish together.",
-    body: "Babylonian tablets already had two fish and a cord here more than two thousand years ago, and the arrangement survived through Greek, Arabic and Latin astronomy into the charts still in use today. Naming the sky is one of the oldest things people have done together \u2014 every culture that could see stars did it, and no two did it the same way.",
+    lede: "The alpha star of Pisces, whose name means \u201cthe cord\u201d, the knot tying the constellation\u2019s two fish together.",
+    body: "Babylonian tablets already had two fish and a cord here more than two thousand years ago, and the arrangement survived through Greek, Arabic and Latin astronomy into the charts still in use today. Naming the sky is one of the oldest things people have done together, and every culture that could see stars did it, no two of them the same way.",
     facts: [["Magnitude", "3.82"], ["Distance", "151 light years"], ["Orbit", "a pair, 700 years"]]
   },
   polaris: {
@@ -8122,8 +8192,7 @@ stEl.innerHTML =
   '<p class="lede"></p>' +
   '<div class="body"></div>' +
   '<dl class="facts"></dl>' +
-  '<p class="src">Magnitudes and distances: Hipparcos and Gaia. Sky brightness: ' +
-    '<a href="https://www.science.org/doi/10.1126/sciadv.1600377" target="_blank" rel="noopener">Falchi et&nbsp;al. 2016</a>.</p>';
+  '<div class="fade" aria-hidden="true"></div>';
 document.body.appendChild(stEl);
 {
   const st = document.createElement("style");
@@ -8212,9 +8281,6 @@ document.body.appendChild(stEl);
   #starcard .fade{ position:sticky; bottom:-1.3rem; height:4.4rem; margin:-4.4rem 0 0;
     pointer-events:none;
     background:linear-gradient(rgba(9,12,27,0) 0%, rgba(9,12,27,.72) 45%, rgba(9,12,27,.99) 100%); }
-  #starcard .src{ margin:.85rem 0 0; font-family:var(--mono); font-size:.545rem; letter-spacing:.06em;
-    line-height:1.7; color:#7f95c4; }
-  #starcard .src a{ color:#a9c2f0; }
 
   /* the chart */
   #starcard .chart .lnk{ stroke:rgba(160,190,255,.34); stroke-width:.7; fill:none; }
@@ -10223,32 +10289,27 @@ const EV_CARDS = [
     h:"This is what had been landing on the windowsill.",
     p:"Soot, brake and tyre dust, smoke, road grit, and particles that form in the air itself out of "+
        "exhaust gases. The mixture is measured by size. PM2.5 means everything under 2.5 micrometres "+
-       "across — small enough to pass the nose and throat entirely and reach the deepest part of the lung.",
-    src:'Definitions and health effects: <a href="https://www.who.int/news-room/fact-sheets/detail/ambient-(outdoor)-air-quality-and-health" target="_blank" rel="noopener">WHO — Ambient air quality and health</a> · '+
-        '<a href="https://www.epa.gov/pm-pollution/particulate-matter-pm-basics" target="_blank" rel="noopener">US EPA — Particulate matter basics</a>' },
+       "across — small enough to pass the nose and throat entirely and reach the deepest part of the lung."
+  },
 
   { id:"e-hills", tag:"how far you could see", lit:true,
     h:"The hills never moved.",
     p:"Fine particles scatter light. That scattered light fills in the space between you and anything "+
        "distant, and contrast falls away with distance — so the farthest things go first, and the sky "+
-       "turns from blue to white. Hold the air clean and the hills come back. They were always there.",
-    src:'The visibility distance shown here is computed with the Koschmieder relation used in air-quality '+
-        'monitoring — <a href="https://www.epa.gov/visibility/basic-information-about-visibility" target="_blank" rel="noopener">US EPA — Visibility &amp; haze</a> · '+
-        'why particles whiten the sky: <a href="https://earthobservatory.nasa.gov/features/Aerosols" target="_blank" rel="noopener">NASA Earth Observatory — Aerosols</a>' },
+       "turns from blue to white. Hold the air clean and the hills come back. They were always there."
+  },
 
   { id:"e-stars", tag:"who this happens to", lit:false,
     h:"Ninety-nine of every hundred people.",
-    p:"99% of the world's population breathes air that exceeds WHO guideline levels, and outdoor air "+
+    p:"99% of the world's population breathes air that exceeds recommended guideline levels, and outdoor air "+
        "pollution is linked to around 4.2 million premature deaths a year. Children take in more air for "+
        "their body weight than adults, breathe faster, and are still growing the lungs they will use for "+
        "the rest of their lives.<br><br><em>The stars are a separate story.</em> Most of the ones this work "+
        "took away are lost to artificial light at night, not to dust — night skies are brightening by "+
        "roughly 9.6% a year, which would take a place with 250 visible stars down to about 100 over a "+
        "childhood. Haze makes it worse by scattering that light back down, but the two causes are not "+
-       "the same and this work does not merge them.",
-    src:'<a href="https://www.who.int/news-room/fact-sheets/detail/ambient-(outdoor)-air-quality-and-health" target="_blank" rel="noopener">WHO — 99%, 4.2 million</a> · '+
-        '<a href="https://www.unicef.org/media/123156/file/Childhood_Air_Pollution_Key_Messages_2022.pdf" target="_blank" rel="noopener">UNICEF — why children</a> · '+
-        '<a href="https://www.science.org/doi/10.1126/science.abq7781" target="_blank" rel="noopener">Kyba et al. 2023, <em>Science</em> — 9.6%/yr, 250→100 stars</a>' }
+       "the same and this work does not merge them."
+  }
 ];
 
 function buildEvidenceCards(){
@@ -10258,7 +10319,7 @@ function buildEvidenceCards(){
   for (const c of EV_CARDS){
     const d = document.createElement("div");
     d.className = "card" + (c.lit?" lit":"");
-    d.innerHTML = '<span class="tag">'+c.tag+'</span><h2>'+c.h+'</h2><p>'+c.p+'</p><p class="src">'+c.src+'</p>';
+    d.innerHTML = '<span class="tag">'+c.tag+'</span><h2>'+c.h+'</h2><p>'+c.p+'</p>';
     host.appendChild(d);
     EV.cards[c.id]=d;
   }
@@ -10522,7 +10583,7 @@ function evStars(t, dt, f){
     ctx.font=(MIN*0.019|0)+"px "+MONO;
     ctx.fillStyle=rgba([226,232,244], a*0.7);
     ctx.fillText("of every hundred people breathe air", W*0.5, gy+gw+MIN*0.062);
-    ctx.fillText("above WHO guideline levels", W*0.5, gy+gw+MIN*0.090);
+    ctx.fillText("above recommended guideline levels", W*0.5, gy+gw+MIN*0.090);
     ctx.restore();
   } else {
     /* --- 250 → 100, and this one is light --- */
@@ -11975,6 +12036,37 @@ function onDrag(x,y){
 }
 function onMove(){}
 function onUp(){ DRAW.on=false; }
+/* ---------------------------------------------------------------- the pace card
+   It is up for a few seconds after Begin and then it goes, and it goes early if
+   the visitor is already scrolling — somebody who has started does not need to
+   be told to start. It is deliberately not a dialogue and cannot be clicked
+   through, because there is nothing in it to agree to: it sets a speed and makes
+   a promise, and then the piece gets on with it. */
+const paceEl = document.getElementById("pace");
+let paceT = 0, paceGone = false;
+function showPace(){
+  if (!paceEl || paceGone) return;
+  paceEl.classList.add("on");
+  document.body.classList.add("pacing");
+  paceEl.setAttribute("aria-hidden", "false");
+  paceT = 6.5;
+}
+function hidePace(){
+  if (!paceEl || paceGone) return;
+  paceGone = true; paceT = 0;
+  paceEl.classList.remove("on");
+  document.body.classList.remove("pacing");
+  paceEl.setAttribute("aria-hidden", "true");
+}
+function updPace(dt){
+  if (paceGone || paceT <= 0) return;
+  /* any real scroll takes it away at once. A couple of hundred pixels, so a
+     trackpad twitch or a bounce does not count as having started. */
+  if (window.scrollY > 180){ hidePace(); return; }
+  paceT -= dt;
+  if (paceT <= 0) hidePace();
+}
+
 function onKey(k){
   const b=id();
   if (k==="Enter"){
@@ -12058,7 +12150,7 @@ function frame(now){
   updPlateCam(dt, t);
   updParticles(dt,t); updClouds(dt); updBirds(dt,t); updBugs(dt,t);
   updTrain(dt); updPlane(dt); updLeaves(dt); updMoth(dt,t);
-  updFlashes(dt); updWhisper(dt); updSound(dt,t); updFireflies(dt,t);
+  updFlashes(dt); updWhisper(dt); updSound(dt,t); updFireflies(dt,t); updPace(dt);
   if (soundOn && AIR.h<0.5 && OUTSIDE>0.4 && Math.random()<0.011*(1-AIR.h)*dt*60) sfx.bird();
   curiosity = Math.max(0, curiosity - dt*0.02);
 
@@ -12112,6 +12204,12 @@ function boot(){
       beatEnter = performance.now();
       PROOM.idle = 3.2;   // the card explains nothing, so the scene must, and soon
       try{ beginEl.blur(); }catch(_){}
+      startSound();          // Begin is the gesture the audio context needs
+      /* After the way-in card has actually gone. Its own fade is 1.6s, and at
+         780ms it was still half there and sitting on a higher layer, so you were
+         reading one through the other. The wait is not dead time either: the room
+         is already up behind it. */
+      setTimeout(showPace, 1750);
     };
     beginEl.addEventListener("click", go);
 

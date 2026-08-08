@@ -66,19 +66,11 @@ count appears at the end.
 
 ## Sources
 
-Every figure in the evidence sequence links to its origin. Claims are separated
-into physics, measured, documented, and memory — and the night-sky losses are
-attributed to light pollution, not to particulates, because that is what the
-evidence supports.
-
-- [WHO — Ambient (outdoor) air quality and health](https://www.who.int/news-room/fact-sheets/detail/ambient-(outdoor)-air-quality-and-health)
-- [WHO Global Air Quality Guidelines 2021](https://www.who.int/publications/i/item/9789240034228)
-- [NASA Earth Observatory — Aerosols](https://earthobservatory.nasa.gov/features/Aerosols)
-- [US EPA — Visibility and haze](https://www.epa.gov/visibility/basic-information-about-visibility)
-- [US EPA — Particulate matter basics](https://www.epa.gov/pm-pollution/particulate-matter-pm-basics)
-- [Kyba et al. 2023, *Science* — star visibility](https://www.science.org/doi/10.1126/science.abq7781)
-- [UNICEF — childhood air pollution](https://www.unicef.org/media/123156/file/Childhood_Air_Pollution_Key_Messages_2022.pdf)
-- [US EPA AirNow — school outdoor activity guidance](https://www.airnow.gov/sites/default/files/2018-09/air-quality-and-outdoor-activity-guidance-2014.pdf)
+The artwork contains no external links, no logos, no organisation names and no
+citations: the competition does not permit third-party branding, sources or
+links. Claims are separated into physics, measured, documented, and memory, and
+the night-sky losses are attributed to light pollution rather than to
+particulates, because that is what the evidence supports.
 
 ## Repository layout
 

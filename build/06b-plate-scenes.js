@@ -314,16 +314,19 @@ const STARY = {
    card that only tells you a feeling is a poster, and this is a piece about
    something measurable.
 
-   The figures are real: magnitudes are V-band, distances are from Hipparcos and
-   Gaia parallaxes, rounded.
+   Nothing here mentions the air at all. This chapter is the sky as it was, and a
+   card that ended every time on what has been lost would spend the ending three
+   chapters early. The loss gets said once, later, by the same sky with most of
+   it missing.
 
-   Nothing here mentions what the air is doing to any of it. This chapter is the
-   sky as it was, and a card that ended every time on what has been lost would
-   spend the ending three chapters early. The loss gets said once, later, by the
-   same sky with most of it missing.
+   No em dashes either. They are a writer's tic and they read as an aside every
+   time; a comma says the same thing without stopping the sentence.
 
    Mizar and Alcor share one card, because separating them would be the one
-   mistake that ruins the pair — the point of Mizar is Alcor. */
+   mistake that ruins the pair — the point of Mizar is Alcor.
+
+   No citations, no links, no organisations named: this is an artwork, not a
+   paper, and a card that ends in a row of logos stops being part of the sky. */
 const STAR_CARD = {
   mizar: {
     name: "Mizar & Alcor",
@@ -331,7 +334,7 @@ const STAR_CARD = {
     bayer: "\u03b6 & 80 Ursae Majoris",
     where: "Ursa Major \u00b7 the handle\u2019s bend",
     lede: "Two stars in the handle of the Big Dipper, famous for having been used as a test of eyesight.",
-    body: "They sit about a fifth of a moon\u2019s width apart, close to the limit of what an unaided eye can separate. Persian astronomers wrote about the pair in the tenth century, and for centuries afterwards seeing both was used as a test of sight \u2014 one that needed no lens, no instrument and no money, and meant the same thing everywhere on Earth.",
+    body: "They sit about a fifth of a moon\u2019s width apart, close to the limit of what an unaided eye can separate. Persian astronomers wrote about the pair in the tenth century, and for centuries afterwards seeing both was used as a test of sight, one that needed no lens, no instrument and no money. Anyone under a clear sky could take it, and passing meant the same thing everywhere on Earth.",
     facts: [["Magnitude", "2.23 \u00b7 3.99"], ["Apart", "11.8 arcminutes"], ["Distance", "83 light years"]]
   },
   alkaid: {
@@ -340,7 +343,7 @@ const STAR_CARD = {
     bayer: "\u03b7 Ursae Majoris",
     where: "Ursa Major \u00b7 the handle\u2019s tip",
     lede: "The star at the very end of the Big Dipper\u2019s handle, long used in navigation.",
-    body: "For most of human history the Dipper it ends was working equipment: swinging around the pole, it gave people the hour, the season and the way to north. In the nineteenth-century United States the same shape was carried in song \u2014 \u201cFollow the Drinking Gourd\u201d gave escaping enslaved people a direction to hold to with no map and no compass.",
+    body: "For most of human history the Dipper it ends was working equipment: swinging around the pole, it gave people the hour, the season and the way to north. In the nineteenth-century United States the same shape was carried in song, and \u201cFollow the Drinking Gourd\u201d gave escaping enslaved people a direction to hold to with no map and no compass.",
     facts: [["Magnitude", "1.86"], ["Distance", "104 light years"], ["Surface", "17,000 K"]]
   },
   megrez: {
@@ -348,17 +351,17 @@ const STAR_CARD = {
     sub: null,
     bayer: "\u03b4 Ursae Majoris",
     where: "Ursa Major \u00b7 handle meets bowl",
-    lede: "The faintest star of the Big Dipper, and usually the first of the seven to disappear in hazy or light-polluted skies.",
-    body: "It sits at the hinge where the handle meets the bowl, so it is the star the whole shape is built on \u2014 take it away and the Dipper comes apart into a bowl and a handle that no longer meet. At magnitude 3.3 it is over four times fainter than Alkaid at the far end, and the last of the seven most people learn to pick out.",
-    facts: [["Magnitude", "3.31"], ["Vs Alkaid", "4\u00d7 fainter"], ["Distance", "58 light years"]]
+    lede: "The faintest of the Big Dipper\u2019s seven stars, sitting at the joint where the handle meets the bowl.",
+    body: "It is the star the whole shape is built on, so taking it away does not make the Dipper fainter, it makes it come apart into a bowl and a handle that no longer meet. At magnitude 3.3 it is the last of the seven most people learn to pick out, which is why anyone who can name all seven has spent real time looking up.",
+    facts: [["Magnitude", "3.31"], ["Distance", "58 light years"]]
   },
   alrischa: {
     name: "Alrischa",
     sub: null,
     bayer: "\u03b1 Piscium",
     where: "Pisces \u00b7 the knot",
-    lede: "The alpha star of Pisces, whose name means \u201cthe cord\u201d \u2014 the knot tying the constellation\u2019s two fish together.",
-    body: "Babylonian tablets already had two fish and a cord here more than two thousand years ago, and the arrangement survived through Greek, Arabic and Latin astronomy into the charts still in use today. Naming the sky is one of the oldest things people have done together \u2014 every culture that could see stars did it, and no two did it the same way.",
+    lede: "The alpha star of Pisces, whose name means \u201cthe cord\u201d, the knot tying the constellation\u2019s two fish together.",
+    body: "Babylonian tablets already had two fish and a cord here more than two thousand years ago, and the arrangement survived through Greek, Arabic and Latin astronomy into the charts still in use today. Naming the sky is one of the oldest things people have done together, and every culture that could see stars did it, no two of them the same way.",
     facts: [["Magnitude", "3.82"], ["Distance", "151 light years"], ["Orbit", "a pair, 700 years"]]
   },
   polaris: {
@@ -585,8 +588,7 @@ stEl.innerHTML =
   '<p class="lede"></p>' +
   '<div class="body"></div>' +
   '<dl class="facts"></dl>' +
-  '<p class="src">Magnitudes and distances: Hipparcos and Gaia. Sky brightness: ' +
-    '<a href="https://www.science.org/doi/10.1126/sciadv.1600377" target="_blank" rel="noopener">Falchi et&nbsp;al. 2016</a>.</p>';
+  '<div class="fade" aria-hidden="true"></div>';
 document.body.appendChild(stEl);
 {
   const st = document.createElement("style");
@@ -675,9 +677,6 @@ document.body.appendChild(stEl);
   #starcard .fade{ position:sticky; bottom:-1.3rem; height:4.4rem; margin:-4.4rem 0 0;
     pointer-events:none;
     background:linear-gradient(rgba(9,12,27,0) 0%, rgba(9,12,27,.72) 45%, rgba(9,12,27,.99) 100%); }
-  #starcard .src{ margin:.85rem 0 0; font-family:var(--mono); font-size:.545rem; letter-spacing:.06em;
-    line-height:1.7; color:#7f95c4; }
-  #starcard .src a{ color:#a9c2f0; }
 
   /* the chart */
   #starcard .chart .lnk{ stroke:rgba(160,190,255,.34); stroke-width:.7; fill:none; }
