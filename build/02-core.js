@@ -359,7 +359,7 @@ const BEATS = [
      chapter mark, no narration and no instruction, because it is not part of the
      memory and it is not asking the visitor for anything. See build/09b-onslaught.js
      for why it is the one beat that runs on a clock rather than on the scroll. */
-  { id:"onslaught", ch:7, len:1.35,
+  { id:"onslaught", ch:7, len:1.0,
     line:"" },
   /* THE RETURN. Chapter 7 has no name, so no chapter mark appears across either of
      these: the visitor is supposed to recognise the room, not be told about it.
@@ -505,7 +505,7 @@ function readTimeline(dt){
      running and released the moment it stops. */
   const oi = typeof onsBeatIndex === "function" ? onsBeatIndex() : -1;
   if (oi >= 0 && onslaughtHolding()){
-    T.ceil = Math.min(T.ceil, ofs[oi] + BEATS[oi].len*0.55);
+    T.ceil = Math.min(T.ceil, ofs[oi] + BEATS[oi].len*0.70);
   }
 
   let want = Math.min(T.target, T.ceil);
@@ -542,7 +542,7 @@ function readTimeline(dt){
      to go back before it. */
   T.floor = 0;
   if (oi >= 0 && onsPlayed()){
-    T.floor = ofs[oi] + BEATS[oi].len*0.55;
+    T.floor = ofs[oi] + BEATS[oi].len*0.70;
     if (want < T.floor) want = T.floor;
   }
   const over = T.target - T.ceil;
@@ -568,7 +568,10 @@ function clampScroll(){
     if (window.scrollY < y0){ window.scrollTo(0, y0); return; }
   }
   if (!T.blocked) return;
-  const y = (T.ceil + 0.34)/TOTAL * max;
+  /* Only a little slack past the ceiling. At 0.34 of a beat-length the scrollbar sat
+     well beyond the end of the beat it was holding, so releasing the onslaught's pin
+     threw the playhead straight through the black tail and into the next scene. */
+  const y = (T.ceil + 0.12)/TOTAL * max;
   if (window.scrollY > y) window.scrollTo(0, y);
 }
 

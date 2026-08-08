@@ -31,8 +31,8 @@ const PRET = {
   tried: 0,         // how many times the window has been asked
   give: 0,          // the millimetre it moves and comes back
   noteT: -1,        // countdown to the notification
-  note: 0,          // 0 nothing, 1 the air reading, 2 her
-  swapT: -1
+  note: 0,          // 0 nothing, 1 the reading
+  begun: 0          // the scene has been set up; do not set it up again
 };
 
 /* The reveal is four seconds. It is the slowest thing in the piece and it should
@@ -42,9 +42,20 @@ const PRET = {
 const PRET_REVEAL = 4.0;
 
 function resetReturn(){
+  /* ONCE. THIS WAS THE GLITCH.
+     onEnter fires every time the eased playhead crosses into this beat, and the
+     playhead crosses back and forth freely whenever the visitor is anywhere near the
+     boundary — a scroll that overshoots and settles is enough. So this ran again and
+     again, and each time it set the reveal back to zero and PULLED THE CURTAINS SHUT
+     AGAIN. Standing near the top of the scene, the room strobed between black and
+     half-lit and the curtains would not stay open, which is exactly the "huge glitch,
+     cannot even get into the scene" that came back from review. It has to happen on
+     arrival and never again. */
+  if (PRET.begun) return;
+  PRET.begun = 1;
   PRET.reveal = 0; PRET.seen = 0; PRET.hover = 0;
   PRET.tried = 0; PRET.give = 0;
-  PRET.noteT = -1; PRET.note = 0; PRET.swapT = -1;
+  PRET.noteT = -1; PRET.note = 0;
   /* The curtains start shut, exactly as they did at the beginning. The opening
      room's own state is reused rather than duplicated, so the drag is not a
      lookalike of the first one, it is the same code with the same weight and the
@@ -75,8 +86,7 @@ function onReturnHandle(x, y){
    reason. Nothing is broken here: no rattle, no judder, no stuck-sash puzzle to
    solve. The handle takes the pull, gives about a millimetre, and comes back,
    which is what a window does when somebody on the other side of the house has
-   decided it stays shut. The explanation arrives afterwards, from her, and it is
-   one sentence long. */
+   decided it stays shut. The reading arrives afterwards, on a phone. */
 function returnWindow(t, dt, live){
   const h = returnHandleAt();
   const near = live && P.active && onReturnHandle(P.x, P.y);
@@ -188,11 +198,7 @@ function drawReturn(t, dt, o){
   /* ---- the phone ---- */
   if (PRET.noteT > 0){
     PRET.noteT -= dt;
-    if (PRET.noteT <= 0){ PRET.note = 1; showNote(1); PRET.swapT = 3.6; }
-  }
-  if (PRET.swapT > 0){
-    PRET.swapT -= dt;
-    if (PRET.swapT <= 0){ PRET.note = 2; showNote(2); }
+    if (PRET.noteT <= 0){ PRET.note = 1; showNote(); }
   }
 
   /* A closed room with bad air outside it. Quiet, muffled, and no gust: there is
@@ -215,33 +221,24 @@ function drawReturn(t, dt, o){
    has been taken down to nothing and a chime here would be the loudest thing in
    the chapter. */
 const noteEl = document.getElementById("note");
-function showNote(kind){
+function showNote(){
   if (!noteEl) return;
-  const t = noteEl.querySelector(".nt"), b = noteEl.querySelector(".nb"),
-        ic = noteEl.querySelector(".ni");
-  if (kind === 2){
-    /* Her. No icon, because a message from your mother does not come with a weather
-       symbol, and no explanation, because the visitor has just been shown the
-       statistics and can see out of the window. "Leave it closed." is an ordinary
-       thing for a parent to send, and that is the entire point: all of that, and it
-       arrives back as one sentence about a window. */
-    ic.textContent = "";
-    ic.classList.add("off");
-    t.textContent = "Mum";
-    b.textContent = "Leave it closed.";
-    noteEl.classList.add("msg");
-  } else {
-    ic.textContent = "⚠️🌫️";
-    ic.classList.remove("off");
-    t.textContent = "Unhealthy: PM2.5 levels elevated";
-    b.textContent = "Keep windows closed. Consider limiting outdoor activity until conditions improve.";
-    noteEl.classList.remove("msg");
-  }
+  /* IT IS THE AIR APP, NOT HER.
+     There was a second state here where the card became a message from his mother
+     reading "Leave it closed." It is gone. A message from a parent is a warmer thing
+     than this moment wants: it puts a person in the room, and the point of the window
+     not opening is that nobody had to be asked. What actually happens is that a phone
+     tells you the number and you leave the window shut, and no one says anything at
+     all. */
+  noteEl.querySelector(".ni").textContent = "\u26a0\ufe0f\ud83c\udf2b\ufe0f";
+  noteEl.querySelector(".nt").textContent = "Unhealthy: PM2.5 levels elevated";
+  noteEl.querySelector(".nb").textContent =
+    "Keep windows closed. Consider limiting outdoor activity until conditions improve.";
   noteEl.classList.add("on");
   noteEl.setAttribute("aria-hidden", "false");
 }
 function hideNote(){
   if (!noteEl) return;
-  noteEl.classList.remove("on", "msg");
+  noteEl.classList.remove("on");
   noteEl.setAttribute("aria-hidden", "true");
 }

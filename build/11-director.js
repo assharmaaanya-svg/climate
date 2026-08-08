@@ -1101,6 +1101,7 @@ document.getElementById("restart").addEventListener("click", ()=>{
      floor they leave behind sits at the first post-pollution beat, so scrollTo(0,0)
      would be snapped straight back and the button would look broken. */
   ONS.played = 0; ONS.running = 0; ONS.t = 0; T.floor = 0;
+  PRET.begun = 0; resetReturn();
   document.body.classList.remove("onslaught");
   SILENCE = 0; onsNoiseStop();
   /* and the lookout starts over: an unticked list, and none of the eleven places
