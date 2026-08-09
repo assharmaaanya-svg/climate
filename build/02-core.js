@@ -334,7 +334,12 @@ const BEATS = [
   /* ---------------- chapter one: the world came inside ---------------- */
   { id:"dark",      ch:1, len:1.5,  gate:"curtain", ask:"Gently pull the curtains apart",
     line:"Mum was always up first." },
-  { id:"light",     ch:1, len:1.4,  gate:"sash",    ask:"Pull the cord down",
+  /* the instruction says what the cord is FOR. "Pull the cord down" is an errand; a cord in
+     a window recess is not self-evidently a window opener, and the visitor who has just
+     opened the curtains is looking for the next thing about the window, not the next thing
+     to drag. The polluted room's cord carries the identical sentence, because it is the
+     identical action and the whole point of that room is that it is the same room. */
+  { id:"light",     ch:1, len:1.4,  gate:"sash",    ask:"Pull the cord down to open the window",
     line:"She always opened it first." },
   /* No line here any more. "And the whole outside came in at once." was doing the
      environment's job for it: the window has just been opened, the ambience opens all the

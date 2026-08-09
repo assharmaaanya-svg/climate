@@ -83,12 +83,26 @@ const SHEETS_AFTER = {
   shadow: { img:"momshadowcoughingcropped.png",
             src:[0.3788,0.2730,0.2137,0.7270],
             box:[0.4125,0.2972,0.1326,0.3116],
-            ink:0.66, dens:0.78, ox:0, oy:0 },
+            ink:0.66, dens:0.78, ox:0, oy:0,
+            /* she stands near the hem, which is the most active part of the mesh, so she
+               follows the cloth at a point low down rather than at its middle, and follows
+               nearly all of it. What is left is a couple of pixels of slip where she is,
+               and a soft edge everywhere else. */
+            follow:0.90, at:[0.45, 0.80] },
   /* and her real skirt, below the hem, in the same wind. The after-pollution painting of it
      is a 1254-square with the skirt filling the frame, so it needs its own source rect; the
      shape is the same one, within half a per cent on aspect, which is why her size on the
      frame is the clean scene's `sk` untouched. */
-  skirt: { img:"skirtafterpollution.png", box:[0.0159,0.0837,0.9681,0.7903] },
+  /* THE SKIRT IS BIGGER THAN THE WOMAN IN IT.
+     It was drawn at the clean chapter's size, which put its waist at 0.0992 of the frame
+     against her shadow's 0.0960 — two pixels of cloth either side of her at 1440, so the
+     skirt read as being exactly her width, which is what a leotard does and not what a
+     gathered cotton skirt does. Twelve per cent larger: the waist goes to 0.1111, which is
+     five pixels clear of her on each side, and the whole silhouette gains the bit of
+     surplus that makes cloth read as cloth hanging on somebody. Her waist still sits inside
+     it, which is the constraint that fixed the scale in the first place. */
+  skirt: { img:"skirtafterpollution.png", box:[0.0159,0.0837,0.9681,0.7903],
+           sk: { w:0.2448, h:0.2672, cx:0.4923, tuck:0.148 } },
   momAt: 2,
   /* how far through the scene she has been touched, and what follows it */
   tapped: 0, coughT: -1, lineT: -1, said: 0, glow: 0,
@@ -161,8 +175,13 @@ function drawSheetsAfter(t, dt, o){
        travels with the sheet instead of hanging in the air when a gust takes it. */
     updSheetsAfterMother(dt);
     drawSkirtOf({ img: SHEETS_AFTER.skirt.img, box: SHEETS_AFTER.skirt.box,
-                  sk: SHEETS.sk, hem: s.box }, t, rect, 1);
-    opt.give = 0.46;
+                  sk: SHEETS_AFTER.skirt.sk, hem: s.box }, t, rect, 1);
+    /* HER SHEET BARELY MOVES, AND THAT IS NOT A COMPROMISE.
+       She is standing right behind it with both hands on it. At 0.46 it billowed nearly as
+       much as its unheld neighbours, and the hem — the most active part of any cloth mesh —
+       swung far enough out from under her that the mask took a piece of her. Held cloth does
+       not billow; 0.24 is a sheet with somebody's weight against it. */
+    opt.give = 0.24;
     opt.deform = clothDeform(s.box, opt);
     drawCloth(IMG[s.img], s.box, opt);
     drawShadowOf(SHEETS_AFTER.shadow, rect, 1, opt.deform, s.box);

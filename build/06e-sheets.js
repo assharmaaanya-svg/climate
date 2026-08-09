@@ -368,7 +368,57 @@ function shadowBuf(img, src, w, h, ink){
   SHBUF.set(key, c);
   return c;
 }
-/* cfg: { img, box, src, ink, dens } — `box` is where she falls on the frame,
+/* THE EDGE OF THE CLOTH IS NOT A KNIFE.
+   Her shadow used to be clipped to the sheet's outline with ctx.clip, and the visible result
+   under a gust was a straight diagonal line through her: the hem travels furthest of any part
+   of the mesh, she reaches nearly down to it, and a rigid shadow cannot follow a displacement
+   that varies across its own width. Some encroachment is unavoidable — and it is also
+   correct, because there really is no cloth there to fall on any more.
+
+   What was wrong was the hardness. So the mask is feathered: the cloth's outline is filled
+   into a small buffer through a blur, and her shadow is kept only where that mask says there
+   is cloth. Where the sheet has swung out from under her she now fades rather than being
+   sliced, which is what a shadow does at the edge of a backlit sheet anyway.
+
+   It all happens in a buffer the size of her own box rather than the frame, and the cloth
+   path is translated into that buffer, so this costs a few hundred pixels square per frame
+   and not a megapixel. */
+/* Two buffers, made once and reused. They are rebuilt every frame — the cloth moves — but
+   allocating a canvas per frame hands the collector a megabyte a second, which shows up as a
+   stutter every few seconds and nowhere else. */
+let SHMASK = null, SHCUT = null;
+function shadowScratch(which, w, h){
+  const cur = which === "mask" ? SHMASK : SHCUT;
+  if (cur && cur.width === w && cur.height === h) return cur;
+  const c = document.createElement("canvas");
+  c.width = w; c.height = h;
+  if (which === "mask") SHMASK = c; else SHCUT = c;
+  return c;
+}
+/* THE MASK IS BUILT AT HALF RESOLUTION, deliberately. It is a soft-edged silhouette with no
+   detail in it — the whole point is that its boundary is a gradient — and a blur is the most
+   expensive thing in this scene, so doing it over a quarter of the pixels and scaling the
+   result up costs nothing anybody can see and gave back the frames the full-resolution
+   version was taking. */
+const SHMASK_S = 0.5;
+function shadowMask(w, h, x0, y0, deform, feather){
+  const mw = Math.max(12, Math.round(w*SHMASK_S)), mh = Math.max(12, Math.round(h*SHMASK_S));
+  const buf = shadowScratch("mask", mw, mh);
+  const g = buf.getContext("2d");
+  g.setTransform(1,0,0,1,0,0);
+  g.clearRect(0,0,mw,mh);
+  g.filter = "blur(" + Math.max(1, feather*SHMASK_S).toFixed(2) + "px)";
+  g.fillStyle = "#ffffff";
+  /* the cloth's own silhouette this frame, walked in the buffer's coordinates */
+  g.save();
+  g.scale(SHMASK_S, SHMASK_S);
+  g.translate(-x0, -y0);
+  g.fill(clothPath(deform));
+  g.restore();
+  g.filter = "none";
+  return buf;
+}
+/* cfg: { img, box, src, ink, dens, follow, at } — `box` is where she falls on the frame,
    `src` what to read out of the file when the two are not the same rect. */
 function drawShadowOf(cfg, rect, a, deform, sb){
   const sh = IMG[cfg.img];
@@ -380,24 +430,38 @@ function drawShadowOf(cfg, rect, a, deform, sb){
   const buf = shadowBuf(sh, cfg.src || cfg.box, dw, dh,
                         cfg.ink === undefined ? 1 : cfg.ink);
 
-  /* She does not ripple, but the surface she is being cast onto does travel,
-     and a shadow pinned to the screen while the cloth slides out from under it
-     loses an arm to the clip. So the shadow takes a little over half of the
-     sheet's bulk drift — the displacement at its middle, not at any point on
-     its surface, so nothing of the ripple reaches her. At this amplitude it is
-     a handful of pixels: she still reads as standing perfectly still. */
-  const mid = deform(0.5, 0.55);
-  const ox = (mid.x - (rect.x + (sb[0] + sb[2]*0.5)*rect.w)) * 0.58;
-  const oy = (mid.y - (rect.y + (sb[1] + sb[3]*0.55)*rect.h)) * 0.58;
-
-  ctx.save();
-  ctx.clip(clothPath(deform));
-  ctx.globalCompositeOperation = "multiply";
-  ctx.globalAlpha = a*(cfg.dens === undefined ? 0.70 : cfg.dens);
+  /* She does not ripple, but the surface she is being cast onto does travel, and a shadow
+     pinned to the screen while the cloth slides out from under it loses an arm. So the
+     shadow takes most of the sheet's bulk drift — the displacement at ONE point, not at any
+     point on her own surface, so nothing of the ripple reaches her. `at` is which point:
+     the middle of the cloth by default, and lower down for a figure who stands near the
+     hem, because that is where the mesh is most active and where the mask bites. */
+  const at = cfg.at || [0.5, 0.55];
+  const fl = cfg.follow === undefined ? 0.58 : cfg.follow;
+  const mid = deform(at[0], at[1]);
+  const ox = (mid.x - (rect.x + (sb[0] + sb[2]*at[0])*rect.w)) * fl;
+  const oy = (mid.y - (rect.y + (sb[1] + sb[3]*at[1])*rect.h)) * fl;
   /* and anything the figure herself is doing, in fractions of the frame — a
      cough moves a body, and the shadow of a body that moves moves with it */
   const kx = (cfg.ox || 0)*rect.w, ky = (cfg.oy || 0)*rect.h;
-  ctx.drawImage(buf, rect.x + bx*rect.w + ox + kx, rect.y + by*rect.h + oy + ky, dw, dh);
+  const px = rect.x + bx*rect.w + ox + kx, py = rect.y + by*rect.h + oy + ky;
+
+  /* her, on white, kept only where there is cloth, with a soft boundary */
+  const mask = shadowMask(dw, dh, px, py, deform, Math.max(2, dw*0.045));
+  const cw = Math.max(16, Math.round(dw)), chh = Math.max(16, Math.round(dh));
+  const cut = shadowScratch("cut", cw, chh);
+  const cg = cut.getContext("2d");
+  cg.setTransform(1,0,0,1,0,0);
+  cg.globalCompositeOperation = "source-over";
+  cg.clearRect(0, 0, cw, chh);
+  cg.drawImage(buf, 0, 0, cw, chh);
+  cg.globalCompositeOperation = "destination-in";
+  cg.drawImage(mask, 0, 0, cw, chh);
+
+  ctx.save();
+  ctx.globalCompositeOperation = "multiply";
+  ctx.globalAlpha = a*(cfg.dens === undefined ? 0.70 : cfg.dens);
+  ctx.drawImage(cut, px, py, dw, dh);
   ctx.restore();
 }
 function drawShadow(rect, a, deform, sb){

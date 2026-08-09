@@ -819,7 +819,7 @@ function updText(now, dt){
     if (PRET.reveal < 0.55) askTxt = "";
     else if (!gateMet("pcurtain")) askTxt = B.ask;
     /* and the cord is not offered until the polluted view has been looked at */
-    else if (!PRET.tried) askTxt = (PRET.look > PRET_LOOK) ? "Pull the cord down" : "";
+    else if (!PRET.tried) askTxt = (PRET.look > PRET_LOOK) ? "Pull the cord down to open the window" : "";
     else askTxt = "";
   } else if (!lineFirst){
     askTxt = "";
@@ -1344,6 +1344,11 @@ window.__bluer = {
   sharp(){ return { w:LSHARP.width, h:LSHARP.height, want:Math.round(W*DPR)+"x"+Math.round(H*DPR) }; },
   get pace(){ return { gone:paceGone, t:+paceT.toFixed(2), up:+paceUp.toFixed(2), ask:Math.round(paceAsk) }; },
   cord(){ return cordBall(); },
+  /* the cloth mesh and her size, so a harness can rebuild the exact clip outline the scene
+     used this frame instead of approximating it */
+  deform(box, o){ return clothDeform(box, o); },
+  sk(){ return SHEETS.sk; },
+
   card(id){ showStarStory(id); },
   cardHide(){ hideStarStory(); },
   say: sayLine,
