@@ -43,49 +43,76 @@ const SHEETS_AFTER = {
        closer in than the rest. Moved by measurement off the render, not by re-deriving
        the crop, which would move all five. */
     { img:"sheetsafterpollution2.png", src:[0.1481,0.2086,0.2233,0.4946], box:[ 0.1563,0.1528,0.2069,0.4074] },
-    /* HER SHEET. Nothing special is declared about it: what masks her is this cloth's own
-       alpha, taken by rendering it a second time, so the mask needs no measurement of where
-       the ink sits inside the crop and no assumption that the hem is straight. It is not. */
     { img:"sheetsafterpollution3.png", src:[0.3785,0.2208,0.2397,0.5510], box:[ 0.3777,0.1640,0.2238,0.4573] },
     { img:"sheetsafterpollution4.png", src:[0.6155,0.2159,0.2184,0.4897], box:[ 0.5962,0.1663,0.2028,0.4042] },
     { img:"sheetsafterpollution5.png", src:[0.8262,0.1865,0.1738,0.5853], box:[ 0.8160,0.1505,0.1670,0.5000] }
   ],
-  /* HER, SEEN ONLY THROUGH THE CLOTH.
-     She stands behind the third sheet with the polluted sunset behind her, and the sheet is
-     what we see her on. Every pixel of her is masked to that sheet: nothing of her exists
-     below its hem, beyond either side, or above it. The sheet is the window.
+  /* HER, BUILT THE WAY SHE IS BUILT IN THE CLEAN CHAPTER.
+     She was wrong here before: a semi-transparent cut-out of her whole body laid behind the
+     sheet, at a size I had picked, with no skirt below the hem and nothing falling on the
+     cloth. So she was neither a shadow nor a person — she was a faint picture behind a sheet,
+     and small enough to miss entirely.
 
-     THIS IS WHY SHE IS A WHOLE FIGURE AND NOT A CROP. She used to be the head-to-waist crop
-     with her painted skirt drawn separately below the hem, which meant her actual body hung
-     out from under the washing — a woman standing in front of a sheet with her skirt showing,
-     rather than a shape you notice through one. The skirt is gone. The sprite is her entire
-     body, and the cloth simply runs out before her legs do, which is what happens when you
-     look at somebody through a sheet on a line.
+     She is now the same three-part figure the clean line has, in the same order: her skirt,
+     then the sheet, then her shadow cast onto that sheet and clipped to it.
 
-     SCALE. Her head sits where the clean chapter's does, with the same 0.117 of clear cloth
-     above it, and her waist falls on the hem — those two together fix the height, since her
-     waist is 0.517 of the way down this sprite. The width is that height at the aspect the
-     clean chapter's plate imposes. So the visible band is head to hips, and everything from
-     the hips down is behind cloth that is not there.
+     HER BOX IS NOT THE CLEAN SCENE'S BOX, AND IT CANNOT BE. The two crops do not start at
+     the same part of her: in the clean sprite her arms are straight up, so the top of that
+     crop is her HANDS and her head sits a quarter of the way down it; in this one her hand
+     is at her mouth and the top of the crop is the top of her head. Drawn into the clean
+     rect she was therefore stood up to where the fingertips had been — head against the
+     pins, shoulders across the middle of the cloth, looming.
 
-     DENSITY. The sprite is a near-black cut-out on transparency, and multiply against a
-     transparent pixel returns the source, so it is composited into a white buffer first and
-     let in at `ink` — 0.66 puts it at the same mean density as the clean chapter's grey
-     shadow. It is multiplied UNDER nothing and OVER the cloth, which is what keeps the
-     sheet's own weave, staining and folds visible through her: multiply cannot brighten and
-     cannot cover, so the fabric stays on top of her by construction rather than by layering. */
-  shadow: { img:"momshadowcoughingafterpollution.png",
-            src:[0.3780,0.1435,0.2145,0.7440],
-            box:[0.4040,0.2810,0.1447,0.6583],
+     SHE IS ONE FIGURE, NOT A TORSO AND A SKIRT. This is the thing that was wrong and it was
+     not a matter of a few pixels: the crop's bottom edge is her WAIST, and it was sitting
+     0.0125 of the frame above the sheet's hem while the mask faded her out over the last
+     inch of cloth as well. So she ended in mid air, there was a band of bare sheet under
+     her, and then a skirt began on its own — a woman cut in half.
+
+     Her box now ends exactly ON the hem, 0.2740 + 0.3473 = 0.6213, and the mask is pushed
+     PAST the hem rather than inset from it, so a lifting hem can never take a slice off the
+     join. Her waist meets the top of the skirt at the one line where the cloth stops and the
+     skirt takes over, which is how the clean chapter has always worked.
+
+     The size then follows from two things and nothing else. Vertically: her feet on the hem,
+     and her head with the same 0.117 of clear cloth above it that the clean chapter leaves,
+     which fixes the height at 0.3473. Horizontally: the aspect the clean chapter's plate
+     imposes, 0.1326/0.3116, which is 0.1478. Her waist is 0.724 of that — and the skirt's
+     `sk` below is then solved so its own width at the hem is the same number. Same size at
+     the join, because they are the same body.
+
+     The sprite is a cut-out on transparency rather than a figure on white, so it goes
+     through the white buffer in shadowBuf and is let in at `ink` — the file is nearly
+     black, and the clean shadow it has to match is a mid grey. 0.66 puts the two at the
+     same mean density, so she reads as a shadow on cloth and not as a hole in it. */
+  shadow: { img:"momshadowcoughingcropped.png",
+            src:[0.3788,0.2730,0.2137,0.7270],
+            box:[0.4020,0.2740,0.1478,0.3473],
             ink:0.66, dens:0.78, ox:0, oy:0,
-            /* softened a little more than the clean figure: she is being read through a
-               second layer of cloth in dirtier air, and the brief for her is diffused rather
-               than crisp. It is still a shadow and not a smudge. */
-            blur:0.017,
             /* SHE DOES NOT SWAY. A shadow is cast by a body onto a surface, and the body is
-               standing still. If it drifts with the cloth it stops being a shadow and starts
-               being a pattern printed on the sheet. */
+               standing still; if it drifts with the cloth it stops being a shadow and becomes
+               a pattern printed on the sheet, which is the one thing this whole approach
+               exists to avoid. It followed 0.90 of the drift as a way of keeping the clip
+               from cutting her, and that is not needed any more — the mask is feathered and
+               her sheet barely moves, so she can be still, which is what she should be. */
             follow:0, at:[0.45, 0.80] },
+  /* HER REAL SKIRT, BELOW THE HEM, IN THE SAME WIND. The after-pollution painting of it is a
+     1254-square with the skirt filling the frame, so it needs its own source rect.
+
+     THE SKIRT IS THE SAME WIDTH AS SHE IS, AT THE ONE PLACE THEY MEET.
+     Not bigger, not smaller — solved. Her waist is 0.724 of her box's width and the skirt
+     sprite's own cloth at the hem is 0.454 of its drawn width, so the skirt's width is her
+     waist divided by 0.454, and its height follows from the clean skirt's aspect so the
+     painting is not stretched. `cx` puts the sprite's ink centre, which is 0.509 of its width
+     and not 0.5, on her waist centre.
+
+     Everything below the hem is flare, and flare is what makes it read as a skirt rather than
+     a tube — the width that matters is the width at the join, and at the join they are the
+     same body. Both numbers were then checked against the render, because the boxes measure
+     ink and a visitor sees ink plus softening, and the softening differs between a blurred
+     multiply and a painted sprite. */
+  skirt: { img:"skirtafterpollution.png", box:[0.0159,0.0837,0.9681,0.7903],
+           sk: { w:0.2357, h:0.2573, cx:0.4909, tuck:0.148 } },
   momAt: 2,
   /* how far through the scene she has been touched, and what follows it */
   tapped: 0, coughT: -1, lineT: -1, said: 0, glow: 0,
@@ -119,16 +146,12 @@ function resetSheetsAfter(){
   SHEETS_AFTER.shadow.ox = 0; SHEETS_AFTER.shadow.oy = 0;
 }
 
-/* WHERE SHE IS ON THE FRAME — meaning the part of her the sheet lets you see, which is her
-   box clipped to the sheet's. She now runs well below the hem in her own coordinates and
-   none of that is visible, so a rect taken from her box alone would put the thing you touch
-   in the meadow under the washing. This is also what the tests read. */
+/* where she is on the frame, for the thing you touch and for the tests. Taken from her
+   shadow's box, exactly as the clean chapter takes it from hers. */
 function saMomRect(rect){
   const b = SHEETS_AFTER.shadow.box;
-  const s = SHEETS_AFTER.src[SHEETS_AFTER.momAt].box;
-  const y0 = Math.max(b[1], s[1]), y1 = Math.min(b[1]+b[3], s[1]+s[3]);
-  return { x: rect.x + b[0]*rect.w, y: rect.y + y0*rect.h,
-           w: b[2]*rect.w, h: Math.max(0, y1-y0)*rect.h };
+  return { x: rect.x + b[0]*rect.w, y: rect.y + b[1]*rect.h,
+           w: b[2]*rect.w, h: b[3]*rect.h };
 }
 
 /* --------------------------------------------------------------------- the scene */
@@ -154,11 +177,17 @@ function drawSheetsAfter(t, dt, o){
 
     if (i !== SHEETS_AFTER.momAt){ drawCloth(IMG[s.img], s.box, opt); continue; }
 
-    /* HER SHEET. Nothing of her is drawn before it — there is no separate skirt any more, and
-       that is the point: the ONLY thing that puts her on screen is the shadow below, and that
-       is masked to this cloth. The sheet goes down first, then she is multiplied onto it, so
-       the cloth's weave, staining and folds sit over her rather than under her. */
+    /* HER SHEET, IN THE CLEAN CHAPTER'S ORDER. Skirt first, so the sheet's own hem covers
+       her waist and there is no seam between the two sprites to hide. Then the sheet,
+       warped like every other one but taking less of the wind, because she is standing
+       right behind it with both hands on it. Then her shadow on the cloth, which is not
+       warped at all — a shadow does not flap — only clipped to the cloth's outline so it
+       travels with the sheet instead of hanging in the air when a gust takes it. */
     updSheetsAfterMother(dt);
+    drawSkirtOf({ img: SHEETS_AFTER.skirt.img, box: SHEETS_AFTER.skirt.box,
+                  sk: SHEETS_AFTER.skirt.sk, hem: s.box,
+                  /* the cough, passed through, so she moves as one body */
+                  ox: SHEETS_AFTER.shadow.ox, oy: SHEETS_AFTER.shadow.oy }, t, rect, 1);
     /* HER SHEET BARELY MOVES, AND THAT IS NOT A COMPROMISE.
        She is standing right behind it with both hands on it. At 0.46 it billowed nearly as
        much as its unheld neighbours, and the hem — the most active part of any cloth mesh —
@@ -167,12 +196,7 @@ function drawSheetsAfter(t, dt, o){
     opt.give = 0.24;
     opt.deform = clothDeform(s.box, opt);
     drawCloth(IMG[s.img], s.box, opt);
-    drawShadowOf(SHEETS_AFTER.shadow, rect, 1, opt.deform, s.box,
-                 ()=>drawCloth(IMG[s.img], s.box, opt));
-    /* exactly what this frame used, kept for __bluer.momProbe(): the only way to ask "is any
-       pixel of her outside the cloth's own alpha" and get a truthful answer is to re-render
-       her and the cloth from the identical state, in the same frame, before anything moves. */
-    SHEETS_AFTER.last = { rect, deform: opt.deform, box: s.box, img: s.img, opt };
+    drawShadowOf(SHEETS_AFTER.shadow, rect, 1, opt.deform, s.box);
   }
 
   /* Her, as something to touch — the same call, the same radius, and in the same place on

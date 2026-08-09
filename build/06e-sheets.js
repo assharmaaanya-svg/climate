@@ -280,9 +280,7 @@ function drawSheetsScene(t, dt, o){
     opt.give = 0.46;
     opt.deform = clothDeform(s.box, opt);
     drawCloth(IMG[s.img], s.box, opt);
-    /* the same sheet, handed over as a way of drawing it: her mask is that cloth's alpha */
-    if (a > 0.005) drawShadow(rect, a, opt.deform, s.box,
-                              ()=>drawCloth(IMG[s.img], s.box, opt));
+    if (a > 0.005) drawShadow(rect, a, opt.deform, s.box);
   }
 
   SHEETS.momFade = lerp(SHEETS.momFade, SHEETS.momGone ? 0 : 1, Math.min(1, dt*0.8));
@@ -361,10 +359,9 @@ const SHADOW_M = 0.07;                 // margin around the figure, in its own b
    source rect never has to reach outside its own image to leave room for the
    blur — which the cropped sprite, whose figure runs to the bottom edge of its
    file, would otherwise do. */
-function shadowBuf(img, src, w, h, ink, soft){
+function shadowBuf(img, src, w, h, ink){
   w = Math.max(16, Math.round(w)); h = Math.max(16, Math.round(h));
-  soft = soft === undefined ? 0.012 : soft;
-  const key = img.src + "|" + w + "x" + h + "|" + ink + "|" + soft;
+  const key = img.src + "|" + w + "x" + h + "|" + ink;
   const hit = SHBUF.get(key);
   if (hit) return hit;
   const c = document.createElement("canvas");
@@ -373,7 +370,7 @@ function shadowBuf(img, src, w, h, ink, soft){
   g.fillStyle = "#ffffff"; g.fillRect(0, 0, w, h);
   const iw = img.naturalWidth, ih = img.naturalHeight;
   const px = w*SHADOW_M/(1+2*SHADOW_M), py = h*SHADOW_M/(1+2*SHADOW_M);
-  g.filter = "blur(" + Math.max(1.2, w*soft) + "px)";
+  g.filter = "blur(" + Math.max(1.2, w*0.012) + "px)";
   g.globalAlpha = ink;
   g.drawImage(img, src[0]*iw, src[1]*ih, src[2]*iw, src[3]*ih,
               px, py, w-2*px, h-2*py);
@@ -414,63 +411,35 @@ function shadowScratch(which, w, h){
    expensive thing in this scene, so doing it over a quarter of the pixels and scaling the
    result up costs nothing anybody can see and gave back the frames the full-resolution
    version was taking. */
-/* THE MASK IS THE CLOTH ITSELF, not a shape standing in for it.
-   Three attempts got this wrong and each failure taught the next one something:
-
-   [1] A hard clip to the mesh outline. Straight diagonal cuts through her whenever a gust
-       moved the sheet further than she moved.
-   [2] The mesh outline, blurred. A blurred shape is soft on BOTH sides of where its outline
-       was, so the mask sat at half strength ON the edge and faded out well past it: she
-       appeared on the sky in a band down the side of the sheet.
-   [3] The mesh outline shrunk by the sheet's transparent margin, then blurred. Better by a
-       factor of twenty, and still wrong — because the painted hem is CURVED. A rectangular
-       inset cannot follow a scalloped edge, and about two hundred pixels of her per frame
-       kept landing just past it at the bottom centre, which the probe found and no amount of
-       arguing about blur tails would have.
-
-   So the mask is made from the sheet's own alpha. The warped cloth is rendered a second time
-   into a buffer; that buffer is drawn into the mask blurred, giving a soft falloff, and then
-   drawn again with `destination-in`, which multiplies the result by the CRISP silhouette. The
-   consequences are all the ones wanted: zero outside the cloth by construction rather than by
-   arithmetic, a soft boundary inside it, an edge that follows every curve and scallop of the
-   painted hem, and — because the cloth's own alpha is part of the product — a figure that is
-   weaker where the fabric is thin and stronger where it is dense, which is what looking at
-   somebody through cloth actually does.
-
-   Full resolution, not half. A half-size mask resamples the crisp pass and bilinear filtering
-   can push alpha a pixel outward, which is exactly the leak this is here to close. */
-function shadowMask(mw, mh, x0, y0, sigma){
+const SHMASK_S = 0.5;
+/* THE MASK MUST NOT REACH PAST THE CLOTH, and a blur reaches both ways.
+   The first version of this filled the cloth's own outline and blurred it, so the mask was
+   half-strength ON the edge and faded out well beyond it — which put her shadow on the sky
+   in a band down the side of the sheet, exactly the "peeking out" that a hard clip at least
+   never did. So the outline is shrunk by `ramp` first and blurred at a third of that: the
+   tail is spent by the time it reaches the real edge, and what is left inside is a gradient
+   over the outer `ramp` pixels of the cloth. A shadow fading out towards the lit edge of a
+   backlit sheet is what happens anyway. */
+function shadowMask(w, h, x0, y0, deform, ramp, ins){
+  const mw = Math.max(12, Math.round(w*SHMASK_S)), mh = Math.max(12, Math.round(h*SHMASK_S));
   const buf = shadowScratch("mask", mw, mh);
   const g = buf.getContext("2d");
   g.setTransform(1,0,0,1,0,0);
   g.clearRect(0,0,mw,mh);
-  /* the cloth, softened: a falloff that spreads both ways. Sampled 1:1 from integer
-     coordinates — a fractional source offset makes the browser resample, and resampling
-     spreads alpha about a pixel outward, which is precisely the leak this exists to close.
-     Everything downstream is drawn back at the same integer position, so the cost is at most
-     half a pixel of placement and the gain is an exact edge. */
-  g.filter = "blur(" + Math.max(0.8, sigma).toFixed(2) + "px)";
-  g.drawImage(TMP2, x0, y0, mw, mh, 0, 0, mw, mh);
+  g.filter = "blur(" + Math.max(0.8, ramp*SHMASK_S/3).toFixed(2) + "px)";
+  g.fillStyle = "#ffffff";
+  /* the cloth's own silhouette this frame, walked in the buffer's coordinates */
+  g.save();
+  g.scale(SHMASK_S, SHMASK_S);
+  g.translate(-x0, -y0);
+  g.fill(clothPath(deform, 16, ins));
+  g.restore();
   g.filter = "none";
-  /* and then held to the cloth's exact silhouette — TWICE, so the mask carries the cloth's
-     alpha squared. Once is enough to be zero where the cloth is absent, but the sprite's edge
-     ramps through single-digit alphas over a pixel or two, and a mask that keeps a two-hundred-
-     and-fifty-fifth of her out there is not literally zero. Squared, an alpha of 8 becomes a
-     quarter of one level and rounds away: the probe goes from tens of pixels a frame to none.
-     It also makes her a touch weaker where the fabric is thin, which is the right direction. */
-  g.globalCompositeOperation = "destination-in";
-  g.drawImage(TMP2, x0, y0, mw, mh, 0, 0, mw, mh);
-  g.drawImage(TMP2, x0, y0, mw, mh, 0, 0, mw, mh);
-  g.globalCompositeOperation = "source-over";
   return buf;
 }
-/* cfg: { img, box, src, ink, dens, blur, follow, at } — `box` is where she falls on the frame,
-   `src` what to read out of the file when the two are not the same rect.
-   `clothDraw` renders the warped sheet, crisply, into whatever context is current. It is a
-   callback rather than a set of numbers because the mask IS that sheet: the caller is the only
-   thing that knows which sprite, which crop and which mesh state, and handing over the numbers
-   to be re-derived here is how the outline and the cloth drift apart. */
-function drawShadowOf(cfg, rect, a, deform, sb, clothDraw){
+/* cfg: { img, box, src, ink, dens, follow, at } — `box` is where she falls on the frame,
+   `src` what to read out of the file when the two are not the same rect. */
+function drawShadowOf(cfg, rect, a, deform, sb){
   const sh = IMG[cfg.img];
   if (!imgReady(sh) || a < 0.005) return;
   const b = cfg.box, m = SHADOW_M;                   // white margin, so the blur
@@ -478,7 +447,7 @@ function drawShadowOf(cfg, rect, a, deform, sb, clothDraw){
   const bw = b[2]*(1+2*m), bh = b[3]*(1+2*m);
   const dw = bw*rect.w, dh = bh*rect.h;
   const buf = shadowBuf(sh, cfg.src || cfg.box, dw, dh,
-                        cfg.ink === undefined ? 1 : cfg.ink, cfg.blur);
+                        cfg.ink === undefined ? 1 : cfg.ink);
 
   /* She does not ripple, but the surface she is being cast onto does travel, and a shadow
      pinned to the screen while the cloth slides out from under it loses an arm. So the
@@ -497,15 +466,17 @@ function drawShadowOf(cfg, rect, a, deform, sb, clothDraw){
   const px = rect.x + bx*rect.w + ox + kx, py = rect.y + by*rect.h + oy + ky;
 
   /* her, on white, kept only where there is cloth, with a soft boundary */
-  /* THE CLOTH IS THE ONLY PLACE SHE EXISTS, on all four sides including the hem — so the
-     sheet is rendered again, on its own, and its alpha is the mask. `sigma` is only how soft
-     the boundary is; it cannot make the mask reach anywhere the cloth is not. */
-  if (!clothDraw) return;
-  offscreen2(clothDraw);
-  const sigma = Math.max(1.5, sb[2]*rect.w*0.020);
+  /* how far in from the cloth's edge the shadow fades, in pixels, converted to the mesh's own
+     u/v so the ramp is the same distance on sides of a sheet that is not square. The bottom
+     goes the other way: it is the hem, where her shadow has to run into the skirt, so the
+     mask is pushed past it and the join is never touched. */
+  const ramp = Math.max(4, sb[2]*rect.w*0.075);
+  const mask = shadowMask(dw, dh, px, py, deform, ramp, {
+    u: ramp/(sb[2]*rect.w),
+    t: ramp/(sb[3]*rect.h),
+    b: -(ramp*1.4)/(sb[3]*rect.h)
+  });
   const cw = Math.max(16, Math.round(dw)), chh = Math.max(16, Math.round(dh));
-  const ix = Math.round(px), iy = Math.round(py);
-  const mask = shadowMask(cw, chh, ix, iy, sigma);
   const cut = shadowScratch("cut", cw, chh);
   const cg = cut.getContext("2d");
   cg.setTransform(1,0,0,1,0,0);
@@ -518,11 +489,11 @@ function drawShadowOf(cfg, rect, a, deform, sb, clothDraw){
   ctx.save();
   ctx.globalCompositeOperation = "multiply";
   ctx.globalAlpha = a*(cfg.dens === undefined ? 0.70 : cfg.dens);
-  ctx.drawImage(cut, ix, iy, cw, chh);
+  ctx.drawImage(cut, px, py, dw, dh);
   ctx.restore();
 }
-function drawShadow(rect, a, deform, sb, clothDraw){
-  drawShadowOf(SHEETS.shadow, rect, a, deform, sb, clothDraw);
+function drawShadow(rect, a, deform, sb){
+  drawShadowOf(SHEETS.shadow, rect, a, deform, sb);
 }
 
 /* ------------------------------------------------------------------ her skirt

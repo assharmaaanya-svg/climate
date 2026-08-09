@@ -225,12 +225,10 @@ function preloadPlates(){
        `imgReady` quietly declines to draw it. */
     "sheetsafterpollution1.png","sheetsafterpollution2.png","sheetsafterpollution3.png",
     "sheetsafterpollution4.png","sheetsafterpollution5.png",
-    /* her, in ONE part: the whole figure, seen only through the cloth. She was briefly two —
-       a crop of her upper body plus her painted skirt drawn below the sheet's hem — and that
-       put her actual body out in the open under the washing instead of behind it. The skirt
-       sprite and the cropped silhouette are both unloaded; the full figure is masked to the
-       sheet, and the sheet simply runs out before her legs do. */
-    "momshadowcoughingafterpollution.png",
+    /* her, in two parts, exactly as the clean line has her: the shadow she casts on her
+       sheet, cropped at the hem because that is where the cloth stops, and her skirt below
+       it. The uncropped full-body version she used to be drawn from is not loaded any more. */
+    "momshadowcoughingcropped.png","skirtafterpollution.png",
     "postpollutionbedroomupdate.png"];
   /* the binocular overlay is not here any more: the lookout draws its field of
      view rather than loading it. See build/06g-lookout.js. */
