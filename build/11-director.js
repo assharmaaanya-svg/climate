@@ -535,32 +535,12 @@ function render(t, dt){
     }
     /* -------------------------------- chapter three */
     case "r-laundry": {
-      setPop({ birds:0.15, butterflies:0.05, dragonflies:0.1, fireflies:0, seeds:0.3 });
-      // the same line, years later. She is not on it, and nothing says so.
+      /* The washing line afterwards. Its own file, built on the clean chapter's parts: the
+         same wind, the same cloth mesh, the same spot() on her. Almost nothing lives here
+         now — no birds and no butterflies, and the fireflies are long gone. */
+      setPop({ birds:0, butterflies:0, dragonflies:0.04, fireflies:0, seeds:0.10 });
       SHEETS.momGone = 1;
-      SHEETS.momFade = lerp(SHEETS.momFade, 0, Math.min(1, dt*0.9));
-      if (getPlate("lineScene")){
-        drawSheetsScene(t, dt, { air: 0.55 + PWASH.progress*0.35, f: T.f });
-        WASH.dust = 0.55;
-        washInteract("brush", dt);
-        updLens(dt, done["brush"]);
-        break;
-      }
-      drawLaundryPlate(t, dt, { air: 0.55 + PWASH.progress*0.35, mother:true, paintedMother:true });
-      PWASH.motherOn = lerp(PWASH.motherOn, 0.45, 0.02);
-      WASH.dust = 0.55;
-      washInteract("brush", dt);
-      if (false) drawLaundry(t, { mother:true });
-      updLens(dt, done["brush"]);
-      pastLens(t, P.x, P.y, LENS.r, LENS.a, (tt,ss)=>{
-        const lineY=AP.y+AP.h*0.20;
-        for (let k=0;k<4;k++){
-          const u=0.10+k*0.24;
-          cloth({ ax:AP.x+u*AP.w, ay:lineY, bx:AP.x+(u+0.20)*AP.w, by:lineY,
-                  h:H*0.34, col:[250,248,242], ph:k*2.1, folds:5, amp:MIN*0.014,
-                  windAmp:MIN*0.036, thin:0.82, pegs:true, seed:k*17 }, tt);
-        }
-      });
+      drawSheetsAfter(t, dt, { gate:"cough", f: T.f });
       break;
     }
     case "r-kite": {
@@ -924,6 +904,8 @@ function gateProgress(g){
     case "find":    return PLOOK.n/3;
     case "rfind":   return PLOOK.recall/0.75;
     case "colour":  return DRAW.strokes/0.55;
+    /* touching her is the whole of it; the rest is the scene answering */
+    case "cough":   return SHEETS_AFTER.said ? 1 : (SHEETS_AFTER.tapped ? 0.6 : 0);
     case "brush":   return WASH.brushed/0.85;
     case "lift":    return EV.lifted/0.72;
     case "pull":    return EV.pull/0.55;
@@ -1056,6 +1038,7 @@ function onEnter(bid){
   if (bid==="horizon" || bid==="r-horizon") resetLookout(bid);
   showLookList(bid==="horizon");
   if (bid==="p-room") resetReturn();
+  if (bid==="r-laundry" && !SHEETS_AFTER.said) resetSheetsAfter();
   if (bid!=="p-room" && bid!=="p-shut") hideNote();
   if (bid==="onslaught") resetOnslaught();
   else { document.body.classList.remove("onslaught"); SILENCE = 0; onsNoiseStop(); }
@@ -1238,6 +1221,7 @@ document.getElementById("restart").addEventListener("click", ()=>{
      would be snapped straight back and the button would look broken. */
   ONS.played = 0; ONS.running = 0; ONS.t = 0; T.floor = 0;
   PRET.begun = 0; resetReturn();
+  resetSheetsAfter(); STARY.wishSaid = 0;
   /* and the waits come back, including any that gave up on the last time through */
   T.wait = 0; for (const k in holdFreed) delete holdFreed[k];
   document.body.classList.remove("onslaught");
@@ -1329,6 +1313,14 @@ window.__bluer = {
   get blocked(){ return T.blocked; },
   get wait(){ return T.wait; },
   get onboarding(){ return onboarding; },
+  get after(){ return SHEETS_AFTER; },
+  /* the beds and the one-shots, by name, because mix() reports the loudest node and the
+     one-shot layers sit at unity while their per-source gains do the actual work */
+  amb(){ const g = L => (L && L.gain) ? +L.gain.gain.value.toFixed(4) : null;
+         return { garden:g(AMB), open:g(AMB2), tunnel:g(AMB3),
+                  hum:g(HUM), cloth:g(RUS), master:master?+master.gain.value.toFixed(4):null }; },
+  momAfter(){ const cam = roomCam(0.05);
+              return saMomRect({ x:cam.x, y:cam.y, w:W, h:H }); },
   sharp(){ return { w:LSHARP.width, h:LSHARP.height, want:Math.round(W*DPR)+"x"+Math.round(H*DPR) }; },
   get pace(){ return { gone:paceGone, t:+paceT.toFixed(2), up:+paceUp.toFixed(2), ask:Math.round(paceAsk) }; },
   cord(){ return cordBall(); },

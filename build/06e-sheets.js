@@ -200,7 +200,14 @@ function clothPath(deform, n){
 function drawCloth(img, box, o){
   if (!imgReady(img)) return;
   const iw = img.naturalWidth, ih = img.naturalHeight;
-  const sx = box[0]*iw, sy = box[1]*ih, sw = box[2]*iw, sh = box[3]*ih;
+  /* SOURCE AND DESTINATION ARE NOT ALWAYS THE SAME RECT.
+     For the clean sheets they are, and deliberately: those sprites were cut from a
+     composite framed exactly like the scene, so the fraction of the file a sheet occupies
+     is the fraction of the frame it should hang in, and one rect can do both jobs. The
+     polluted sheets are 612x408 against a 4:3 environment and their ink sits elsewhere in
+     the file, so they pass `src` for what to read and keep `box` for where to put it. */
+  const sb = o.src || box;
+  const sx = sb[0]*iw, sy = sb[1]*ih, sw = sb[2]*iw, sh = sb[3]*ih;
 
   /* Warp the sprite and stop. Every version of the fold shading has ended up
      painting outside the cloth: clipped to the mesh outline it filled the gaps

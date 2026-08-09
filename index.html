@@ -1073,20 +1073,30 @@ function ph(L, fh){ return fh*AP.h*CAM.zoom; }
 const BEATS = [
   /* ---------------- chapter one: the world came inside ---------------- */
   { id:"dark",      ch:1, len:1.5,  gate:"curtain", ask:"Gently pull the curtains apart",
-    line:"Before you were awake, someone was already up." },
+    line:"Mum was always up first." },
   { id:"light",     ch:1, len:1.4,  gate:"sash",    ask:"Pull the cord down",
     line:"She always opened it first." },
+  /* No line here any more. "And the whole outside came in at once." was doing the
+     environment's job for it: the window has just been opened, the ambience opens all the
+     way, the garden arrives, and saying so as well is narration explaining a thing the
+     visitor is in the middle of experiencing. The beat keeps its length and its silence. */
   { id:"breathe",   ch:1, len:1.1,
-    line:"And the whole outside came in at once." },
+    line:"" },
   /* ---------------- chapter two: life happened outdoors ---------------- */
   { id:"laundry",   ch:2, len:2.10, gate:"sheets",  ask:"Tap your mother to hear her hum",
     line:"Sheets that had been in the sun all morning." },
   { id:"shirt",     ch:2, len:1.0,  gate:"shirt",   ask:"",
     line:"" },
   { id:"kite",      ch:2, len:1.6,  gate:"kite",    ask:"Hold to bring the kite closer",
-    line:"You put it up into all of that." },
+    line:"You never once let go of the string." },
+  /* The fireflies get their one line here, and here rather than anywhere else because
+     this is the beat they actually arrive in: the population ramps them up from a sixth of
+     the way through, which is the same stretch the narration is on screen for, so the
+     sentence and the thing it is about are in the frame together. Nothing is explained and
+     nothing is foreshadowed — they are simply another ordinary part of the evening, which
+     is the whole reason their absence can mean something later without being pointed at. */
   { id:"climb",     ch:2, len:1.25,
-    line:"" },
+    line:"The fireflies always came out before it got properly dark." },
   { id:"stars",     ch:2, len:1.55, gate:"stars",   ask:"Tap a bright star to discover its story",
     line:"There were so many it was hard to look at one." },
   { id:"wish",      ch:2, len:0.95,
@@ -1110,7 +1120,13 @@ const BEATS = [
     ask:"Gently pull the curtains apart", line:"" },
   { id:"p-shut",  ch:7, len:2.0, line:"" },
   /* ------------- chapter three: the change is almost invisible ------------- */
-  { id:"r-laundry", ch:3, len:1.35, gate:"brush",   ask:"Brush it off",
+  /* THE SAME LINE, AFTERWARDS, AND THE SAME THING TO DO WITH IT.
+     The instruction is word for word the one from the clean chapter, and that is the point:
+     the visitor is being invited to do the thing that worked before. What they get is not
+     what they got before, and nothing here warns them. The gate is her, not the dust — this
+     scene is about touching her — and the beat is longer than it was because the cough, the
+     pause and the sentence all have to fit inside it. */
+  { id:"r-laundry", ch:3, len:1.9, gate:"cough",  ask:"Tap your mother to hear her hum",
     line:"Later. The same line, the same sheets." },
   { id:"r-kite",    ch:3, len:1.3,  gate:"rkite",   ask:"Put it up again",
     line:"" },
@@ -1210,7 +1226,11 @@ HOLD_AT.laundry = { done: () => !!SHEETS.tapped,
    then the phone, then the line, and then a breath. Its own file owns the question. */
 HOLD_AT["p-room"] = { done: () => returnDone(),
                       prog: () => returnProgress(),
-                      pass: () => { done.pcurtain = true; PRET.tried = 1; PRET.settled = 1; } };
+                      /* `begun` too, or the pass is undone a moment later: onEnter fires for this
+                beat on the way through and resetReturn zeroes the sequence unless the scene
+                has already been marked as set up. */
+             pass: () => { done.pcurtain = true; PRET.begun = 1;
+                           PRET.tried = 1; PRET.settled = 1; } };
 /* AND NO HOLD MAY EVER BECOME A WALL, whatever goes wrong behind it.
    The three deliberate waits are all satisfiable and all show a pair of hands after a
    few idle seconds, so nobody who is engaging with them will ever reach this. It is
@@ -1605,6 +1625,15 @@ const PLATES = {
     crop:{ x:0.0, y:0.0, w:1.0, h:1.0 },
     bands:[ {to:0.30,p:0.012}, {to:0.62,p:0.035}, {to:0.80,p:0.09}, {to:1.0,p:0.20} ]
   },
+  /* the same washing line, afterwards. The framing matches the clean plate closely — the
+     line and its pins across the top, the fence, the pole on the right, the meadow — which
+     is what lets the polluted sheets hang from the same pins the clean ones did. The haze is
+     in the paint, so this plate asks for no air of its own. */
+  lineAfter: {
+    clean:"postpollutionsheets.png",
+    crop:{ x:0.0, y:0.0, w:1.0, h:1.0 },
+    bands:[ {to:0.30,p:0.012}, {to:0.62,p:0.035}, {to:0.80,p:0.09}, {to:1.0,p:0.20} ]
+  },
   /* the laundry, in four versions. `sheetBand` marks the rows that will be fed
      through the cloth mesh so the painted washing moves. */
   laundry: {
@@ -1695,6 +1724,14 @@ function preloadPlates(){
     "childflykite.png","childflykiteevening.png","childflykite night.png","pollutedkitefly.png",
     "stargaze.png","pollutedstargaze.png","viewoftown.png","viewoftownafterpollution.png",
     "sheetspostpollution.png","sheetspostpollution with basket.png","bedroomopenver2.png",
+    "postpollutionsheets.png",
+    /* the polluted line's five sheets and her coughing silhouette. Without these in the
+       preload the scene drew its environment and then a bare washing line: IMG[] is only
+       populated from this list, so a sprite that is not named here is never loaded and
+       `imgReady` quietly declines to draw it. */
+    "sheetsafterpollution1.png","sheetsafterpollution2.png","sheetsafterpollution3.png",
+    "sheetsafterpollution4.png","sheetsafterpollution5.png",
+    "momshadowcoughingafterpollution.png",
     "postpollutionbedroomupdate.png"];
   /* the binocular overlay is not here any more: the lookout draws its field of
      view rather than loading it. See build/06g-lookout.js. */
@@ -4761,6 +4798,18 @@ function initAudio(){
     KWIND.filt.connect(KWIND.gain); KWIND.gain.connect(master);
     LAUGH.gain = AC.createGain(); LAUGH.gain.gain.value = 1;
     LAUGH.gain.connect(master);
+    /* the polluted bed, built like the other two: its own lowpass into its own gain, so
+       the scene can bring it up on its own without touching the garden. Missing this was why
+       the tunnel recording had no gain node at all and the polluted scene played in silence. */
+    AMB3.gain = AC.createGain(); AMB3.gain.gain.value = 0;
+    AMB3.filt = AC.createBiquadFilter(); AMB3.filt.type = "lowpass";
+    AMB3.filt.frequency.value = 5200; AMB3.filt.Q.value = 0.4;
+    AMB3.filt.connect(AMB3.gain); AMB3.gain.connect(master);
+
+    COUGH.gain = AC.createGain(); COUGH.gain.gain.value = 1;
+    if (AC.createStereoPanner){ COUGH.pan = AC.createStereoPanner();
+      COUGH.gain.connect(COUGH.pan); COUGH.pan.connect(master); }
+    else COUGH.gain.connect(master);
 
     /* The lookout. One layer per place, each of them silent until the visitor is
        looking at that place through the binoculars. */
@@ -4806,6 +4855,16 @@ const HUM  = { buf:null, src:null, gain:null, filt:null, state:"idle" };
 /* the field: open wind off the water, and him */
 const KWIND = { buf:null, src:null, gain:null, filt:null, state:"idle" };
 const LAUGH = { buf:null, gain:null, state:"idle", next: 4 };
+/* Her cough, and the air of the place afterwards.
+   The cough is a one-shot like the laugh — it happens because somebody touched her, and it
+   never loops. It goes through a stereo panner set from where she is standing in the frame,
+   so it arrives from her rather than from the middle of the listener's head. */
+const COUGH = { buf:null, gain:null, pan:null, state:"idle" };
+/* the flat lift on the outdoor bed, shared by both halves so their relationship holds */
+const AMB_LIFT = 1.34;
+/* the polluted bed: a distant tunnel field recording, which is what the outside sounds like
+   when there is nothing living in it */
+const AMB3 = { buf:null, src:null, gain:null, filt:null, state:"idle" };
 /* after dark. The birds that sang all afternoon are not out here now — what is
    out here is insects, and one bird that only calls at night. */
 const CRICK = { buf:null, src:null, gain:null, filt:null, state:"idle" };
@@ -4891,6 +4950,13 @@ function loadAmbience(){
   loadOne(HUM,  "line-hum.wav");
   loadOne(KWIND, "kite-wind.wav");
   loadOne(LAUGH, "kite-laugh.wav");
+  loadOne(COUGH, "mothercoughing.wav");
+  /* The artist's tunnel field recording, renamed on disk from its original
+     839653__guidofm__ambpubl_cinematis_fieldrecording_tunnelambience_distant (1).wav.
+     Same audio, untouched; the name is shortened because spaces and parentheses travel
+     badly through a pipeline that turns every filename into a URL, and the original
+     filename is recorded with its attribution in CREDITS.md where it belongs. */
+  loadOne(AMB3, "amb-tunnel-distant.wav");
   loadOne(CRICK, "night-crickets.wav");
   loadOne(NBIRD, "night-birds.wav");
   for (const k in LOOKA) loadOne(LOOKA[k], LOOKA[k].file);
@@ -4914,8 +4980,50 @@ function fireLaugh(vol){
   s.start(now);
   s.stop(now + d + 0.05);
 }
+/* HER COUGH.
+   Once, when she is touched, at a level that is unmistakable on laptop speakers without
+   being startling — it sits above the bed and the cloth and below nothing. No fade-in: a
+   cough starts where it starts. Panned very slightly toward where she is standing, which is
+   just left of centre, so it is coming from her and not from the interface. */
+function coughSound(panX){
+  if (!AC || !soundOn || COUGH.state !== "ready" || !COUGH.gain) return;
+  if (COUGH.pan) COUGH.pan.pan.setTargetAtTime(
+    cl((panX===undefined ? 0.488 : panX)*2 - 1, -1, 1) * 0.45, AC.currentTime, 0.05);
+  const s2 = AC.createBufferSource();
+  s2.buffer = COUGH.buf;
+  const g = AC.createGain();
+  const now = AC.currentTime, d = COUGH.buf.duration;
+  g.gain.setValueAtTime(0.62, now);
+  g.gain.setValueAtTime(0.62, now + Math.max(0.1, d - 0.45));
+  g.gain.exponentialRampToValueAtTime(0.0001, now + d);
+  s2.connect(g); g.connect(COUGH.gain);
+  s2.start(now);
+  s2.stop(now + d + 0.05);
+}
+
+/* THE POLLUTED BED, AND WHY IT IS LOUDER THAN THE GARDEN EVER WAS.
+   The contrast this scene is built on is not "quieter" — it is "emptier". If the polluted
+   ambience is mixed so low that a visitor on laptop speakers hears nothing, the scene reads
+   as broken audio rather than as a place with less in it. So this bed is set high and kept
+   there, and what makes the scene feel emptier is that almost nothing else is playing over
+   it: no birds, no gust, the cloth well down, and her only when she is touched. */
+function ambienceAfter(v){
+  v = v * (1 - SILENCE);
+  if (!AC || !soundOn || !AMB3.gain) return;
+  if (AMB3.state === "ready" && !AMB3.src) startOne(AMB3);
+  envGain(AMB3.gain, Math.max(0, v*AMB_LIFT), 0.7);
+  if (AMB3.filt) AMB3.filt.frequency.setTargetAtTime(5200, AC.currentTime, 0.8);
+  /* and the clean garden gets out of the way entirely */
+  if (AMB.gain)  envGain(AMB.gain, 0, 1.1);
+  if (AMB2.gain) envGain(AMB2.gain, 0, 1.1);
+}
+/* ...and the reverse, for every scene that is not this one */
+function ambienceAfterOff(){
+  if (AMB3.gain) envGain(AMB3.gain, 0, 1.2);
+}
+
 function startOne(layer){
-  if (layer === LAUGH) return;          // a one-shot has nothing to start
+  if (layer === LAUGH || layer === COUGH) return;   // a one-shot has nothing to start
   if (!AC || !layer.buf || layer.src) return;
   const s = AC.createBufferSource();
   s.buffer = layer.buf; s.loop = true;
@@ -4941,14 +5049,20 @@ function ambience(v, open){
   AMB.vol = v; AMB.open = open;
   if (!AC || !soundOn || !AMB.gain) return;
   if (AMB.state === "ready" && !AMB.src) startOne(AMB);
-  envGain(AMB.gain, Math.max(0, v), 0.55);
+  /* AND THE BED SITS HIGHER THAN IT DID, EVERYWHERE.
+     The environment was mixed to sit under everything, and the result was that on laptop
+     speakers at ordinary volume parts of it were inaudible — a garden you cannot hear is
+     not restraint, it is a missing layer, and it also destroys the contrast the polluted
+     scene depends on. A flat lift of about a third on the outdoor bed, applied here so both
+     halves of the piece move together and their relationship is unchanged. */
+  envGain(AMB.gain, Math.max(0, v*AMB_LIFT), 0.55);
   // shut, it is muffled through glass; open, nothing is taking the top off it
   AMB.filt.frequency.setTargetAtTime(620 + 8600*cl01(open), AC.currentTime, 0.55);
   if (AMB2.gain){
     if (AMB2.state === "ready" && !AMB2.src) startOne(AMB2);
     // held well under the first, and only present once the window is
     const o = cl01((open-0.34)/0.66);
-    envGain(AMB2.gain, Math.max(0, v*0.46*o*o), 0.9);
+    envGain(AMB2.gain, Math.max(0, v*0.46*o*o*AMB_LIFT), 0.9);
     AMB2.filt.frequency.setTargetAtTime(1800 + 7000*cl01(open), AC.currentTime, 0.8);
   }
 }
@@ -7831,7 +7945,14 @@ function clothPath(deform, n){
 function drawCloth(img, box, o){
   if (!imgReady(img)) return;
   const iw = img.naturalWidth, ih = img.naturalHeight;
-  const sx = box[0]*iw, sy = box[1]*ih, sw = box[2]*iw, sh = box[3]*ih;
+  /* SOURCE AND DESTINATION ARE NOT ALWAYS THE SAME RECT.
+     For the clean sheets they are, and deliberately: those sprites were cut from a
+     composite framed exactly like the scene, so the fraction of the file a sheet occupies
+     is the fraction of the frame it should hang in, and one rect can do both jobs. The
+     polluted sheets are 612x408 against a 4:3 environment and their ink sits elsewhere in
+     the file, so they pass `src` for what to read and keep `box` for where to put it. */
+  const sb = o.src || box;
+  const sx = sb[0]*iw, sy = sb[1]*ih, sw = sb[2]*iw, sh = sb[3]*ih;
 
   /* Warp the sprite and stop. Every version of the fold shading has ended up
      painting outside the cloth: clipped to the mesh outline it filled the gaps
@@ -8051,6 +8172,197 @@ function drawSkirt(t, rect, a){
   const ext = dh*0.24;
   ctx.drawImage(skirt, sx, sy + ih*0.006, sw, ih*0.004, -dw*0.5, -ext, dw, ext + 1);
   ctx.drawImage(skirt, sx, sy, sw, sh, -dw*0.5, 0, dw, dh);
+  ctx.restore();
+}
+/* ============================================================================
+   THE WASHING LINE, AFTERWARDS
+
+   The same place and the same structure as the clean laundry chapter, changed by the air.
+   It is built on that chapter's parts rather than beside them: the same wind, the same
+   cloth mesh, the same spot() for her, so the movement quality and the interaction language
+   are not a lookalike — they are the same code.
+
+   WHAT IS DIFFERENT IS WHAT THE VISITOR ALREADY KNOWS. In the clean scene they learned one
+   thing: touch her and you hear her. That lesson is the whole mechanism of this scene. The
+   instruction, if it appears at all, is the identical sentence from the clean chapter —
+   because a prompt that said "tap her to hear her cough" would hand over the ending. They
+   reach for a hum and get a cough. Nothing stages it, nothing warns them, and the sentence
+   that follows is the shortest one in the piece.
+
+   THE SPRITES. Five polluted sheets, each in its own file at 612x408, and the environment
+   at 1448x1086 — different aspect, and the ink sits somewhere else in the frame, so unlike
+   the clean set a single rect cannot serve as both source and destination. Each one carries
+   a measured source rect and a destination on the pin its clean counterpart hung from. The
+   source boxes were measured by sweeping the alpha threshold until the bounding box stopped
+   moving: below about 150 every sheet measured as though it were most of the width of its
+   canvas, because each file also carries a very faint cast shadow beside the cloth. The
+   cloth is what gets pinned; the shadow belongs to the painting.
+
+   NO COLOUR CORRECTION. The polluted sheets were painted for this polluted environment, so
+   they are drawn exactly as they are, at full alpha, with no tint, no multiply and no haze
+   pass — every one of those would fight the matching they already have. The only thing done
+   to them is the wind.
+   ========================================================================== */
+
+const SHEETS_AFTER = {
+  src: [
+    { img:"sheetsafterpollution1.png", src:[0.0000,0.1816,0.1792,0.5019], box:[-0.0075,0.1273,0.1692,0.4213] },
+    { img:"sheetsafterpollution2.png", src:[0.1481,0.2086,0.2233,0.4946], box:[ 0.1730,0.1528,0.2069,0.4074] },
+    { img:"sheetsafterpollution3.png", src:[0.3785,0.2208,0.2397,0.5510], box:[ 0.3777,0.1640,0.2238,0.4573] },
+    { img:"sheetsafterpollution4.png", src:[0.6155,0.2159,0.2184,0.4897], box:[ 0.5962,0.1663,0.2028,0.4042] },
+    { img:"sheetsafterpollution5.png", src:[0.8262,0.1865,0.1738,0.5853], box:[ 0.8160,0.1505,0.1670,0.5000] }
+  ],
+  /* Her. A transparent, already-tinted silhouette rather than the clean scene's figure on
+     pure white, so she is composited normally instead of multiplied — multiply against a
+     transparent pixel returns the source, which would have put a hard rectangle of her own
+     colour across the sheet behind her.
+
+     She stands behind the third sheet, as she did, and she is drawn under it: encountered
+     among the washing rather than presented in front of it. Her box is measured off her own
+     ink and scaled to the height the clean shadow had on the cloth, so she is the same
+     person the same distance away. */
+  mother: { img:"momshadowcoughingafterpollution.png", src:[0.3788,0.1443,0.2137,0.7432] },
+  momAt: 2,
+  /* how far through the scene she has been touched, and what follows it */
+  tapped: 0, coughT: -1, lineT: -1, said: 0, glow: 0,
+  built: false, cloth: []
+};
+
+/* the drop and the horizontal place of her figure, as fractions of the frame. Her drawn
+   height is matched to the clean scene's shadow, which was measured against the painting
+   of her really standing behind that sheet — so this is the painter's scale, not mine. */
+/* SHE IS BEHIND THE SHEET, NOT LOOKING OVER IT.
+   At 0.1735 her head cleared the top of the cloth and she read as somebody peering over the
+   washing line, which is both wrong and faintly comic. Her sheet hangs from 0.164 to 0.621,
+   so she starts well inside that and finishes just below the hem: the head is covered, the
+   feet show, and what the visitor sees of her is a shape through cloth and a pair of feet
+   under it — which is how you actually come across someone hanging washing. */
+const SA_MOM = { cx:0.4880, top:0.2150, h:0.4300 };
+
+/* how long the cough takes to land before anything is said. Long enough that the sentence
+   is a response to it rather than a caption on it, short enough that the visitor is still
+   holding the sound when they read it. */
+const SA_PAUSE = 1.9;
+const SA_LINE  = 7.5;
+
+function buildSheetsAfter(){
+  SHEETS_AFTER.cloth.length = 0;
+  for (let i=0;i<SHEETS_AFTER.src.length;i++){
+    /* their own places in the wind, from the same hash the clean sheets use, so no two of
+       them move together and the line as a whole reads as cloth rather than as a row */
+    SHEETS_AFTER.cloth.push({
+      ph: hash(i*4.7 + 31.7)*TAU,
+      rate: 0.86 + hash(i*9.1 + 5.3)*0.32,
+      slack: 0.80 + hash(i*2.3 + 11.9)*0.45,
+      scale: 1, lag: 0, swing: 0, seen: 0
+    });
+  }
+  SHEETS_AFTER.built = true;
+}
+
+function resetSheetsAfter(){
+  SHEETS_AFTER.tapped = 0; SHEETS_AFTER.coughT = -1;
+  SHEETS_AFTER.lineT = -1; SHEETS_AFTER.said = 0; SHEETS_AFTER.glow = 0;
+}
+
+function saMomRect(rect){
+  const h = SA_MOM.h * rect.h;
+  const w = h * (SHEETS_AFTER.mother.src[2]*1254) / (SHEETS_AFTER.mother.src[3]*1254);
+  return { x: rect.x + SA_MOM.cx*rect.w - w/2, y: rect.y + SA_MOM.top*rect.h, w, h };
+}
+
+/* --------------------------------------------------------------------- the scene */
+function drawSheetsAfter(t, dt, o){
+  o = o||{};
+  if (!getPlate("lineAfter")){ ctx.fillStyle="#5d5344"; ctx.fillRect(0,0,W,H); return; }
+  if (!SHEETS_AFTER.built) buildSheetsAfter();
+  /* the same wind that moves the clean line, so the cloth has the same weight; the scene
+     itself is stiller because there is less in it, not because the air behaves differently */
+  updSheetWind(dt, t);
+
+  drawPlate("lineAfter", { air:0 });
+
+  const cam = roomCam(0.05);
+  const rect = { x: cam.x, y: cam.y, w: W, h: H };
+
+  for (let i=0;i<SHEETS_AFTER.src.length;i++){
+    const s = SHEETS_AFTER.src[i], c = SHEETS_AFTER.cloth[i];
+    const opt = { t, c, x:rect.x, y:rect.y, w:rect.w, h:rect.h,
+                  give: 1, wave1: 5.2, wave2: 3.4, pin: 1, alpha: 1, src: s.src };
+
+    /* she goes in behind her sheet, so the cloth crosses her and she is found among the
+       washing. Her sheet takes less of the wind, exactly as the clean one did: she is
+       standing against it. */
+    if (i === SHEETS_AFTER.momAt){
+      drawSheetsAfterMother(t, dt, rect);
+      opt.give = 0.46;
+    }
+    drawCloth(IMG[s.img], s.box, opt);
+  }
+
+  /* Her, as something to touch — the same call, the same radius, the same halo the clean
+     scene puts on her, because the visitor is meant to recognise this and reach for it. */
+  const mr = saMomRect(rect);
+  spot("mother-after", mr.x + mr.w*0.5, mr.y + mr.h*0.52, MIN*0.15, ()=>{
+    SHEETS_AFTER.tapped = 1;
+    if (SHEETS_AFTER.coughT < 0 && !SHEETS_AFTER.said){
+      SHEETS_AFTER.coughT = 0;
+      coughSound();
+      /* no ripple and no chime. The clean scene answers a touch with a small warm ring
+         because what follows is pleasant; here the answer is the sound itself. */
+      curiosity += 0.3;
+    }
+  }, false);
+
+  /* the cough, then a breath, then the sentence */
+  if (SHEETS_AFTER.coughT >= 0){
+    SHEETS_AFTER.coughT += dt;
+    if (SHEETS_AFTER.coughT > SA_PAUSE && !SHEETS_AFTER.said){
+      SHEETS_AFTER.said = 1;
+      SHEETS_AFTER.lineT = SA_LINE;
+      if (typeof sayLine === "function") sayLine("She’d had asthma for a while by then.", SA_LINE);
+    }
+  }
+  if (SHEETS_AFTER.lineT > 0) SHEETS_AFTER.lineT -= dt;
+
+  /* THE SOUND OF A PLACE WITH LESS IN IT.
+     The bed is the tunnel recording rather than the garden, and it is the loudest thing
+     here by a wide margin: the hierarchy is ambience, then cloth, then her, then nothing.
+     No birds — they are not quiet in this scene, they are absent from it. */
+  OUTSIDE = 1; MUFFLE = 0;
+  /* 0.72 through the shared lift lands the layer just under unity, which is where the
+     loudest thing in a scene should sit: the master trim is 0.85, so there is headroom and
+     nothing is asking the buffer to clip. */
+  ambienceAfter(0.72);
+  lineSound(0.52, SHEETS_AFTER.wind === undefined ? SHEETS.wind : SHEETS.wind, 0);
+
+  if (o.gate && SHEETS_AFTER.said) meet(o.gate);
+}
+
+/* ------------------------------------------------------------------------ her
+   Drawn flat, never deformed, and never brightened. Her pose is doing the work: a figure
+   with a hand up at her face, seen through cloth. There are no particles, no lines coming
+   off her and no animation beyond the small amount of life the scene already has — the
+   brief for her was that her silhouette carries it, and it does.
+
+   She sits UNDER her sheet in the draw order, which is why nothing about her needs keying
+   or feathering: the cloth is the thing with the soft edge, and she is behind it. */
+function drawSheetsAfterMother(t, dt, rect){
+  const im = IMG[SHEETS_AFTER.mother.img];
+  if (!imgReady(im)) return;
+  const s = SHEETS_AFTER.mother.src;
+  const r = saMomRect(rect);
+  const iw = im.naturalWidth, ih = im.naturalHeight;
+
+  /* a very small amount of settle, the kind a person standing still has, and a touch more
+     of it in the second after the cough. Nothing that reads as an animation. */
+  const after = SHEETS_AFTER.coughT >= 0 ? Math.max(0, 1 - SHEETS_AFTER.coughT/1.4) : 0;
+  const bob = Math.sin(t*0.9)*r.h*0.0016 + after*Math.sin(t*7.5)*r.h*0.0042;
+
+  ctx.save();
+  ctx.globalAlpha = 0.88;
+  ctx.drawImage(im, s[0]*iw, s[1]*ih, s[2]*iw, s[3]*ih,
+                r.x, r.y + bob, r.w, r.h);
   ctx.restore();
 }
 /* ============================================================================
@@ -8631,7 +8943,7 @@ const STARY = {
   told:Object.create(null),       // id -> true once its story has been read
   hover:null,
   pan:0, panV:0,
-  wish:0, shoot:null, shootT:7,
+  wish:0, wishSaid:0, shoot:null, shootT:7,
   story:null, storyT:0
 };
 /* ---------------------------------------------------------------- the cards
@@ -8823,6 +9135,16 @@ function drawStarsPlate(t, dt, o){
   STARY.shootT -= dt;
   if (!STARY.shoot && STARY.shootT<=0 && air<0.55){
     STARY.shoot = { x:rnd(W*0.2,W*0.85), y:rnd(H*0.10,H*0.40), vx:rnd(-8,-4), vy:rnd(2.2,4.2), life:1 };
+    /* THE LINE COMES WITH THE STAR, NOT WITH CATCHING IT.
+       It used to be the reward for tapping a streak that crosses the sky in about a second
+       and a half, which made one of the best sentences in the piece a prize for reaction
+       time — most visitors never saw it at all. It is said the moment the star appears. The
+       tap still exists and still does its own small thing, but nothing depends on it.
+       `said` so that a sky full of shooting stars does not repeat itself. */
+    if (!STARY.wishSaid){
+      STARY.wishSaid = 1;
+      whisper("You always wished for the same thing, and never told anyone.");
+    }
     cc("a meteor");
   }
   if (STARY.shoot){
@@ -8892,7 +9214,7 @@ function tapStarP(x,y,air,glow){
   hideStarStory();                 // a tap on empty sky puts the card away
   if (STARY.shoot && Math.hypot(STARY.shoot.x-x, STARY.shoot.y-y) < MIN*0.14){
     STARY.wish=1; STARY.shoot=null; STARY.shootT=rnd(9,18);
-    sfx.wish(); whisper("You always wished for the same thing, and never told anyone.");
+    sfx.wish();
     return true;
   }
   return false;
@@ -10765,7 +11087,7 @@ function drawStars(t, dt, o){
     ctx.restore();
     spot("wish", sh.x, sh.y, MIN*0.13, ()=>{
       SKYV.wish=1; SKYV.wishGlow=1; SKYV.shoot=null; SKYV.shootT=rnd(9,20);
-      sfx.wish(); whisper("You always wished for the same thing, and never told anyone.");
+      sfx.wish();
       curiosity+=0.6;
     });
     if (sh.life<=0){ SKYV.shoot=null; SKYV.shootT=rnd(9,22); }
@@ -14216,32 +14538,12 @@ function render(t, dt){
     }
     /* -------------------------------- chapter three */
     case "r-laundry": {
-      setPop({ birds:0.15, butterflies:0.05, dragonflies:0.1, fireflies:0, seeds:0.3 });
-      // the same line, years later. She is not on it, and nothing says so.
+      /* The washing line afterwards. Its own file, built on the clean chapter's parts: the
+         same wind, the same cloth mesh, the same spot() on her. Almost nothing lives here
+         now — no birds and no butterflies, and the fireflies are long gone. */
+      setPop({ birds:0, butterflies:0, dragonflies:0.04, fireflies:0, seeds:0.10 });
       SHEETS.momGone = 1;
-      SHEETS.momFade = lerp(SHEETS.momFade, 0, Math.min(1, dt*0.9));
-      if (getPlate("lineScene")){
-        drawSheetsScene(t, dt, { air: 0.55 + PWASH.progress*0.35, f: T.f });
-        WASH.dust = 0.55;
-        washInteract("brush", dt);
-        updLens(dt, done["brush"]);
-        break;
-      }
-      drawLaundryPlate(t, dt, { air: 0.55 + PWASH.progress*0.35, mother:true, paintedMother:true });
-      PWASH.motherOn = lerp(PWASH.motherOn, 0.45, 0.02);
-      WASH.dust = 0.55;
-      washInteract("brush", dt);
-      if (false) drawLaundry(t, { mother:true });
-      updLens(dt, done["brush"]);
-      pastLens(t, P.x, P.y, LENS.r, LENS.a, (tt,ss)=>{
-        const lineY=AP.y+AP.h*0.20;
-        for (let k=0;k<4;k++){
-          const u=0.10+k*0.24;
-          cloth({ ax:AP.x+u*AP.w, ay:lineY, bx:AP.x+(u+0.20)*AP.w, by:lineY,
-                  h:H*0.34, col:[250,248,242], ph:k*2.1, folds:5, amp:MIN*0.014,
-                  windAmp:MIN*0.036, thin:0.82, pegs:true, seed:k*17 }, tt);
-        }
-      });
+      drawSheetsAfter(t, dt, { gate:"cough", f: T.f });
       break;
     }
     case "r-kite": {
@@ -14605,6 +14907,8 @@ function gateProgress(g){
     case "find":    return PLOOK.n/3;
     case "rfind":   return PLOOK.recall/0.75;
     case "colour":  return DRAW.strokes/0.55;
+    /* touching her is the whole of it; the rest is the scene answering */
+    case "cough":   return SHEETS_AFTER.said ? 1 : (SHEETS_AFTER.tapped ? 0.6 : 0);
     case "brush":   return WASH.brushed/0.85;
     case "lift":    return EV.lifted/0.72;
     case "pull":    return EV.pull/0.55;
@@ -14737,6 +15041,7 @@ function onEnter(bid){
   if (bid==="horizon" || bid==="r-horizon") resetLookout(bid);
   showLookList(bid==="horizon");
   if (bid==="p-room") resetReturn();
+  if (bid==="r-laundry" && !SHEETS_AFTER.said) resetSheetsAfter();
   if (bid!=="p-room" && bid!=="p-shut") hideNote();
   if (bid==="onslaught") resetOnslaught();
   else { document.body.classList.remove("onslaught"); SILENCE = 0; onsNoiseStop(); }
@@ -14919,6 +15224,7 @@ document.getElementById("restart").addEventListener("click", ()=>{
      would be snapped straight back and the button would look broken. */
   ONS.played = 0; ONS.running = 0; ONS.t = 0; T.floor = 0;
   PRET.begun = 0; resetReturn();
+  resetSheetsAfter(); STARY.wishSaid = 0;
   /* and the waits come back, including any that gave up on the last time through */
   T.wait = 0; for (const k in holdFreed) delete holdFreed[k];
   document.body.classList.remove("onslaught");
@@ -15010,6 +15316,14 @@ window.__bluer = {
   get blocked(){ return T.blocked; },
   get wait(){ return T.wait; },
   get onboarding(){ return onboarding; },
+  get after(){ return SHEETS_AFTER; },
+  /* the beds and the one-shots, by name, because mix() reports the loudest node and the
+     one-shot layers sit at unity while their per-source gains do the actual work */
+  amb(){ const g = L => (L && L.gain) ? +L.gain.gain.value.toFixed(4) : null;
+         return { garden:g(AMB), open:g(AMB2), tunnel:g(AMB3),
+                  hum:g(HUM), cloth:g(RUS), master:master?+master.gain.value.toFixed(4):null }; },
+  momAfter(){ const cam = roomCam(0.05);
+              return saMomRect({ x:cam.x, y:cam.y, w:W, h:H }); },
   sharp(){ return { w:LSHARP.width, h:LSHARP.height, want:Math.round(W*DPR)+"x"+Math.round(H*DPR) }; },
   get pace(){ return { gone:paceGone, t:+paceT.toFixed(2), up:+paceUp.toFixed(2), ask:Math.round(paceAsk) }; },
   cord(){ return cordBall(); },

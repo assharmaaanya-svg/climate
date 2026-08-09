@@ -119,6 +119,15 @@ const PLATES = {
     crop:{ x:0.0, y:0.0, w:1.0, h:1.0 },
     bands:[ {to:0.30,p:0.012}, {to:0.62,p:0.035}, {to:0.80,p:0.09}, {to:1.0,p:0.20} ]
   },
+  /* the same washing line, afterwards. The framing matches the clean plate closely — the
+     line and its pins across the top, the fence, the pole on the right, the meadow — which
+     is what lets the polluted sheets hang from the same pins the clean ones did. The haze is
+     in the paint, so this plate asks for no air of its own. */
+  lineAfter: {
+    clean:"postpollutionsheets.png",
+    crop:{ x:0.0, y:0.0, w:1.0, h:1.0 },
+    bands:[ {to:0.30,p:0.012}, {to:0.62,p:0.035}, {to:0.80,p:0.09}, {to:1.0,p:0.20} ]
+  },
   /* the laundry, in four versions. `sheetBand` marks the rows that will be fed
      through the cloth mesh so the painted washing moves. */
   laundry: {
@@ -209,6 +218,14 @@ function preloadPlates(){
     "childflykite.png","childflykiteevening.png","childflykite night.png","pollutedkitefly.png",
     "stargaze.png","pollutedstargaze.png","viewoftown.png","viewoftownafterpollution.png",
     "sheetspostpollution.png","sheetspostpollution with basket.png","bedroomopenver2.png",
+    "postpollutionsheets.png",
+    /* the polluted line's five sheets and her coughing silhouette. Without these in the
+       preload the scene drew its environment and then a bare washing line: IMG[] is only
+       populated from this list, so a sprite that is not named here is never loaded and
+       `imgReady` quietly declines to draw it. */
+    "sheetsafterpollution1.png","sheetsafterpollution2.png","sheetsafterpollution3.png",
+    "sheetsafterpollution4.png","sheetsafterpollution5.png",
+    "momshadowcoughingafterpollution.png",
     "postpollutionbedroomupdate.png"];
   /* the binocular overlay is not here any more: the lookout draws its field of
      view rather than loading it. See build/06g-lookout.js. */

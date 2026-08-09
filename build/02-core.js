@@ -333,20 +333,30 @@ function ph(L, fh){ return fh*AP.h*CAM.zoom; }
 const BEATS = [
   /* ---------------- chapter one: the world came inside ---------------- */
   { id:"dark",      ch:1, len:1.5,  gate:"curtain", ask:"Gently pull the curtains apart",
-    line:"Before you were awake, someone was already up." },
+    line:"Mum was always up first." },
   { id:"light",     ch:1, len:1.4,  gate:"sash",    ask:"Pull the cord down",
     line:"She always opened it first." },
+  /* No line here any more. "And the whole outside came in at once." was doing the
+     environment's job for it: the window has just been opened, the ambience opens all the
+     way, the garden arrives, and saying so as well is narration explaining a thing the
+     visitor is in the middle of experiencing. The beat keeps its length and its silence. */
   { id:"breathe",   ch:1, len:1.1,
-    line:"And the whole outside came in at once." },
+    line:"" },
   /* ---------------- chapter two: life happened outdoors ---------------- */
   { id:"laundry",   ch:2, len:2.10, gate:"sheets",  ask:"Tap your mother to hear her hum",
     line:"Sheets that had been in the sun all morning." },
   { id:"shirt",     ch:2, len:1.0,  gate:"shirt",   ask:"",
     line:"" },
   { id:"kite",      ch:2, len:1.6,  gate:"kite",    ask:"Hold to bring the kite closer",
-    line:"You put it up into all of that." },
+    line:"You never once let go of the string." },
+  /* The fireflies get their one line here, and here rather than anywhere else because
+     this is the beat they actually arrive in: the population ramps them up from a sixth of
+     the way through, which is the same stretch the narration is on screen for, so the
+     sentence and the thing it is about are in the frame together. Nothing is explained and
+     nothing is foreshadowed — they are simply another ordinary part of the evening, which
+     is the whole reason their absence can mean something later without being pointed at. */
   { id:"climb",     ch:2, len:1.25,
-    line:"" },
+    line:"The fireflies always came out before it got properly dark." },
   { id:"stars",     ch:2, len:1.55, gate:"stars",   ask:"Tap a bright star to discover its story",
     line:"There were so many it was hard to look at one." },
   { id:"wish",      ch:2, len:0.95,
@@ -370,7 +380,13 @@ const BEATS = [
     ask:"Gently pull the curtains apart", line:"" },
   { id:"p-shut",  ch:7, len:2.0, line:"" },
   /* ------------- chapter three: the change is almost invisible ------------- */
-  { id:"r-laundry", ch:3, len:1.35, gate:"brush",   ask:"Brush it off",
+  /* THE SAME LINE, AFTERWARDS, AND THE SAME THING TO DO WITH IT.
+     The instruction is word for word the one from the clean chapter, and that is the point:
+     the visitor is being invited to do the thing that worked before. What they get is not
+     what they got before, and nothing here warns them. The gate is her, not the dust — this
+     scene is about touching her — and the beat is longer than it was because the cough, the
+     pause and the sentence all have to fit inside it. */
+  { id:"r-laundry", ch:3, len:1.9, gate:"cough",  ask:"Tap your mother to hear her hum",
     line:"Later. The same line, the same sheets." },
   { id:"r-kite",    ch:3, len:1.3,  gate:"rkite",   ask:"Put it up again",
     line:"" },
@@ -470,7 +486,11 @@ HOLD_AT.laundry = { done: () => !!SHEETS.tapped,
    then the phone, then the line, and then a breath. Its own file owns the question. */
 HOLD_AT["p-room"] = { done: () => returnDone(),
                       prog: () => returnProgress(),
-                      pass: () => { done.pcurtain = true; PRET.tried = 1; PRET.settled = 1; } };
+                      /* `begun` too, or the pass is undone a moment later: onEnter fires for this
+                beat on the way through and resetReturn zeroes the sequence unless the scene
+                has already been marked as set up. */
+             pass: () => { done.pcurtain = true; PRET.begun = 1;
+                           PRET.tried = 1; PRET.settled = 1; } };
 /* AND NO HOLD MAY EVER BECOME A WALL, whatever goes wrong behind it.
    The three deliberate waits are all satisfiable and all show a pair of hands after a
    few idle seconds, so nobody who is engaging with them will ever reach this. It is

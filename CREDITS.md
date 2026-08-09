@@ -20,6 +20,7 @@ originals are kept at the repository root; `assets/` holds only the loops built 
 | Built file | Where it plays |
 | --- | --- |
 | `assets/amb-garden.wav` | the bed under everything, muffled by whatever is in the way |
+| `assets/amb-tunnel-distant.wav` | the polluted washing line, in place of the garden |
 | `assets/amb-open.wav` | what arrives when the window opens |
 | `assets/line-cloth.wav` | the washing, almost still |
 | `assets/line-gust.wav` | the washing in a gust, layered over the first, never crossfaded |

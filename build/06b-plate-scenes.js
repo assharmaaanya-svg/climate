@@ -305,7 +305,7 @@ const STARY = {
   told:Object.create(null),       // id -> true once its story has been read
   hover:null,
   pan:0, panV:0,
-  wish:0, shoot:null, shootT:7,
+  wish:0, wishSaid:0, shoot:null, shootT:7,
   story:null, storyT:0
 };
 /* ---------------------------------------------------------------- the cards
@@ -497,6 +497,16 @@ function drawStarsPlate(t, dt, o){
   STARY.shootT -= dt;
   if (!STARY.shoot && STARY.shootT<=0 && air<0.55){
     STARY.shoot = { x:rnd(W*0.2,W*0.85), y:rnd(H*0.10,H*0.40), vx:rnd(-8,-4), vy:rnd(2.2,4.2), life:1 };
+    /* THE LINE COMES WITH THE STAR, NOT WITH CATCHING IT.
+       It used to be the reward for tapping a streak that crosses the sky in about a second
+       and a half, which made one of the best sentences in the piece a prize for reaction
+       time — most visitors never saw it at all. It is said the moment the star appears. The
+       tap still exists and still does its own small thing, but nothing depends on it.
+       `said` so that a sky full of shooting stars does not repeat itself. */
+    if (!STARY.wishSaid){
+      STARY.wishSaid = 1;
+      whisper("You always wished for the same thing, and never told anyone.");
+    }
     cc("a meteor");
   }
   if (STARY.shoot){
@@ -566,7 +576,7 @@ function tapStarP(x,y,air,glow){
   hideStarStory();                 // a tap on empty sky puts the card away
   if (STARY.shoot && Math.hypot(STARY.shoot.x-x, STARY.shoot.y-y) < MIN*0.14){
     STARY.wish=1; STARY.shoot=null; STARY.shootT=rnd(9,18);
-    sfx.wish(); whisper("You always wished for the same thing, and never told anyone.");
+    sfx.wish();
     return true;
   }
   return false;

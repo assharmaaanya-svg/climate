@@ -376,7 +376,7 @@ function drawStars(t, dt, o){
     ctx.restore();
     spot("wish", sh.x, sh.y, MIN*0.13, ()=>{
       SKYV.wish=1; SKYV.wishGlow=1; SKYV.shoot=null; SKYV.shootT=rnd(9,20);
-      sfx.wish(); whisper("You always wished for the same thing, and never told anyone.");
+      sfx.wish();
       curiosity+=0.6;
     });
     if (sh.life<=0){ SKYV.shoot=null; SKYV.shootT=rnd(9,22); }

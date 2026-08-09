@@ -97,6 +97,18 @@ function initAudio(){
     KWIND.filt.connect(KWIND.gain); KWIND.gain.connect(master);
     LAUGH.gain = AC.createGain(); LAUGH.gain.gain.value = 1;
     LAUGH.gain.connect(master);
+    /* the polluted bed, built like the other two: its own lowpass into its own gain, so
+       the scene can bring it up on its own without touching the garden. Missing this was why
+       the tunnel recording had no gain node at all and the polluted scene played in silence. */
+    AMB3.gain = AC.createGain(); AMB3.gain.gain.value = 0;
+    AMB3.filt = AC.createBiquadFilter(); AMB3.filt.type = "lowpass";
+    AMB3.filt.frequency.value = 5200; AMB3.filt.Q.value = 0.4;
+    AMB3.filt.connect(AMB3.gain); AMB3.gain.connect(master);
+
+    COUGH.gain = AC.createGain(); COUGH.gain.gain.value = 1;
+    if (AC.createStereoPanner){ COUGH.pan = AC.createStereoPanner();
+      COUGH.gain.connect(COUGH.pan); COUGH.pan.connect(master); }
+    else COUGH.gain.connect(master);
 
     /* The lookout. One layer per place, each of them silent until the visitor is
        looking at that place through the binoculars. */
@@ -142,6 +154,16 @@ const HUM  = { buf:null, src:null, gain:null, filt:null, state:"idle" };
 /* the field: open wind off the water, and him */
 const KWIND = { buf:null, src:null, gain:null, filt:null, state:"idle" };
 const LAUGH = { buf:null, gain:null, state:"idle", next: 4 };
+/* Her cough, and the air of the place afterwards.
+   The cough is a one-shot like the laugh — it happens because somebody touched her, and it
+   never loops. It goes through a stereo panner set from where she is standing in the frame,
+   so it arrives from her rather than from the middle of the listener's head. */
+const COUGH = { buf:null, gain:null, pan:null, state:"idle" };
+/* the flat lift on the outdoor bed, shared by both halves so their relationship holds */
+const AMB_LIFT = 1.34;
+/* the polluted bed: a distant tunnel field recording, which is what the outside sounds like
+   when there is nothing living in it */
+const AMB3 = { buf:null, src:null, gain:null, filt:null, state:"idle" };
 /* after dark. The birds that sang all afternoon are not out here now — what is
    out here is insects, and one bird that only calls at night. */
 const CRICK = { buf:null, src:null, gain:null, filt:null, state:"idle" };
@@ -227,6 +249,13 @@ function loadAmbience(){
   loadOne(HUM,  "line-hum.wav");
   loadOne(KWIND, "kite-wind.wav");
   loadOne(LAUGH, "kite-laugh.wav");
+  loadOne(COUGH, "mothercoughing.wav");
+  /* The artist's tunnel field recording, renamed on disk from its original
+     839653__guidofm__ambpubl_cinematis_fieldrecording_tunnelambience_distant (1).wav.
+     Same audio, untouched; the name is shortened because spaces and parentheses travel
+     badly through a pipeline that turns every filename into a URL, and the original
+     filename is recorded with its attribution in CREDITS.md where it belongs. */
+  loadOne(AMB3, "amb-tunnel-distant.wav");
   loadOne(CRICK, "night-crickets.wav");
   loadOne(NBIRD, "night-birds.wav");
   for (const k in LOOKA) loadOne(LOOKA[k], LOOKA[k].file);
@@ -250,8 +279,50 @@ function fireLaugh(vol){
   s.start(now);
   s.stop(now + d + 0.05);
 }
+/* HER COUGH.
+   Once, when she is touched, at a level that is unmistakable on laptop speakers without
+   being startling — it sits above the bed and the cloth and below nothing. No fade-in: a
+   cough starts where it starts. Panned very slightly toward where she is standing, which is
+   just left of centre, so it is coming from her and not from the interface. */
+function coughSound(panX){
+  if (!AC || !soundOn || COUGH.state !== "ready" || !COUGH.gain) return;
+  if (COUGH.pan) COUGH.pan.pan.setTargetAtTime(
+    cl((panX===undefined ? 0.488 : panX)*2 - 1, -1, 1) * 0.45, AC.currentTime, 0.05);
+  const s2 = AC.createBufferSource();
+  s2.buffer = COUGH.buf;
+  const g = AC.createGain();
+  const now = AC.currentTime, d = COUGH.buf.duration;
+  g.gain.setValueAtTime(0.62, now);
+  g.gain.setValueAtTime(0.62, now + Math.max(0.1, d - 0.45));
+  g.gain.exponentialRampToValueAtTime(0.0001, now + d);
+  s2.connect(g); g.connect(COUGH.gain);
+  s2.start(now);
+  s2.stop(now + d + 0.05);
+}
+
+/* THE POLLUTED BED, AND WHY IT IS LOUDER THAN THE GARDEN EVER WAS.
+   The contrast this scene is built on is not "quieter" — it is "emptier". If the polluted
+   ambience is mixed so low that a visitor on laptop speakers hears nothing, the scene reads
+   as broken audio rather than as a place with less in it. So this bed is set high and kept
+   there, and what makes the scene feel emptier is that almost nothing else is playing over
+   it: no birds, no gust, the cloth well down, and her only when she is touched. */
+function ambienceAfter(v){
+  v = v * (1 - SILENCE);
+  if (!AC || !soundOn || !AMB3.gain) return;
+  if (AMB3.state === "ready" && !AMB3.src) startOne(AMB3);
+  envGain(AMB3.gain, Math.max(0, v*AMB_LIFT), 0.7);
+  if (AMB3.filt) AMB3.filt.frequency.setTargetAtTime(5200, AC.currentTime, 0.8);
+  /* and the clean garden gets out of the way entirely */
+  if (AMB.gain)  envGain(AMB.gain, 0, 1.1);
+  if (AMB2.gain) envGain(AMB2.gain, 0, 1.1);
+}
+/* ...and the reverse, for every scene that is not this one */
+function ambienceAfterOff(){
+  if (AMB3.gain) envGain(AMB3.gain, 0, 1.2);
+}
+
 function startOne(layer){
-  if (layer === LAUGH) return;          // a one-shot has nothing to start
+  if (layer === LAUGH || layer === COUGH) return;   // a one-shot has nothing to start
   if (!AC || !layer.buf || layer.src) return;
   const s = AC.createBufferSource();
   s.buffer = layer.buf; s.loop = true;
@@ -277,14 +348,20 @@ function ambience(v, open){
   AMB.vol = v; AMB.open = open;
   if (!AC || !soundOn || !AMB.gain) return;
   if (AMB.state === "ready" && !AMB.src) startOne(AMB);
-  envGain(AMB.gain, Math.max(0, v), 0.55);
+  /* AND THE BED SITS HIGHER THAN IT DID, EVERYWHERE.
+     The environment was mixed to sit under everything, and the result was that on laptop
+     speakers at ordinary volume parts of it were inaudible — a garden you cannot hear is
+     not restraint, it is a missing layer, and it also destroys the contrast the polluted
+     scene depends on. A flat lift of about a third on the outdoor bed, applied here so both
+     halves of the piece move together and their relationship is unchanged. */
+  envGain(AMB.gain, Math.max(0, v*AMB_LIFT), 0.55);
   // shut, it is muffled through glass; open, nothing is taking the top off it
   AMB.filt.frequency.setTargetAtTime(620 + 8600*cl01(open), AC.currentTime, 0.55);
   if (AMB2.gain){
     if (AMB2.state === "ready" && !AMB2.src) startOne(AMB2);
     // held well under the first, and only present once the window is
     const o = cl01((open-0.34)/0.66);
-    envGain(AMB2.gain, Math.max(0, v*0.46*o*o), 0.9);
+    envGain(AMB2.gain, Math.max(0, v*0.46*o*o*AMB_LIFT), 0.9);
     AMB2.filt.frequency.setTargetAtTime(1800 + 7000*cl01(open), AC.currentTime, 0.8);
   }
 }
