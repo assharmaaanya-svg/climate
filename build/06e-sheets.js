@@ -190,14 +190,19 @@ function clothDeform(box, o){
 /* The outline of that mesh, as a path — the cloth's own silhouette after the
    wind has had it. Walked round the four edges rather than sampled as a grid,
    because only the boundary matters. */
-function clothPath(deform, n, iu, iv){
+function clothPath(deform, n, ins){
   n = n || 14;
-  /* `iu`/`iv` walk the outline inside the cloth rather than along its edge. A blurred shape
-     is soft on BOTH sides of wherever its outline was, so a mask built from the edge itself
+  /* `ins` walks the outline inside the cloth rather than along its edge. A blurred shape is
+     soft on BOTH sides of wherever its outline was, so a mask built from the edge itself
      covers ground outside the cloth and lets a shadow bleed onto the sky. Shrunk first, the
-     blur's outer tail lands on the edge and stops there. */
-  iu = iu || 0; iv = iv || 0;
-  const U = u => iu + u*(1-2*iu), V = v => iv + v*(1-2*iv);
+     blur's outer tail lands on the edge and stops there.
+     The three sides are separate because the BOTTOM must not be inset at all — it is the hem,
+     and the hem is where the figure's shadow has to meet the skirt drawn below it. Fade her
+     out over the last inch of cloth there and she ends in mid air with a gap under her; and
+     since the hem is also the most mobile part of the mesh, the bottom is pushed OUT rather
+     than in, so a lifting hem can never take a slice off the join. */
+  const iu = (ins && ins.u) || 0, it = (ins && ins.t) || 0, ib = (ins && ins.b) || 0;
+  const U = u => iu + u*(1-2*iu), V = v => it + v*(1-it-ib);
   const p = new Path2D();
   let q = deform(U(0),V(0)); p.moveTo(q.x,q.y);
   for (let i=1;i<=n;i++){ q = deform(U(i/n), V(0));   p.lineTo(q.x,q.y); }
@@ -415,7 +420,7 @@ const SHMASK_S = 0.5;
    tail is spent by the time it reaches the real edge, and what is left inside is a gradient
    over the outer `ramp` pixels of the cloth. A shadow fading out towards the lit edge of a
    backlit sheet is what happens anyway. */
-function shadowMask(w, h, x0, y0, deform, ramp, iu, iv){
+function shadowMask(w, h, x0, y0, deform, ramp, ins){
   const mw = Math.max(12, Math.round(w*SHMASK_S)), mh = Math.max(12, Math.round(h*SHMASK_S));
   const buf = shadowScratch("mask", mw, mh);
   const g = buf.getContext("2d");
@@ -427,7 +432,7 @@ function shadowMask(w, h, x0, y0, deform, ramp, iu, iv){
   g.save();
   g.scale(SHMASK_S, SHMASK_S);
   g.translate(-x0, -y0);
-  g.fill(clothPath(deform, 16, iu, iv));
+  g.fill(clothPath(deform, 16, ins));
   g.restore();
   g.filter = "none";
   return buf;
@@ -462,10 +467,15 @@ function drawShadowOf(cfg, rect, a, deform, sb){
 
   /* her, on white, kept only where there is cloth, with a soft boundary */
   /* how far in from the cloth's edge the shadow fades, in pixels, converted to the mesh's own
-     u/v so the inset is the same distance on all four sides of a sheet that is not square */
+     u/v so the ramp is the same distance on sides of a sheet that is not square. The bottom
+     goes the other way: it is the hem, where her shadow has to run into the skirt, so the
+     mask is pushed past it and the join is never touched. */
   const ramp = Math.max(4, sb[2]*rect.w*0.075);
-  const mask = shadowMask(dw, dh, px, py, deform, ramp,
-                          ramp/(sb[2]*rect.w), ramp/(sb[3]*rect.h));
+  const mask = shadowMask(dw, dh, px, py, deform, ramp, {
+    u: ramp/(sb[2]*rect.w),
+    t: ramp/(sb[3]*rect.h),
+    b: -(ramp*1.4)/(sb[3]*rect.h)
+  });
   const cw = Math.max(16, Math.round(dw)), chh = Math.max(16, Math.round(dh));
   const cut = shadowScratch("cut", cw, chh);
   const cg = cut.getContext("2d");

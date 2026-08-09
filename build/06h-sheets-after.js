@@ -63,18 +63,23 @@ const SHEETS_AFTER = {
      rect she was therefore stood up to where the fingertips had been — head against the
      pins, shoulders across the middle of the cloth, looming.
 
-     So she is placed off the one landmark the poses share and the one thing she has to
-     agree with: her waist. It is the bottom of both crops, and it is where her skirt
-     starts. The skirt sprite is drawn from a fixed place on the frame, and at the sheet's
-     hem its cloth runs from 0.4446 to 0.5438 — so her waist has to fit inside that, or her
-     shadow is a woman wider than her own skirt. Her waist is 0.724 of this crop's width,
-     which fixes the scale; the crops both end at the hem, which anchors her feet; and her
-     waist centre goes on the skirt's centre at 0.4942.
+     SHE IS ONE FIGURE, NOT A TORSO AND A SKIRT. This is the thing that was wrong and it was
+     not a matter of a few pixels: the crop's bottom edge is her WAIST, and it was sitting
+     0.0125 of the frame above the sheet's hem while the mask faded her out over the last
+     inch of cloth as well. So she ended in mid air, there was a band of bare sheet under
+     her, and then a skirt began on its own — a woman cut in half.
 
-     Scaled uniformly, so nothing about her is stretched: at 0.1326 by 0.3116 her waist is
-     0.0960 against the skirt's 0.0992, which leaves her about two pixels inside the cloth
-     on each side at 1440. Contained, not flush — a shadow that meets the skirt exactly at
-     its edges reads as a mistake even when it is arithmetically right.
+     Her box now ends exactly ON the hem, 0.2740 + 0.3473 = 0.6213, and the mask is pushed
+     PAST the hem rather than inset from it, so a lifting hem can never take a slice off the
+     join. Her waist meets the top of the skirt at the one line where the cloth stops and the
+     skirt takes over, which is how the clean chapter has always worked.
+
+     The size then follows from two things and nothing else. Vertically: her feet on the hem,
+     and her head with the same 0.117 of clear cloth above it that the clean chapter leaves,
+     which fixes the height at 0.3473. Horizontally: the aspect the clean chapter's plate
+     imposes, 0.1326/0.3116, which is 0.1478. Her waist is 0.724 of that — and the skirt's
+     `sk` below is then solved so its own width at the hem is the same number. Same size at
+     the join, because they are the same body.
 
      The sprite is a cut-out on transparency rather than a figure on white, so it goes
      through the white buffer in shadowBuf and is let in at `ink` — the file is nearly
@@ -82,7 +87,7 @@ const SHEETS_AFTER = {
      same mean density, so she reads as a shadow on cloth and not as a hole in it. */
   shadow: { img:"momshadowcoughingcropped.png",
             src:[0.3788,0.2730,0.2137,0.7270],
-            box:[0.4125,0.2972,0.1326,0.3116],
+            box:[0.4020,0.2740,0.1478,0.3473],
             ink:0.66, dens:0.78, ox:0, oy:0,
             /* SHE DOES NOT SWAY. A shadow is cast by a body onto a surface, and the body is
                standing still; if it drifts with the cloth it stops being a shadow and becomes
@@ -91,25 +96,23 @@ const SHEETS_AFTER = {
                from cutting her, and that is not needed any more — the mask is feathered and
                her sheet barely moves, so she can be still, which is what she should be. */
             follow:0, at:[0.45, 0.80] },
-  /* and her real skirt, below the hem, in the same wind. The after-pollution painting of it
-     is a 1254-square with the skirt filling the frame, so it needs its own source rect; the
-     shape is the same one, within half a per cent on aspect, which is why her size on the
-     frame is the clean scene's `sk` untouched. */
-  /* THE SKIRT IS BIGGER THAN THE WOMAN IN IT.
-     Set off the RENDER, not off the boxes. The box arithmetic said the waist was already
-     five pixels clear of her shadow on each side, and then the frame was measured — her
-     shadow drawn and undrawn, differenced, at the row just above the hem against the row
-     just below it — and the truth was that the skirt was 2 px NARROWER than her and sitting
-     9 px to her right. The arithmetic was measuring ink boxes; what a visitor sees is ink
-     plus the softening, and the softening is not symmetrical between a blurred multiply and
-     a painted sprite.
+  /* HER REAL SKIRT, BELOW THE HEM, IN THE SAME WIND. The after-pollution painting of it is a
+     1254-square with the skirt filling the frame, so it needs its own source rect.
 
-     So: 9 px left, and wide enough that the skirt is clearly the larger of the two at the
-     one place they meet. `tuck` is deeper as well, which hides more of the sprite's narrow
-     top behind the hem — the visible skirt then starts further down its own flare, so it
-     gains width at the join without the whole thing having to grow to get it. */
+     THE SKIRT IS THE SAME WIDTH AS SHE IS, AT THE ONE PLACE THEY MEET.
+     Not bigger, not smaller — solved. Her waist is 0.724 of her box's width and the skirt
+     sprite's own cloth at the hem is 0.454 of its drawn width, so the skirt's width is her
+     waist divided by 0.454, and its height follows from the clean skirt's aspect so the
+     painting is not stretched. `cx` puts the sprite's ink centre, which is 0.509 of its width
+     and not 0.5, on her waist centre.
+
+     Everything below the hem is flare, and flare is what makes it read as a skirt rather than
+     a tube — the width that matters is the width at the join, and at the join they are the
+     same body. Both numbers were then checked against the render, because the boxes measure
+     ink and a visitor sees ink plus softening, and the softening differs between a blurred
+     multiply and a painted sprite. */
   skirt: { img:"skirtafterpollution.png", box:[0.0159,0.0837,0.9681,0.7903],
-           sk: { w:0.2742, h:0.2992, cx:0.4892, tuck:0.190 } },
+           sk: { w:0.2357, h:0.2573, cx:0.4909, tuck:0.148 } },
   momAt: 2,
   /* how far through the scene she has been touched, and what follows it */
   tapped: 0, coughT: -1, lineT: -1, said: 0, glow: 0,
