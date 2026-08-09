@@ -190,14 +190,20 @@ function clothDeform(box, o){
 /* The outline of that mesh, as a path — the cloth's own silhouette after the
    wind has had it. Walked round the four edges rather than sampled as a grid,
    because only the boundary matters. */
-function clothPath(deform, n){
+function clothPath(deform, n, iu, iv){
   n = n || 14;
+  /* `iu`/`iv` walk the outline inside the cloth rather than along its edge. A blurred shape
+     is soft on BOTH sides of wherever its outline was, so a mask built from the edge itself
+     covers ground outside the cloth and lets a shadow bleed onto the sky. Shrunk first, the
+     blur's outer tail lands on the edge and stops there. */
+  iu = iu || 0; iv = iv || 0;
+  const U = u => iu + u*(1-2*iu), V = v => iv + v*(1-2*iv);
   const p = new Path2D();
-  let q = deform(0,0); p.moveTo(q.x,q.y);
-  for (let i=1;i<=n;i++){ q = deform(i/n, 0);   p.lineTo(q.x,q.y); }
-  for (let i=1;i<=n;i++){ q = deform(1, i/n);   p.lineTo(q.x,q.y); }
-  for (let i=1;i<=n;i++){ q = deform(1-i/n, 1); p.lineTo(q.x,q.y); }
-  for (let i=1;i<=n;i++){ q = deform(0, 1-i/n); p.lineTo(q.x,q.y); }
+  let q = deform(U(0),V(0)); p.moveTo(q.x,q.y);
+  for (let i=1;i<=n;i++){ q = deform(U(i/n), V(0));   p.lineTo(q.x,q.y); }
+  for (let i=1;i<=n;i++){ q = deform(U(1), V(i/n));   p.lineTo(q.x,q.y); }
+  for (let i=1;i<=n;i++){ q = deform(U(1-i/n), V(1)); p.lineTo(q.x,q.y); }
+  for (let i=1;i<=n;i++){ q = deform(U(0), V(1-i/n)); p.lineTo(q.x,q.y); }
   p.closePath();
   return p;
 }
@@ -401,19 +407,27 @@ function shadowScratch(which, w, h){
    result up costs nothing anybody can see and gave back the frames the full-resolution
    version was taking. */
 const SHMASK_S = 0.5;
-function shadowMask(w, h, x0, y0, deform, feather){
+/* THE MASK MUST NOT REACH PAST THE CLOTH, and a blur reaches both ways.
+   The first version of this filled the cloth's own outline and blurred it, so the mask was
+   half-strength ON the edge and faded out well beyond it — which put her shadow on the sky
+   in a band down the side of the sheet, exactly the "peeking out" that a hard clip at least
+   never did. So the outline is shrunk by `ramp` first and blurred at a third of that: the
+   tail is spent by the time it reaches the real edge, and what is left inside is a gradient
+   over the outer `ramp` pixels of the cloth. A shadow fading out towards the lit edge of a
+   backlit sheet is what happens anyway. */
+function shadowMask(w, h, x0, y0, deform, ramp, iu, iv){
   const mw = Math.max(12, Math.round(w*SHMASK_S)), mh = Math.max(12, Math.round(h*SHMASK_S));
   const buf = shadowScratch("mask", mw, mh);
   const g = buf.getContext("2d");
   g.setTransform(1,0,0,1,0,0);
   g.clearRect(0,0,mw,mh);
-  g.filter = "blur(" + Math.max(1, feather*SHMASK_S).toFixed(2) + "px)";
+  g.filter = "blur(" + Math.max(0.8, ramp*SHMASK_S/3).toFixed(2) + "px)";
   g.fillStyle = "#ffffff";
   /* the cloth's own silhouette this frame, walked in the buffer's coordinates */
   g.save();
   g.scale(SHMASK_S, SHMASK_S);
   g.translate(-x0, -y0);
-  g.fill(clothPath(deform));
+  g.fill(clothPath(deform, 16, iu, iv));
   g.restore();
   g.filter = "none";
   return buf;
@@ -447,7 +461,11 @@ function drawShadowOf(cfg, rect, a, deform, sb){
   const px = rect.x + bx*rect.w + ox + kx, py = rect.y + by*rect.h + oy + ky;
 
   /* her, on white, kept only where there is cloth, with a soft boundary */
-  const mask = shadowMask(dw, dh, px, py, deform, Math.max(2, dw*0.045));
+  /* how far in from the cloth's edge the shadow fades, in pixels, converted to the mesh's own
+     u/v so the inset is the same distance on all four sides of a sheet that is not square */
+  const ramp = Math.max(4, sb[2]*rect.w*0.075);
+  const mask = shadowMask(dw, dh, px, py, deform, ramp,
+                          ramp/(sb[2]*rect.w), ramp/(sb[3]*rect.h));
   const cw = Math.max(16, Math.round(dw)), chh = Math.max(16, Math.round(dh));
   const cut = shadowScratch("cut", cw, chh);
   const cg = cut.getContext("2d");
@@ -522,7 +540,13 @@ function drawSkirtOf(cfg, t, rect, a){
 
   ctx.save();
   ctx.globalAlpha = a;
-  ctx.translate(rect.x + cx*rect.w, rect.y + top*rect.h);
+  /* SHE IS ONE PERSON, so whatever her body is doing the skirt does too. `ox`/`oy` are the
+     same fractions of the frame the shadow is offset by — a cough folds a whole body, and a
+     skirt that stays put while the shadow above it moves separates into two objects. It
+     takes a little less than all of it, because the weight of a gathered skirt does not
+     move as readily as a shoulder. */
+  ctx.translate(rect.x + (cx + (cfg.ox||0)*0.82)*rect.w,
+                rect.y + (top + (cfg.oy||0)*0.82)*rect.h);
   ctx.transform(1, 0, swing, 1, 0, 0);           // shear about the waist, and
   ctx.scale(1, 1 - lift);                        // the hem lifting a little
   /* The sprite stops at her waist, and the sheet's hem does not hold still: it

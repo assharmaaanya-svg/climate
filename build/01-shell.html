@@ -75,6 +75,11 @@
   /* ---------- narration ---------- */
   #cap{ position:fixed; left:50%; bottom:var(--narr-bottom); transform:translate(-50%,12px); z-index:6; margin:0;
     width:min(90vw,34ch); text-align:center; font-size:clamp(1.1rem,3.5vw,1.75rem); line-height:1.4;
+    /* a line may choose where it breaks. Narration is set as textContent, so a newline in a
+       beat's line does nothing without this; `pre-line` honours the newline and still
+       collapses everything else, so every existing single-line string is unaffected and a
+       sentence that wants to land in two parts can. */
+    white-space:pre-line;
     letter-spacing:.004em; color:var(--ink); text-shadow:var(--sh); opacity:0; pointer-events:none;
     /* colour is in the transition list on the base rule, not on .redshift, so the drift
        has somewhere to start from the instant the class arrives */

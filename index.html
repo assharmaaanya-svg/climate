@@ -75,6 +75,11 @@
   /* ---------- narration ---------- */
   #cap{ position:fixed; left:50%; bottom:var(--narr-bottom); transform:translate(-50%,12px); z-index:6; margin:0;
     width:min(90vw,34ch); text-align:center; font-size:clamp(1.1rem,3.5vw,1.75rem); line-height:1.4;
+    /* a line may choose where it breaks. Narration is set as textContent, so a newline in a
+       beat's line does nothing without this; `pre-line` honours the newline and still
+       collapses everything else, so every existing single-line string is unaffected and a
+       sentence that wants to land in two parts can. */
+    white-space:pre-line;
     letter-spacing:.004em; color:var(--ink); text-shadow:var(--sh); opacity:0; pointer-events:none;
     /* colour is in the transition list on the base rule, not on .redshift, so the drift
        has somewhere to start from the instant the class arrives */
@@ -1079,8 +1084,13 @@ const BEATS = [
      opened the curtains is looking for the next thing about the window, not the next thing
      to drag. The polluted room's cord carries the identical sentence, because it is the
      identical action and the whole point of that room is that it is the same room. */
+  /* NO LINE HERE. "She always opened it first." was replaced by "Mum was always up first."
+     on the beat before, and kept here as well, so the same fact was stated twice in the
+     first thirty seconds of the piece. The one that survives is the one that is about her
+     rather than about the window. An empty line also means the instruction does not have to
+     wait for anything: `lineFirst` short-circuits on a beat with nothing to say. */
   { id:"light",     ch:1, len:1.4,  gate:"sash",    ask:"Pull the cord down to open the window",
-    line:"She always opened it first." },
+    line:"" },
   /* No line here any more. "And the whole outside came in at once." was doing the
      environment's job for it: the window has just been opened, the ambience opens all the
      way, the garden arrives, and saying so as well is narration explaining a thing the
@@ -1101,9 +1111,9 @@ const BEATS = [
      nothing is foreshadowed — they are simply another ordinary part of the evening, which
      is the whole reason their absence can mean something later without being pointed at. */
   { id:"climb",     ch:2, len:1.25,
-    line:"The fireflies always came out before it got properly dark." },
+    line:"The fireflies always come out before it gets properly dark" },
   { id:"stars",     ch:2, len:1.55, gate:"stars",   ask:"Tap a bright star to discover its story",
-    line:"There were so many it was hard to look at one." },
+    line:"There were so many.\nIt was hard to look at one." },
   { id:"wish",      ch:2, len:0.95,
     line:"" },
   { id:"horizon",   ch:2, len:1.75, gate:"find",    ask:"Press and hold to zoom in with the binoculars",
@@ -7951,14 +7961,20 @@ function clothDeform(box, o){
 /* The outline of that mesh, as a path — the cloth's own silhouette after the
    wind has had it. Walked round the four edges rather than sampled as a grid,
    because only the boundary matters. */
-function clothPath(deform, n){
+function clothPath(deform, n, iu, iv){
   n = n || 14;
+  /* `iu`/`iv` walk the outline inside the cloth rather than along its edge. A blurred shape
+     is soft on BOTH sides of wherever its outline was, so a mask built from the edge itself
+     covers ground outside the cloth and lets a shadow bleed onto the sky. Shrunk first, the
+     blur's outer tail lands on the edge and stops there. */
+  iu = iu || 0; iv = iv || 0;
+  const U = u => iu + u*(1-2*iu), V = v => iv + v*(1-2*iv);
   const p = new Path2D();
-  let q = deform(0,0); p.moveTo(q.x,q.y);
-  for (let i=1;i<=n;i++){ q = deform(i/n, 0);   p.lineTo(q.x,q.y); }
-  for (let i=1;i<=n;i++){ q = deform(1, i/n);   p.lineTo(q.x,q.y); }
-  for (let i=1;i<=n;i++){ q = deform(1-i/n, 1); p.lineTo(q.x,q.y); }
-  for (let i=1;i<=n;i++){ q = deform(0, 1-i/n); p.lineTo(q.x,q.y); }
+  let q = deform(U(0),V(0)); p.moveTo(q.x,q.y);
+  for (let i=1;i<=n;i++){ q = deform(U(i/n), V(0));   p.lineTo(q.x,q.y); }
+  for (let i=1;i<=n;i++){ q = deform(U(1), V(i/n));   p.lineTo(q.x,q.y); }
+  for (let i=1;i<=n;i++){ q = deform(U(1-i/n), V(1)); p.lineTo(q.x,q.y); }
+  for (let i=1;i<=n;i++){ q = deform(U(0), V(1-i/n)); p.lineTo(q.x,q.y); }
   p.closePath();
   return p;
 }
@@ -8162,19 +8178,27 @@ function shadowScratch(which, w, h){
    result up costs nothing anybody can see and gave back the frames the full-resolution
    version was taking. */
 const SHMASK_S = 0.5;
-function shadowMask(w, h, x0, y0, deform, feather){
+/* THE MASK MUST NOT REACH PAST THE CLOTH, and a blur reaches both ways.
+   The first version of this filled the cloth's own outline and blurred it, so the mask was
+   half-strength ON the edge and faded out well beyond it — which put her shadow on the sky
+   in a band down the side of the sheet, exactly the "peeking out" that a hard clip at least
+   never did. So the outline is shrunk by `ramp` first and blurred at a third of that: the
+   tail is spent by the time it reaches the real edge, and what is left inside is a gradient
+   over the outer `ramp` pixels of the cloth. A shadow fading out towards the lit edge of a
+   backlit sheet is what happens anyway. */
+function shadowMask(w, h, x0, y0, deform, ramp, iu, iv){
   const mw = Math.max(12, Math.round(w*SHMASK_S)), mh = Math.max(12, Math.round(h*SHMASK_S));
   const buf = shadowScratch("mask", mw, mh);
   const g = buf.getContext("2d");
   g.setTransform(1,0,0,1,0,0);
   g.clearRect(0,0,mw,mh);
-  g.filter = "blur(" + Math.max(1, feather*SHMASK_S).toFixed(2) + "px)";
+  g.filter = "blur(" + Math.max(0.8, ramp*SHMASK_S/3).toFixed(2) + "px)";
   g.fillStyle = "#ffffff";
   /* the cloth's own silhouette this frame, walked in the buffer's coordinates */
   g.save();
   g.scale(SHMASK_S, SHMASK_S);
   g.translate(-x0, -y0);
-  g.fill(clothPath(deform));
+  g.fill(clothPath(deform, 16, iu, iv));
   g.restore();
   g.filter = "none";
   return buf;
@@ -8208,7 +8232,11 @@ function drawShadowOf(cfg, rect, a, deform, sb){
   const px = rect.x + bx*rect.w + ox + kx, py = rect.y + by*rect.h + oy + ky;
 
   /* her, on white, kept only where there is cloth, with a soft boundary */
-  const mask = shadowMask(dw, dh, px, py, deform, Math.max(2, dw*0.045));
+  /* how far in from the cloth's edge the shadow fades, in pixels, converted to the mesh's own
+     u/v so the inset is the same distance on all four sides of a sheet that is not square */
+  const ramp = Math.max(4, sb[2]*rect.w*0.075);
+  const mask = shadowMask(dw, dh, px, py, deform, ramp,
+                          ramp/(sb[2]*rect.w), ramp/(sb[3]*rect.h));
   const cw = Math.max(16, Math.round(dw)), chh = Math.max(16, Math.round(dh));
   const cut = shadowScratch("cut", cw, chh);
   const cg = cut.getContext("2d");
@@ -8283,7 +8311,13 @@ function drawSkirtOf(cfg, t, rect, a){
 
   ctx.save();
   ctx.globalAlpha = a;
-  ctx.translate(rect.x + cx*rect.w, rect.y + top*rect.h);
+  /* SHE IS ONE PERSON, so whatever her body is doing the skirt does too. `ox`/`oy` are the
+     same fractions of the frame the shadow is offset by — a cough folds a whole body, and a
+     skirt that stays put while the shadow above it moves separates into two objects. It
+     takes a little less than all of it, because the weight of a gathered skirt does not
+     move as readily as a shoulder. */
+  ctx.translate(rect.x + (cx + (cfg.ox||0)*0.82)*rect.w,
+                rect.y + (top + (cfg.oy||0)*0.82)*rect.h);
   ctx.transform(1, 0, swing, 1, 0, 0);           // shear about the waist, and
   ctx.scale(1, 1 - lift);                        // the hem lifting a little
   /* The sprite stops at her waist, and the sheet's hem does not hold still: it
@@ -8387,25 +8421,32 @@ const SHEETS_AFTER = {
             src:[0.3788,0.2730,0.2137,0.7270],
             box:[0.4125,0.2972,0.1326,0.3116],
             ink:0.66, dens:0.78, ox:0, oy:0,
-            /* she stands near the hem, which is the most active part of the mesh, so she
-               follows the cloth at a point low down rather than at its middle, and follows
-               nearly all of it. What is left is a couple of pixels of slip where she is,
-               and a soft edge everywhere else. */
-            follow:0.90, at:[0.45, 0.80] },
+            /* SHE DOES NOT SWAY. A shadow is cast by a body onto a surface, and the body is
+               standing still; if it drifts with the cloth it stops being a shadow and becomes
+               a pattern printed on the sheet, which is the one thing this whole approach
+               exists to avoid. It followed 0.90 of the drift as a way of keeping the clip
+               from cutting her, and that is not needed any more — the mask is feathered and
+               her sheet barely moves, so she can be still, which is what she should be. */
+            follow:0, at:[0.45, 0.80] },
   /* and her real skirt, below the hem, in the same wind. The after-pollution painting of it
      is a 1254-square with the skirt filling the frame, so it needs its own source rect; the
      shape is the same one, within half a per cent on aspect, which is why her size on the
      frame is the clean scene's `sk` untouched. */
   /* THE SKIRT IS BIGGER THAN THE WOMAN IN IT.
-     It was drawn at the clean chapter's size, which put its waist at 0.0992 of the frame
-     against her shadow's 0.0960 — two pixels of cloth either side of her at 1440, so the
-     skirt read as being exactly her width, which is what a leotard does and not what a
-     gathered cotton skirt does. Twelve per cent larger: the waist goes to 0.1111, which is
-     five pixels clear of her on each side, and the whole silhouette gains the bit of
-     surplus that makes cloth read as cloth hanging on somebody. Her waist still sits inside
-     it, which is the constraint that fixed the scale in the first place. */
+     Set off the RENDER, not off the boxes. The box arithmetic said the waist was already
+     five pixels clear of her shadow on each side, and then the frame was measured — her
+     shadow drawn and undrawn, differenced, at the row just above the hem against the row
+     just below it — and the truth was that the skirt was 2 px NARROWER than her and sitting
+     9 px to her right. The arithmetic was measuring ink boxes; what a visitor sees is ink
+     plus the softening, and the softening is not symmetrical between a blurred multiply and
+     a painted sprite.
+
+     So: 9 px left, and wide enough that the skirt is clearly the larger of the two at the
+     one place they meet. `tuck` is deeper as well, which hides more of the sprite's narrow
+     top behind the hem — the visible skirt then starts further down its own flare, so it
+     gains width at the join without the whole thing having to grow to get it. */
   skirt: { img:"skirtafterpollution.png", box:[0.0159,0.0837,0.9681,0.7903],
-           sk: { w:0.2448, h:0.2672, cx:0.4923, tuck:0.148 } },
+           sk: { w:0.2742, h:0.2992, cx:0.4892, tuck:0.190 } },
   momAt: 2,
   /* how far through the scene she has been touched, and what follows it */
   tapped: 0, coughT: -1, lineT: -1, said: 0, glow: 0,
@@ -8478,7 +8519,9 @@ function drawSheetsAfter(t, dt, o){
        travels with the sheet instead of hanging in the air when a gust takes it. */
     updSheetsAfterMother(dt);
     drawSkirtOf({ img: SHEETS_AFTER.skirt.img, box: SHEETS_AFTER.skirt.box,
-                  sk: SHEETS_AFTER.skirt.sk, hem: s.box }, t, rect, 1);
+                  sk: SHEETS_AFTER.skirt.sk, hem: s.box,
+                  /* the cough, passed through, so she moves as one body */
+                  ox: SHEETS_AFTER.shadow.ox, oy: SHEETS_AFTER.shadow.oy }, t, rect, 1);
     /* HER SHEET BARELY MOVES, AND THAT IS NOT A COMPROMISE.
        She is standing right behind it with both hands on it. At 0.46 it billowed nearly as
        much as its unheld neighbours, and the hem — the most active part of any cloth mesh —
@@ -9123,9 +9166,20 @@ const STARY = {
   told:Object.create(null),       // id -> true once its story has been read
   hover:null,
   pan:0, panV:0,
-  wish:0, wishSaid:0, shoot:null, shootT:7,
+  /* THE SHOOTING STAR IS NOT OPTIONAL, so it arrives soon and the chapter waits for it.
+     `shootT` was seven seconds, which is a long time to stand in a field when the thing you
+     were asked to do — touch a star — takes two, so a visitor who did as they were told and
+     moved on never saw it, and the best sentence in the chapter went with it. Three and a
+     half: long enough that it is not a reward for arriving, short enough that nobody is kept
+     waiting for it.
+     `wishSeen` counts from the moment it appears, and the chapter's gate waits on it, so the
+     streak crosses the sky and its line is read before the scroll comes back. */
+  wish:0, wishSaid:0, wishSeen:0, shoot:null, shootT:3.5,
+  /* how long after it appears before the chapter will let go: the streak crosses the sky in
+     about a second and a quarter, and the sentence wants reading after that. */
   story:null, storyT:0
 };
+const STAR_WISH = 2.8;
 /* ---------------------------------------------------------------- the cards
    TWO SENTENCES. What the star is, and what people did with it. That is the whole
    card, and the length is the point rather than a limitation.
@@ -9327,6 +9381,8 @@ function drawStarsPlate(t, dt, o){
     }
     cc("a meteor");
   }
+  /* how long since the first one, which is what the chapter's gate is actually waiting on */
+  if (STARY.wishSaid) STARY.wishSeen += dt;
   if (STARY.shoot){
     const sh=STARY.shoot;
     sh.x+=sh.vx*dt*60; sh.y+=sh.vy*dt*60; sh.life-=dt*0.8;
@@ -9366,7 +9422,14 @@ function starsInteractP(g, dt, o){
   for (const s of DIPPER.concat(OUTLIERS)){
     if (hasCard(s) && STARY.lit[s.id]) lit++;
   }
-  if (g && lit >= 1) meet(g);
+  /* AND THE SHOOTING STAR HAS TO HAVE HAPPENED.
+     One card is enough to have understood the sky, but a visitor who opened one in the first
+     two seconds and scrolled on left before the chapter's own sentence had been said — and
+     that sentence is not decoration, it is the only thing in the piece she says about
+     herself. So the gate wants both: a card, and the meteor gone by. It arrives on its own
+     after three and a half seconds and needs nothing from anybody, so this is a short wait
+     and not a second task. */
+  if (g && lit >= 1 && STARY.wishSeen > STAR_WISH) meet(g);
 }
 function tapStarP(x,y,air,glow){
   const all = DIPPER.concat(OUTLIERS);
@@ -15086,10 +15149,16 @@ function gateProgress(g){
     case "sheets":  return 1;
     case "shirt":   return PWASH.through/5;
     case "kite":  return KSKY.best/0.52;
-    /* one is enough, so the bar is full as soon as a single card has been opened */
-    case "stars": { for (const id of ["mizar","alkaid","megrez","alrischa","polaris"]) if (STARY.lit[id]) return 1; return 0; }
+    /* one card, and the shooting star gone by. The bar carries both, most of it on the card,
+       because that is the part the visitor does. (There was a second `case "stars"` below
+       this one, counting all seven of the Dipper — unreachable, and left over from when the
+       gate wanted three. Removed rather than left to mislead the next reader.) */
+    case "stars": {
+      let one = 0;
+      for (const id of ["mizar","alkaid","megrez","alrischa","polaris"]) if (STARY.lit[id]){ one = 1; break; }
+      return one*0.62 + cl01(STARY.wishSeen/STAR_WISH)*0.38;
+    }
     case "rkite": return PKITE.best/0.40;
-    case "stars":   { let n=0; for(const s2 of DIPPER) if(STARY.lit[s2.id])n++; return n/DIPPER.length; }
     case "rstars":  { let v=0,n=0; for(const s2 of DIPPER){ if(starSeen(s2,0.78,0.55)){v++; if(STARY.lit[s2.id])n++;} } return v? n/v : 1; }
     case "find":    return PLOOK.n/3;
     case "rfind":   return PLOOK.recall/0.75;
@@ -15468,6 +15537,12 @@ window.__bluer = {
   get dipper(){ return DIPPER; },
   get ap(){ return AP; },
   get stary(){ return STARY; },
+  /* a named star's position on screen this frame, and any gate's meter, so a harness can
+     reach for the thing a visitor reaches for instead of guessing coordinates */
+  starAt(nm){ const all = DIPPER.concat(OUTLIERS);
+              for (const s of all) if (s.id === nm && s._p) return { x:s._p.x, y:s._p.y };
+              return null; },
+  progress(g){ return gateProgress(g); },
   get outliers(){ return OUTLIERS; },
   nightAudio(){ const f=L=>({state:L.state,playing:!!L.src,g:L.gain?+L.gain.gain.value.toFixed(4):null});
                 return { crickets:f(CRICK), nightbird:f(NBIRD) }; },

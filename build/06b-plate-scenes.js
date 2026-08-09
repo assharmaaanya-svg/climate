@@ -305,9 +305,20 @@ const STARY = {
   told:Object.create(null),       // id -> true once its story has been read
   hover:null,
   pan:0, panV:0,
-  wish:0, wishSaid:0, shoot:null, shootT:7,
+  /* THE SHOOTING STAR IS NOT OPTIONAL, so it arrives soon and the chapter waits for it.
+     `shootT` was seven seconds, which is a long time to stand in a field when the thing you
+     were asked to do — touch a star — takes two, so a visitor who did as they were told and
+     moved on never saw it, and the best sentence in the chapter went with it. Three and a
+     half: long enough that it is not a reward for arriving, short enough that nobody is kept
+     waiting for it.
+     `wishSeen` counts from the moment it appears, and the chapter's gate waits on it, so the
+     streak crosses the sky and its line is read before the scroll comes back. */
+  wish:0, wishSaid:0, wishSeen:0, shoot:null, shootT:3.5,
+  /* how long after it appears before the chapter will let go: the streak crosses the sky in
+     about a second and a quarter, and the sentence wants reading after that. */
   story:null, storyT:0
 };
+const STAR_WISH = 2.8;
 /* ---------------------------------------------------------------- the cards
    TWO SENTENCES. What the star is, and what people did with it. That is the whole
    card, and the length is the point rather than a limitation.
@@ -509,6 +520,8 @@ function drawStarsPlate(t, dt, o){
     }
     cc("a meteor");
   }
+  /* how long since the first one, which is what the chapter's gate is actually waiting on */
+  if (STARY.wishSaid) STARY.wishSeen += dt;
   if (STARY.shoot){
     const sh=STARY.shoot;
     sh.x+=sh.vx*dt*60; sh.y+=sh.vy*dt*60; sh.life-=dt*0.8;
@@ -548,7 +561,14 @@ function starsInteractP(g, dt, o){
   for (const s of DIPPER.concat(OUTLIERS)){
     if (hasCard(s) && STARY.lit[s.id]) lit++;
   }
-  if (g && lit >= 1) meet(g);
+  /* AND THE SHOOTING STAR HAS TO HAVE HAPPENED.
+     One card is enough to have understood the sky, but a visitor who opened one in the first
+     two seconds and scrolled on left before the chapter's own sentence had been said — and
+     that sentence is not decoration, it is the only thing in the piece she says about
+     herself. So the gate wants both: a card, and the meteor gone by. It arrives on its own
+     after three and a half seconds and needs nothing from anybody, so this is a short wait
+     and not a second task. */
+  if (g && lit >= 1 && STARY.wishSeen > STAR_WISH) meet(g);
 }
 function tapStarP(x,y,air,glow){
   const all = DIPPER.concat(OUTLIERS);

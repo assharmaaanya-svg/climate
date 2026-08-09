@@ -339,8 +339,13 @@ const BEATS = [
      opened the curtains is looking for the next thing about the window, not the next thing
      to drag. The polluted room's cord carries the identical sentence, because it is the
      identical action and the whole point of that room is that it is the same room. */
+  /* NO LINE HERE. "She always opened it first." was replaced by "Mum was always up first."
+     on the beat before, and kept here as well, so the same fact was stated twice in the
+     first thirty seconds of the piece. The one that survives is the one that is about her
+     rather than about the window. An empty line also means the instruction does not have to
+     wait for anything: `lineFirst` short-circuits on a beat with nothing to say. */
   { id:"light",     ch:1, len:1.4,  gate:"sash",    ask:"Pull the cord down to open the window",
-    line:"She always opened it first." },
+    line:"" },
   /* No line here any more. "And the whole outside came in at once." was doing the
      environment's job for it: the window has just been opened, the ambience opens all the
      way, the garden arrives, and saying so as well is narration explaining a thing the
@@ -361,9 +366,9 @@ const BEATS = [
      nothing is foreshadowed — they are simply another ordinary part of the evening, which
      is the whole reason their absence can mean something later without being pointed at. */
   { id:"climb",     ch:2, len:1.25,
-    line:"The fireflies always came out before it got properly dark." },
+    line:"The fireflies always come out before it gets properly dark" },
   { id:"stars",     ch:2, len:1.55, gate:"stars",   ask:"Tap a bright star to discover its story",
-    line:"There were so many it was hard to look at one." },
+    line:"There were so many.\nIt was hard to look at one." },
   { id:"wish",      ch:2, len:0.95,
     line:"" },
   { id:"horizon",   ch:2, len:1.75, gate:"find",    ask:"Press and hold to zoom in with the binoculars",

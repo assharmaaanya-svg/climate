@@ -84,25 +84,32 @@ const SHEETS_AFTER = {
             src:[0.3788,0.2730,0.2137,0.7270],
             box:[0.4125,0.2972,0.1326,0.3116],
             ink:0.66, dens:0.78, ox:0, oy:0,
-            /* she stands near the hem, which is the most active part of the mesh, so she
-               follows the cloth at a point low down rather than at its middle, and follows
-               nearly all of it. What is left is a couple of pixels of slip where she is,
-               and a soft edge everywhere else. */
-            follow:0.90, at:[0.45, 0.80] },
+            /* SHE DOES NOT SWAY. A shadow is cast by a body onto a surface, and the body is
+               standing still; if it drifts with the cloth it stops being a shadow and becomes
+               a pattern printed on the sheet, which is the one thing this whole approach
+               exists to avoid. It followed 0.90 of the drift as a way of keeping the clip
+               from cutting her, and that is not needed any more — the mask is feathered and
+               her sheet barely moves, so she can be still, which is what she should be. */
+            follow:0, at:[0.45, 0.80] },
   /* and her real skirt, below the hem, in the same wind. The after-pollution painting of it
      is a 1254-square with the skirt filling the frame, so it needs its own source rect; the
      shape is the same one, within half a per cent on aspect, which is why her size on the
      frame is the clean scene's `sk` untouched. */
   /* THE SKIRT IS BIGGER THAN THE WOMAN IN IT.
-     It was drawn at the clean chapter's size, which put its waist at 0.0992 of the frame
-     against her shadow's 0.0960 — two pixels of cloth either side of her at 1440, so the
-     skirt read as being exactly her width, which is what a leotard does and not what a
-     gathered cotton skirt does. Twelve per cent larger: the waist goes to 0.1111, which is
-     five pixels clear of her on each side, and the whole silhouette gains the bit of
-     surplus that makes cloth read as cloth hanging on somebody. Her waist still sits inside
-     it, which is the constraint that fixed the scale in the first place. */
+     Set off the RENDER, not off the boxes. The box arithmetic said the waist was already
+     five pixels clear of her shadow on each side, and then the frame was measured — her
+     shadow drawn and undrawn, differenced, at the row just above the hem against the row
+     just below it — and the truth was that the skirt was 2 px NARROWER than her and sitting
+     9 px to her right. The arithmetic was measuring ink boxes; what a visitor sees is ink
+     plus the softening, and the softening is not symmetrical between a blurred multiply and
+     a painted sprite.
+
+     So: 9 px left, and wide enough that the skirt is clearly the larger of the two at the
+     one place they meet. `tuck` is deeper as well, which hides more of the sprite's narrow
+     top behind the hem — the visible skirt then starts further down its own flare, so it
+     gains width at the join without the whole thing having to grow to get it. */
   skirt: { img:"skirtafterpollution.png", box:[0.0159,0.0837,0.9681,0.7903],
-           sk: { w:0.2448, h:0.2672, cx:0.4923, tuck:0.148 } },
+           sk: { w:0.2742, h:0.2992, cx:0.4892, tuck:0.190 } },
   momAt: 2,
   /* how far through the scene she has been touched, and what follows it */
   tapped: 0, coughT: -1, lineT: -1, said: 0, glow: 0,
@@ -175,7 +182,9 @@ function drawSheetsAfter(t, dt, o){
        travels with the sheet instead of hanging in the air when a gust takes it. */
     updSheetsAfterMother(dt);
     drawSkirtOf({ img: SHEETS_AFTER.skirt.img, box: SHEETS_AFTER.skirt.box,
-                  sk: SHEETS_AFTER.skirt.sk, hem: s.box }, t, rect, 1);
+                  sk: SHEETS_AFTER.skirt.sk, hem: s.box,
+                  /* the cough, passed through, so she moves as one body */
+                  ox: SHEETS_AFTER.shadow.ox, oy: SHEETS_AFTER.shadow.oy }, t, rect, 1);
     /* HER SHEET BARELY MOVES, AND THAT IS NOT A COMPROMISE.
        She is standing right behind it with both hands on it. At 0.46 it billowed nearly as
        much as its unheld neighbours, and the hem — the most active part of any cloth mesh —

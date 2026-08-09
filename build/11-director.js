@@ -896,10 +896,16 @@ function gateProgress(g){
     case "sheets":  return 1;
     case "shirt":   return PWASH.through/5;
     case "kite":  return KSKY.best/0.52;
-    /* one is enough, so the bar is full as soon as a single card has been opened */
-    case "stars": { for (const id of ["mizar","alkaid","megrez","alrischa","polaris"]) if (STARY.lit[id]) return 1; return 0; }
+    /* one card, and the shooting star gone by. The bar carries both, most of it on the card,
+       because that is the part the visitor does. (There was a second `case "stars"` below
+       this one, counting all seven of the Dipper — unreachable, and left over from when the
+       gate wanted three. Removed rather than left to mislead the next reader.) */
+    case "stars": {
+      let one = 0;
+      for (const id of ["mizar","alkaid","megrez","alrischa","polaris"]) if (STARY.lit[id]){ one = 1; break; }
+      return one*0.62 + cl01(STARY.wishSeen/STAR_WISH)*0.38;
+    }
     case "rkite": return PKITE.best/0.40;
-    case "stars":   { let n=0; for(const s2 of DIPPER) if(STARY.lit[s2.id])n++; return n/DIPPER.length; }
     case "rstars":  { let v=0,n=0; for(const s2 of DIPPER){ if(starSeen(s2,0.78,0.55)){v++; if(STARY.lit[s2.id])n++;} } return v? n/v : 1; }
     case "find":    return PLOOK.n/3;
     case "rfind":   return PLOOK.recall/0.75;
@@ -1278,6 +1284,12 @@ window.__bluer = {
   get dipper(){ return DIPPER; },
   get ap(){ return AP; },
   get stary(){ return STARY; },
+  /* a named star's position on screen this frame, and any gate's meter, so a harness can
+     reach for the thing a visitor reaches for instead of guessing coordinates */
+  starAt(nm){ const all = DIPPER.concat(OUTLIERS);
+              for (const s of all) if (s.id === nm && s._p) return { x:s._p.x, y:s._p.y };
+              return null; },
+  progress(g){ return gateProgress(g); },
   get outliers(){ return OUTLIERS; },
   nightAudio(){ const f=L=>({state:L.state,playing:!!L.src,g:L.gain?+L.gain.gain.value.toFixed(4):null});
                 return { crickets:f(CRICK), nightbird:f(NBIRD) }; },
