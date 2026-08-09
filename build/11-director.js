@@ -1305,6 +1305,8 @@ window.__bluer = {
   get wait(){ return T.wait; },
   icon(k){ return ASK_ICON_SVG[k] || ""; },
   cord(){ return cordBall(); },
+  card(id){ showStarStory(id); },
+  cardHide(){ hideStarStory(); },
   say: sayLine,
   get line(){ return { text: evLine, left: +evLineT.toFixed(2),
                        on: capEl.classList.contains("on"), shown: capEl.textContent }; },
