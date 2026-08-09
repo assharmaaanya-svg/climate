@@ -572,7 +572,11 @@ function readTimeline(dt){
      to go back before it. */
   T.floor = 0;
   if (oi >= 0 && onsPlayed()){
-    T.floor = ofs[oi] + BEATS[oi].len*0.70;
+    /* the floor is the bedroom door. Not the black behind it: the black has already
+       been left, by the piece rather than by the visitor, so there is nothing back
+       there to return to and a floor inside it would only let them scroll back onto
+       an empty screen. Back as far as the first post-pollution scene, and no further. */
+    T.floor = ofs[oi+1];
     if (want < T.floor) want = T.floor;
   }
   const over = T.target - T.ceil;

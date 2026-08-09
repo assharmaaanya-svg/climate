@@ -344,6 +344,7 @@ function onsSkip(){
   ONS.t = ONS_END; ONS.running = 0; ONS.played = 1;
   onsNoiseStop();
   document.body.classList.remove("onslaught");
+  placeInRoom();                 // leaving early still leaves you somewhere
   return true;
 }
 
@@ -360,6 +361,28 @@ function onsSkip(){
    instead. During the held silence there is no scroll and no cue, because the visitor
    is meant to be sitting in it. The instant the silence is over, the scroll comes back
    and so does the cue, on the black, and the visitor moves on when they are ready. */
+/* THE PIECE PUTS THEM IN THE ROOM. THEY DO NOT SCROLL INTO IT.
+   Leaving the black by scrolling made the visitor perform the transition, which is
+   the one thing this cut must not be: they have just sat through the statistics and
+   the next thing that happens to them is a bedroom, not a thing they went and found.
+   It is also indistinguishable from being stuck — a black screen that only moves when
+   you push it reads as a page that has failed, however brief the wait.
+
+   So the instant the silence is over the playhead is placed just inside the bedroom
+   and the scroll position is moved with it, in one step, with no glide: the room's own
+   four-second rise out of black is the transition and it does not want a second one
+   underneath it. Scrolling is free again from there. Note that this is a placement and
+   not a floor — a floor clamps from below and would go on pushing, which is what
+   ended the held silence early the first time this was attempted. */
+function placeInRoom(){
+  const i = BEATS.findIndex(b => b.id === "p-room");
+  if (i < 0) return;
+  const at = ofs[i] + BEATS[i].len*0.05;
+  const max = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
+  T.p = at; T.target = at;
+  window.scrollTo(0, (at/TOTAL) * max);
+}
+
 /* what the timeline asks, every frame, to know whether to hold the playhead and
    whether the sequence is still ahead of the visitor */
 function onslaughtHolding(){ return !!ONS.running && ONS.t < ONS_END; }
@@ -389,6 +412,8 @@ function drawOnslaught(t, dt){
   if (T0 >= after && ONS.running){
     ONS.running = 0; ONS.played = 1; onsNoiseStop();
     document.body.classList.remove("onslaught");
+    placeInRoom();
+    return;                      // nothing more of this frame belongs on screen
   }
 
   /* ---- the world goes, and it is gone before the picture is ----

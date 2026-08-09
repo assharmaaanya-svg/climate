@@ -723,6 +723,14 @@ const FIN_LINES = [
 ];
 let shownFin = -1, lastCap="", lastCh=-1;
 
+/* A LINE SAID IN ANSWER TO SOMETHING, rather than at a point in a beat.
+   Every other line in the piece is a property of where the visitor is: the beat
+   carries it and it comes up a fraction of the way in. The window needs the other
+   kind — the room only says "Leave it closed." because somebody just tried the
+   handle, and it has to arrive on the action, not on a scroll position. */
+let evLine = "", evLineT = 0;
+function sayLine(text, secs){ evLine = text; evLineT = secs===undefined ? 5.5 : secs; }
+
 /* EVERY LINE IN THE PIECE IS WHITE.
    This used to flip the narration to near-black over the bright scenes — the washing
    line, the drawing, the evidence hills — on the reasoning that dark ink reads better
@@ -756,7 +764,9 @@ function updText(now, dt){
   const lineOut = bid==="f-end" && f>titleFrom-0.06;
   const show = line && !lineOut &&
     ((bid.startsWith("f-")) ? f>=0.28 : (f>0.06 && f<0.62));
-  const want = show ? line : "";
+  let want = show ? line : "";
+  /* and an answer outranks whatever the beat had to say, for as long as it lasts */
+  if (evLineT > 0){ evLineT -= dt; want = evLine; }
   if (want!==lastCap){
     lastCap=want;
     if (want){ capEl.textContent=want; capEl.classList.add("on"); }
@@ -1192,6 +1202,9 @@ window.__bluer = {
   get floor(){ return T.floor; },
   get blocked(){ return T.blocked; },
   get wait(){ return T.wait; },
+  say: sayLine,
+  get line(){ return { text: evLine, left: +evLineT.toFixed(2),
+                       on: capEl.classList.contains("on"), shown: capEl.textContent }; },
   /* the whole clamp in one call. Both limits, the beat each one belongs to, and the
      scroll positions they translate to, because a scroll that will not move is always
      two limits disagreeing and you cannot see that from either one alone. */
