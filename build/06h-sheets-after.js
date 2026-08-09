@@ -196,7 +196,15 @@ function drawSheetsAfter(t, dt, o){
     opt.give = 0.24;
     opt.deform = clothDeform(s.box, opt);
     drawCloth(IMG[s.img], s.box, opt);
-    drawShadowOf(SHEETS_AFTER.shadow, rect, 1, opt.deform, s.box);
+    /* the sheet, handed over as a way of drawing it: her mask is that cloth's own alpha,
+       which is what keeps her inside it however the wind takes it. The sprite's alpha is
+       binary to within a feathered edge — 97.6% of it sits at 224-254 — so masking her with
+       it bounds her without printing the cloth's folds onto her: the folds are colour, not
+       transparency, and a shadow must not brighten and dim as the cloth moves. */
+    drawShadowOf(SHEETS_AFTER.shadow, rect, 1, opt.deform, s.box,
+                 ()=>drawCloth(IMG[s.img], s.box, opt));
+    /* exactly what this frame used, for __bluer.momProbe() */
+    SHEETS_AFTER.last = { rect, deform: opt.deform, box: s.box, img: s.img, opt };
   }
 
   /* Her, as something to touch — the same call, the same radius, and in the same place on
