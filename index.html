@@ -167,10 +167,22 @@
     opacity:0 !important; transition:opacity .45s; }
   /* an aside and the narration are two voices two vh apart, so only one speaks */
   body.aside #cap{ opacity:0 !important; transition:opacity .5s; }
-  /* and while the pace card is up, nothing else on screen competes with it */
+  /* and while the onboarding is running, nothing else on screen competes with it.
+     `onboarding` covers the whole protected state including the gap between the way-in
+     card fading and the pace card arriving; `pacing` is only the card itself. Without the
+     first of the two, the instruction plaque appeared over the fading way-in card. */
   body.pacing #cap, body.pacing #ask, body.pacing #gate, body.pacing #sdown,
-  body.pacing #chapter, body.pacing #look, body.pacing .ctl{
+  body.pacing #chapter, body.pacing #look, body.pacing .ctl,
+  body.onboarding #cap, body.onboarding #ask, body.onboarding #gate,
+  body.onboarding #sdown, body.onboarding #chapter, body.onboarding #look{
     opacity:0 !important; transition:opacity .8s; }
+  /* AND THE CUE NEEDS MORE THAN OPACITY.
+     `#sdown` pulses its own opacity, so Chromium runs it on the compositor and keeps
+     painting the animated value while getComputedStyle reports 0 — the same trap the
+     statistics blackout hit. SCROLL was sitting on top of the onboarding card. */
+  body.pacing #sdown, body.onboarding #sdown,
+  body.pacing #sdown svg, body.onboarding #sdown svg{
+    visibility:hidden !important; animation:none !important; }
   /* THE ONSLAUGHT OWNS THE WHOLE SCREEN.
      Black means black. Not black with a scroll cue on it, or a chapter mark, or a
      Skip button in the corner — the sequence asks the visitor for nothing and
@@ -496,6 +508,19 @@
   #pace .arrows i{ width:13px; height:13px; border-right:2px solid rgba(240,246,255,.75);
     border-bottom:2px solid rgba(240,246,255,.75); transform:rotate(45deg);
     animation:pchev 2.1s ease-in-out infinite; }
+  /* WHICH DEVICE, ANSWERED HONESTLY.
+     Not a recommendation invented to sound thorough. The piece asks for press-and-hold
+     on a kite and a pair of binoculars, a two-handed drag on the curtains, a crayon
+     stroke on glass, and hit tests as small as a cord ball fifteen pixels across — and
+     on a touch screen a vertical swipe is also how you scroll, so the drag gestures and
+     the navigation are competing for the same movement. It runs on a phone and the
+     layout is built for one, but a pointer is plainly the better instrument, so that is
+     what it says. Set small and quiet: practical guidance, not a third headline. */
+  #pace .dev{ margin:-.55rem 0 0; font-family:var(--mono);
+    font-size:clamp(.66rem,1.7vw,.74rem); letter-spacing:.1em; text-transform:uppercase;
+    line-height:1.75; color:rgba(228,222,208,.62); max-width:56ch; }
+  #pace .dev b{ font-weight:400; color:rgba(246,241,229,.94); }
+
   /* Half of this work is the sound, and there is no switch to turn it on with,
      so the one thing worth saying out loud is: turn it up. */
   #pace .vol{ margin:.1rem 0 0; max-width:none;
@@ -572,6 +597,7 @@
   <h2>Scroll slowly to begin your journey.</h2>
   <p>Interactions appear on their own as you go. Whenever there is something to explore,
      you will be shown. Afterwards, keep scrolling slowly and the next memory arrives.</p>
+  <p class="dev">Best experienced on a <b>desktop or laptop</b>, with a mouse or trackpad.</p>
   <p class="vol">
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h3.2L12 5v14l-4.8-4H4z"/>
       <path class="w1" d="M16 9.4a4 4 0 0 1 0 5.2"/><path class="w2" d="M18.7 7a7.6 7.6 0 0 1 0 10"/></svg>
@@ -1355,10 +1381,25 @@ cv.addEventListener("touchmove", e=>{ if (P.down && needsDrag()) e.preventDefaul
    out the curtains, which is the opposite of what it is for. Real input is stamped here
    instead, and only real input runs the clock. */
 const stamp = () => { T.inT = performance.now(); };
-window.addEventListener("wheel", stamp, {passive:true});
-window.addEventListener("touchmove", stamp, {passive:true});
+/* and the same events tell the onboarding card that somebody has started. It cannot read
+   the scroll position for that, because during onboarding the page is deliberately pinned
+   and the position never changes. */
+const askPace = px => { if (typeof paceInput === "function") paceInput(px); };
+window.addEventListener("wheel", e=>{ stamp(); askPace(e.deltaY || 0); }, {passive:true});
+let _tY = null;
+window.addEventListener("touchstart", e=>{
+  _tY = (e.touches && e.touches[0]) ? e.touches[0].clientY : null;
+}, {passive:true});
+window.addEventListener("touchmove", e=>{
+  stamp();
+  const y = (e.touches && e.touches[0]) ? e.touches[0].clientY : null;
+  if (y !== null && _tY !== null) askPace(y - _tY);
+  _tY = y;
+}, {passive:true});
 window.addEventListener("keydown", e=>{
-  if (e.key===" "||e.key==="PageDown"||e.key==="PageUp"||e.key==="ArrowDown"||e.key==="ArrowUp") stamp();
+  if (e.key===" "||e.key==="PageDown"||e.key==="PageUp"||e.key==="ArrowDown"||e.key==="ArrowUp"){
+    stamp(); askPace(H*0.28);
+  }
 }, {passive:true});
 
 window.addEventListener("keydown", e=>{
@@ -6589,7 +6630,9 @@ function bedroomInteract(g, t, dt){
   if (PROOM.cR < floor) PROOM.cR = floor;
 
   // how much help to offer
-  if (Math.min(PROOM.cL,PROOM.cR) < CTR.need && isCurtain && !introOn){
+  /* and the idle clock does not run behind either card, or the demo pull is already
+     part-way through by the time the chapter starts */
+  if (Math.min(PROOM.cL,PROOM.cR) < CTR.need && isCurtain && !introOn && !onboarding){
     PROOM.idle += dt*(P.down?0.35:1);
     PROOM.demo = lerp(PROOM.demo, PROOM.idle>1.8 ? 1 : 0, Math.min(1, dt*1.6));
   } else {
@@ -6658,7 +6701,11 @@ function drawHandGlyph(x, y, r, a, dirn){
 }
 
 function curtainHelp(t, dt){
-  if (introOn) return;                    // nothing demonstrates behind the card
+  /* Nothing demonstrates behind either card. The hands are a bedroom affordance, and
+     while the onboarding is running the bedroom is meant to be waiting, not offering.
+     They were coming up through the pace card because the room's idle counter had been
+     started at Begin. */
+  if (introOn || onboarding) return;
   const need = cl01((CTR.need - Math.min(PROOM.cL,PROOM.cR))/CTR.need);
   if (need < 0.02 || !CGEO.built) return;
   const r = MIN*0.036;
@@ -14423,27 +14470,51 @@ function onUp(){ DRAW.on=false; }
    through, because there is nothing in it to agree to: it sets a speed and makes
    a promise, and then the piece gets on with it. */
 const paceEl = document.getElementById("pace");
-let paceT = 0, paceGone = false;
+let paceT = 0, paceGone = false, paceUp = 0;
+/* the protected state itself, read by the frame loop */
+let onboarding = false;
+/* HOW MUCH THE VISITOR HAS ASKED TO SCROLL, rather than how far the page has moved.
+   The page cannot move while this card is up — that is the point — so the old test
+   (`window.scrollY > 180`) can never be true any more and would have left the card on
+   screen until its timer ran out. Intent is measured at the input instead, and it is
+   deliberately not one notch: a trackpad twitch or a bounce is not somebody starting. */
+let paceAsk = 0;
+function paceInput(px){ if (onboarding) paceAsk += Math.abs(px); }
 function showPace(){
   if (!paceEl || paceGone) return;
+  onboarding = true;
+  paceAsk = 0; paceUp = 0;
   paceEl.classList.add("on");
   document.body.classList.add("pacing");
   paceEl.setAttribute("aria-hidden", "false");
-  paceT = 6.5;
+  /* longer than it was, because there is one more line to read now, and it is the only
+     place the piece explains itself */
+  paceT = 9.5;
 }
 function hidePace(){
   if (!paceEl || paceGone) return;
   paceGone = true; paceT = 0;
+  /* THE HANDOFF. The card goes and the chapter becomes live in the same frame. Nothing
+     is reset because nothing ever ran: the playhead is still at zero, the curtains are
+     still shut, and the first line has not been spoken yet. */
+  onboarding = false;
+  document.body.classList.remove("onboarding");
+  /* the chapter starts here, so this is where the room starts counting */
+  PROOM.idle = 3.2;
+  beatEnter = performance.now();
   paceEl.classList.remove("on");
   document.body.classList.remove("pacing");
   paceEl.setAttribute("aria-hidden", "true");
 }
 function updPace(dt){
   if (paceGone || paceT <= 0) return;
-  /* any real scroll takes it away at once. A couple of hundred pixels, so a
-     trackpad twitch or a bounce does not count as having started. */
-  if (window.scrollY > 180){ hidePace(); return; }
+  paceUp += dt;
   paceT -= dt;
+  /* Scrolling still takes it away, which is the behaviour it always had and the right
+     one: somebody who has started does not need to be told to start. But not in the
+     first couple of seconds, or an eager scroll would dismiss the instruction before it
+     had been read — and it is dismissed by the ASKING, not by the moving. */
+  if (paceUp > 2.2 && paceAsk > 260){ hidePace(); return; }
   if (paceT <= 0) hidePace();
 }
 
@@ -14521,17 +14592,26 @@ function frame(now){
   window.__fps = 1000/ftAvg;
   if (W<2||H<2){ fit(); if (W<2||H<2){ requestAnimationFrame(frame); return; } }
 
-  if (introOn){
-    // hold everything still behind the card: the first frame the visitor sees
-    // should be the room they are about to be asked to open
+  /* ONBOARDING IS A STATE, AND WHILE IT LASTS THE STORY DOES NOT MOVE.
+     This was the whole bug. The card after Begin says "scroll slowly", and the timeline
+     was live underneath it, so a visitor who did as they were told spent the instruction
+     scrolling through the first chapter. Measured: by the moment the card left the screen
+     the first beat was already 31% gone, and the opening line had come up and faded out
+     again behind it. Following the instruction cost them the beginning of the piece.
+
+     So both cards share one protected state. Nothing behind them advances: the scroll is
+     pinned, the pointer is neutralised so no interaction can fire, and the playhead is
+     not read at all. Because nothing ever moved, the handoff has nothing to undo — no
+     reset, no jump, no scroll position to reconcile. The chapter simply starts, from the
+     beginning, at the moment the instruction is finished with. */
+  if (introOn || onboarding){
     P.down = false; P.active = false; P.dx = 0; P.dy = 0;
     window.scrollTo(0,0);
   } else {
     keyDrive(dt);
     updPointer(dt);
   }
-  readTimeline(dt);
-  clampScroll();
+  if (!onboarding){ readTimeline(dt); clampScroll(); }
   updWind(dt);
 
   const t = now*0.001;
@@ -14589,10 +14669,21 @@ function boot(){
     const go = ()=>{
       if (!introOn) return;
       introOn = false;
+      /* THE PROTECTED STATE IS CONTINUOUS FROM HERE.
+         It has to be set now and not when the card appears. The way-in card takes 1.6s
+         to fade and the pace card is held back until it has actually gone, which left a
+         gap of nearly two seconds where the story was live, the instruction plaque was
+         already on screen, and a visitor scrolling through the fade was spending the
+         first beat. Onboarding begins the instant Begin is pressed and ends once, at the
+         handoff. */
+      onboarding = true;
+      document.body.classList.add("onboarding");
       introEl.classList.add("off");
       window.scrollTo(0,0);
       beatEnter = performance.now();
-      PROOM.idle = 3.2;   // the card explains nothing, so the scene must, and soon
+      /* PROOM.idle used to be primed here so the hands would arrive soon after Begin.
+         Started this early it ran through the whole onboarding, so the hands were up
+         before the chapter was. It is primed at the handoff instead. */
       try{ beginEl.blur(); }catch(_){}
       startSound();          // Begin is the gesture the audio context needs
       /* After the way-in card has actually gone. Its own fade is 1.6s, and at

@@ -669,10 +669,25 @@ cv.addEventListener("touchmove", e=>{ if (P.down && needsDrag()) e.preventDefaul
    out the curtains, which is the opposite of what it is for. Real input is stamped here
    instead, and only real input runs the clock. */
 const stamp = () => { T.inT = performance.now(); };
-window.addEventListener("wheel", stamp, {passive:true});
-window.addEventListener("touchmove", stamp, {passive:true});
+/* and the same events tell the onboarding card that somebody has started. It cannot read
+   the scroll position for that, because during onboarding the page is deliberately pinned
+   and the position never changes. */
+const askPace = px => { if (typeof paceInput === "function") paceInput(px); };
+window.addEventListener("wheel", e=>{ stamp(); askPace(e.deltaY || 0); }, {passive:true});
+let _tY = null;
+window.addEventListener("touchstart", e=>{
+  _tY = (e.touches && e.touches[0]) ? e.touches[0].clientY : null;
+}, {passive:true});
+window.addEventListener("touchmove", e=>{
+  stamp();
+  const y = (e.touches && e.touches[0]) ? e.touches[0].clientY : null;
+  if (y !== null && _tY !== null) askPace(y - _tY);
+  _tY = y;
+}, {passive:true});
 window.addEventListener("keydown", e=>{
-  if (e.key===" "||e.key==="PageDown"||e.key==="PageUp"||e.key==="ArrowDown"||e.key==="ArrowUp") stamp();
+  if (e.key===" "||e.key==="PageDown"||e.key==="PageUp"||e.key==="ArrowDown"||e.key==="ArrowUp"){
+    stamp(); askPace(H*0.28);
+  }
 }, {passive:true});
 
 window.addEventListener("keydown", e=>{

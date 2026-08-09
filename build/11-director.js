@@ -1000,27 +1000,51 @@ function onUp(){ DRAW.on=false; }
    through, because there is nothing in it to agree to: it sets a speed and makes
    a promise, and then the piece gets on with it. */
 const paceEl = document.getElementById("pace");
-let paceT = 0, paceGone = false;
+let paceT = 0, paceGone = false, paceUp = 0;
+/* the protected state itself, read by the frame loop */
+let onboarding = false;
+/* HOW MUCH THE VISITOR HAS ASKED TO SCROLL, rather than how far the page has moved.
+   The page cannot move while this card is up — that is the point — so the old test
+   (`window.scrollY > 180`) can never be true any more and would have left the card on
+   screen until its timer ran out. Intent is measured at the input instead, and it is
+   deliberately not one notch: a trackpad twitch or a bounce is not somebody starting. */
+let paceAsk = 0;
+function paceInput(px){ if (onboarding) paceAsk += Math.abs(px); }
 function showPace(){
   if (!paceEl || paceGone) return;
+  onboarding = true;
+  paceAsk = 0; paceUp = 0;
   paceEl.classList.add("on");
   document.body.classList.add("pacing");
   paceEl.setAttribute("aria-hidden", "false");
-  paceT = 6.5;
+  /* longer than it was, because there is one more line to read now, and it is the only
+     place the piece explains itself */
+  paceT = 9.5;
 }
 function hidePace(){
   if (!paceEl || paceGone) return;
   paceGone = true; paceT = 0;
+  /* THE HANDOFF. The card goes and the chapter becomes live in the same frame. Nothing
+     is reset because nothing ever ran: the playhead is still at zero, the curtains are
+     still shut, and the first line has not been spoken yet. */
+  onboarding = false;
+  document.body.classList.remove("onboarding");
+  /* the chapter starts here, so this is where the room starts counting */
+  PROOM.idle = 3.2;
+  beatEnter = performance.now();
   paceEl.classList.remove("on");
   document.body.classList.remove("pacing");
   paceEl.setAttribute("aria-hidden", "true");
 }
 function updPace(dt){
   if (paceGone || paceT <= 0) return;
-  /* any real scroll takes it away at once. A couple of hundred pixels, so a
-     trackpad twitch or a bounce does not count as having started. */
-  if (window.scrollY > 180){ hidePace(); return; }
+  paceUp += dt;
   paceT -= dt;
+  /* Scrolling still takes it away, which is the behaviour it always had and the right
+     one: somebody who has started does not need to be told to start. But not in the
+     first couple of seconds, or an eager scroll would dismiss the instruction before it
+     had been read — and it is dismissed by the ASKING, not by the moving. */
+  if (paceUp > 2.2 && paceAsk > 260){ hidePace(); return; }
   if (paceT <= 0) hidePace();
 }
 
@@ -1098,17 +1122,26 @@ function frame(now){
   window.__fps = 1000/ftAvg;
   if (W<2||H<2){ fit(); if (W<2||H<2){ requestAnimationFrame(frame); return; } }
 
-  if (introOn){
-    // hold everything still behind the card: the first frame the visitor sees
-    // should be the room they are about to be asked to open
+  /* ONBOARDING IS A STATE, AND WHILE IT LASTS THE STORY DOES NOT MOVE.
+     This was the whole bug. The card after Begin says "scroll slowly", and the timeline
+     was live underneath it, so a visitor who did as they were told spent the instruction
+     scrolling through the first chapter. Measured: by the moment the card left the screen
+     the first beat was already 31% gone, and the opening line had come up and faded out
+     again behind it. Following the instruction cost them the beginning of the piece.
+
+     So both cards share one protected state. Nothing behind them advances: the scroll is
+     pinned, the pointer is neutralised so no interaction can fire, and the playhead is
+     not read at all. Because nothing ever moved, the handoff has nothing to undo — no
+     reset, no jump, no scroll position to reconcile. The chapter simply starts, from the
+     beginning, at the moment the instruction is finished with. */
+  if (introOn || onboarding){
     P.down = false; P.active = false; P.dx = 0; P.dy = 0;
     window.scrollTo(0,0);
   } else {
     keyDrive(dt);
     updPointer(dt);
   }
-  readTimeline(dt);
-  clampScroll();
+  if (!onboarding){ readTimeline(dt); clampScroll(); }
   updWind(dt);
 
   const t = now*0.001;
@@ -1166,10 +1199,21 @@ function boot(){
     const go = ()=>{
       if (!introOn) return;
       introOn = false;
+      /* THE PROTECTED STATE IS CONTINUOUS FROM HERE.
+         It has to be set now and not when the card appears. The way-in card takes 1.6s
+         to fade and the pace card is held back until it has actually gone, which left a
+         gap of nearly two seconds where the story was live, the instruction plaque was
+         already on screen, and a visitor scrolling through the fade was spending the
+         first beat. Onboarding begins the instant Begin is pressed and ends once, at the
+         handoff. */
+      onboarding = true;
+      document.body.classList.add("onboarding");
       introEl.classList.add("off");
       window.scrollTo(0,0);
       beatEnter = performance.now();
-      PROOM.idle = 3.2;   // the card explains nothing, so the scene must, and soon
+      /* PROOM.idle used to be primed here so the hands would arrive soon after Begin.
+         Started this early it ran through the whole onboarding, so the hands were up
+         before the chapter was. It is primed at the handoff instead. */
       try{ beginEl.blur(); }catch(_){}
       startSound();          // Begin is the gesture the audio context needs
       /* After the way-in card has actually gone. Its own fade is 1.6s, and at

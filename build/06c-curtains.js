@@ -450,7 +450,9 @@ function bedroomInteract(g, t, dt){
   if (PROOM.cR < floor) PROOM.cR = floor;
 
   // how much help to offer
-  if (Math.min(PROOM.cL,PROOM.cR) < CTR.need && isCurtain && !introOn){
+  /* and the idle clock does not run behind either card, or the demo pull is already
+     part-way through by the time the chapter starts */
+  if (Math.min(PROOM.cL,PROOM.cR) < CTR.need && isCurtain && !introOn && !onboarding){
     PROOM.idle += dt*(P.down?0.35:1);
     PROOM.demo = lerp(PROOM.demo, PROOM.idle>1.8 ? 1 : 0, Math.min(1, dt*1.6));
   } else {
@@ -519,7 +521,11 @@ function drawHandGlyph(x, y, r, a, dirn){
 }
 
 function curtainHelp(t, dt){
-  if (introOn) return;                    // nothing demonstrates behind the card
+  /* Nothing demonstrates behind either card. The hands are a bedroom affordance, and
+     while the onboarding is running the bedroom is meant to be waiting, not offering.
+     They were coming up through the pace card because the room's idle counter had been
+     started at Begin. */
+  if (introOn || onboarding) return;
   const need = cl01((CTR.need - Math.min(PROOM.cL,PROOM.cR))/CTR.need);
   if (need < 0.02 || !CGEO.built) return;
   const r = MIN*0.036;
