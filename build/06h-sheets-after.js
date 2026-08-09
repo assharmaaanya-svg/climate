@@ -36,32 +36,48 @@ const SHEETS_AFTER = {
     { img:"sheetsafterpollution4.png", src:[0.6155,0.2159,0.2184,0.4897], box:[ 0.5962,0.1663,0.2028,0.4042] },
     { img:"sheetsafterpollution5.png", src:[0.8262,0.1865,0.1738,0.5853], box:[ 0.8160,0.1505,0.1670,0.5000] }
   ],
-  /* Her. A transparent, already-tinted silhouette rather than the clean scene's figure on
-     pure white, so she is composited normally instead of multiplied — multiply against a
-     transparent pixel returns the source, which would have put a hard rectangle of her own
-     colour across the sheet behind her.
+  /* HER, BUILT THE WAY SHE IS BUILT IN THE CLEAN CHAPTER.
+     She was wrong here before: a semi-transparent cut-out of her whole body laid behind the
+     sheet, at a size I had picked, with no skirt below the hem and nothing falling on the
+     cloth. So she was neither a shadow nor a person — she was a faint picture behind a sheet,
+     and small enough to miss entirely.
 
-     She stands behind the third sheet, as she did, and she is drawn under it: encountered
-     among the washing rather than presented in front of it. Her box is measured off her own
-     ink and scaled to the height the clean shadow had on the cloth, so she is the same
-     person the same distance away. */
-  mother: { img:"momshadowcoughingafterpollution.png", src:[0.3788,0.1443,0.2137,0.7432] },
+     She is now the same three-part figure the clean line has, in the same order: her skirt,
+     then the sheet, then her shadow cast onto that sheet and clipped to it.
+
+     HER BOX IS NOT THE CLEAN SCENE'S BOX, AND IT CANNOT BE. The two crops do not start at
+     the same part of her: in the clean sprite her arms are straight up, so the top of that
+     crop is her HANDS and her head sits a quarter of the way down it; in this one her hand
+     is at her mouth and the top of the crop is the top of her head. Drawn into the clean
+     rect she was therefore stood up to where the fingertips had been — head against the
+     pins, shoulders across the middle of the cloth, looming.
+
+     So she is placed off the two landmarks the poses do share. Her waist, at the bottom of
+     both crops, is 0.728 of this crop's width against 0.545 of the clean one's, and it has
+     to match the top of the skirt drawn under it — that fixes the scale at 0.748 of the
+     clean box and puts her waist centre on the skirt's centre. Both crops end at the hem,
+     so her feet are anchored there. And the check that the two agree: this leaves 0.116 of
+     the frame of clear cloth above her head, where the clean chapter leaves 0.117. Same
+     woman, same distance, same amount of sheet over her head.
+
+     The sprite is a cut-out on transparency rather than a figure on white, so it goes
+     through the white buffer in shadowBuf and is let in at `ink` — the file is nearly
+     black, and the clean shadow it has to match is a mid grey. 0.66 puts the two at the
+     same mean density, so she reads as a shadow on cloth and not as a hole in it. */
+  shadow: { img:"momshadowcoughingcropped.png",
+            src:[0.3788,0.2730,0.2137,0.7270],
+            box:[0.4045,0.2738,0.1426,0.3350],
+            ink:0.66, dens:0.78, ox:0, oy:0 },
+  /* and her real skirt, below the hem, in the same wind. The after-pollution painting of it
+     is a 1254-square with the skirt filling the frame, so it needs its own source rect; the
+     shape is the same one, within half a per cent on aspect, which is why her size on the
+     frame is the clean scene's `sk` untouched. */
+  skirt: { img:"skirtafterpollution.png", box:[0.0159,0.0837,0.9681,0.7903] },
   momAt: 2,
   /* how far through the scene she has been touched, and what follows it */
   tapped: 0, coughT: -1, lineT: -1, said: 0, glow: 0,
   built: false, cloth: []
 };
-
-/* the drop and the horizontal place of her figure, as fractions of the frame. Her drawn
-   height is matched to the clean scene's shadow, which was measured against the painting
-   of her really standing behind that sheet — so this is the painter's scale, not mine. */
-/* SHE IS BEHIND THE SHEET, NOT LOOKING OVER IT.
-   At 0.1735 her head cleared the top of the cloth and she read as somebody peering over the
-   washing line, which is both wrong and faintly comic. Her sheet hangs from 0.164 to 0.621,
-   so she starts well inside that and finishes just below the hem: the head is covered, the
-   feet show, and what the visitor sees of her is a shape through cloth and a pair of feet
-   under it — which is how you actually come across someone hanging washing. */
-const SA_MOM = { cx:0.4880, top:0.2150, h:0.4300 };
 
 /* how long the cough takes to land before anything is said. Long enough that the sentence
    is a response to it rather than a caption on it, short enough that the visitor is still
@@ -87,12 +103,15 @@ function buildSheetsAfter(){
 function resetSheetsAfter(){
   SHEETS_AFTER.tapped = 0; SHEETS_AFTER.coughT = -1;
   SHEETS_AFTER.lineT = -1; SHEETS_AFTER.said = 0; SHEETS_AFTER.glow = 0;
+  SHEETS_AFTER.shadow.ox = 0; SHEETS_AFTER.shadow.oy = 0;
 }
 
+/* where she is on the frame, for the thing you touch and for the tests. Taken from her
+   shadow's box, exactly as the clean chapter takes it from hers. */
 function saMomRect(rect){
-  const h = SA_MOM.h * rect.h;
-  const w = h * (SHEETS_AFTER.mother.src[2]*1254) / (SHEETS_AFTER.mother.src[3]*1254);
-  return { x: rect.x + SA_MOM.cx*rect.w - w/2, y: rect.y + SA_MOM.top*rect.h, w, h };
+  const b = SHEETS_AFTER.shadow.box;
+  return { x: rect.x + b[0]*rect.w, y: rect.y + b[1]*rect.h,
+           w: b[2]*rect.w, h: b[3]*rect.h };
 }
 
 /* --------------------------------------------------------------------- the scene */
@@ -101,8 +120,10 @@ function drawSheetsAfter(t, dt, o){
   if (!getPlate("lineAfter")){ ctx.fillStyle="#5d5344"; ctx.fillRect(0,0,W,H); return; }
   if (!SHEETS_AFTER.built) buildSheetsAfter();
   /* the same wind that moves the clean line, so the cloth has the same weight; the scene
-     itself is stiller because there is less in it, not because the air behaves differently */
-  updSheetWind(dt, t);
+     itself is stiller because there is less in it, not because the air behaves differently.
+     Its own row of cloth is what the wind is reaching — passing this is what makes these
+     sheets move at all. */
+  updSheetWind(dt, t, SHEETS_AFTER.cloth);
 
   drawPlate("lineAfter", { air:0 });
 
@@ -114,20 +135,28 @@ function drawSheetsAfter(t, dt, o){
     const opt = { t, c, x:rect.x, y:rect.y, w:rect.w, h:rect.h,
                   give: 1, wave1: 5.2, wave2: 3.4, pin: 1, alpha: 1, src: s.src };
 
-    /* she goes in behind her sheet, so the cloth crosses her and she is found among the
-       washing. Her sheet takes less of the wind, exactly as the clean one did: she is
-       standing against it. */
-    if (i === SHEETS_AFTER.momAt){
-      drawSheetsAfterMother(t, dt, rect);
-      opt.give = 0.46;
-    }
+    if (i !== SHEETS_AFTER.momAt){ drawCloth(IMG[s.img], s.box, opt); continue; }
+
+    /* HER SHEET, IN THE CLEAN CHAPTER'S ORDER. Skirt first, so the sheet's own hem covers
+       her waist and there is no seam between the two sprites to hide. Then the sheet,
+       warped like every other one but taking less of the wind, because she is standing
+       right behind it with both hands on it. Then her shadow on the cloth, which is not
+       warped at all — a shadow does not flap — only clipped to the cloth's outline so it
+       travels with the sheet instead of hanging in the air when a gust takes it. */
+    updSheetsAfterMother(dt);
+    drawSkirtOf({ img: SHEETS_AFTER.skirt.img, box: SHEETS_AFTER.skirt.box,
+                  sk: SHEETS.sk, hem: s.box }, t, rect, 1);
+    opt.give = 0.46;
+    opt.deform = clothDeform(s.box, opt);
     drawCloth(IMG[s.img], s.box, opt);
+    drawShadowOf(SHEETS_AFTER.shadow, rect, 1, opt.deform, s.box);
   }
 
-  /* Her, as something to touch — the same call, the same radius, the same halo the clean
-     scene puts on her, because the visitor is meant to recognise this and reach for it. */
+  /* Her, as something to touch — the same call, the same radius, and in the same place on
+     the frame as the clean chapter's, because the visitor is meant to recognise this and
+     reach for it without being told. */
   const mr = saMomRect(rect);
-  spot("mother-after", mr.x + mr.w*0.5, mr.y + mr.h*0.52, MIN*0.15, ()=>{
+  spot("mother-after", mr.x + mr.w*0.5, mr.y + mr.h*0.62, MIN*0.15, ()=>{
     SHEETS_AFTER.tapped = 1;
     if (SHEETS_AFTER.coughT < 0 && !SHEETS_AFTER.said){
       SHEETS_AFTER.coughT = 0;
@@ -164,28 +193,17 @@ function drawSheetsAfter(t, dt, o){
 }
 
 /* ------------------------------------------------------------------------ her
-   Drawn flat, never deformed, and never brightened. Her pose is doing the work: a figure
-   with a hand up at her face, seen through cloth. There are no particles, no lines coming
-   off her and no animation beyond the small amount of life the scene already has — the
-   brief for her was that her silhouette carries it, and it does.
+   Nothing here draws her. Her drawing is the clean chapter's, called with her sprites —
+   what this does is the one thing that is hers alone: a cough is a whole body folding, and
+   for a second or so after it her shadow on the cloth is not quite still.
 
-   She sits UNDER her sheet in the draw order, which is why nothing about her needs keying
-   or feathering: the cloth is the thing with the soft edge, and she is behind it. */
-function drawSheetsAfterMother(t, dt, rect){
-  const im = IMG[SHEETS_AFTER.mother.img];
-  if (!imgReady(im)) return;
-  const s = SHEETS_AFTER.mother.src;
-  const r = saMomRect(rect);
-  const iw = im.naturalWidth, ih = im.naturalHeight;
-
-  /* a very small amount of settle, the kind a person standing still has, and a touch more
-     of it in the second after the cough. Nothing that reads as an animation. */
-  const after = SHEETS_AFTER.coughT >= 0 ? Math.max(0, 1 - SHEETS_AFTER.coughT/1.4) : 0;
-  const bob = Math.sin(t*0.9)*r.h*0.0016 + after*Math.sin(t*7.5)*r.h*0.0042;
-
-  ctx.save();
-  ctx.globalAlpha = 0.88;
-  ctx.drawImage(im, s[0]*iw, s[1]*ih, s[2]*iw, s[3]*ih,
-                r.x, r.y + bob, r.w, r.h);
-  ctx.restore();
+   It is a handful of pixels at most, and it decays. A shadow that keeps twitching would
+   turn into an animation, and the pose is already carrying the moment. */
+function updSheetsAfterMother(dt){
+  const sh = SHEETS_AFTER.shadow;
+  if (SHEETS_AFTER.coughT < 0){ sh.ox = 0; sh.oy = 0; return; }
+  const k = Math.max(0, 1 - SHEETS_AFTER.coughT/1.6);
+  const p = SHEETS_AFTER.coughT * 9.0;
+  sh.oy = k*k * 0.0060 * Math.abs(Math.sin(p));      // down into the fold, never up
+  sh.ox = k*k * 0.0016 * Math.sin(p*0.7);
 }

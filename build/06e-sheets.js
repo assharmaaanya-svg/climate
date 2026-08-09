@@ -107,8 +107,16 @@ function buildSheets(){
 /* the washing line, as it sags between its poles */
 function lineY(fx){ return 0.148 + 0.034*Math.sin(cl01(fx*0.5+0.25)*PI); }
 
-/* the wind: gusts that arrive, pass through, and leave the line still */
-function updSheetWind(dt, t){
+/* the wind: gusts that arrive, pass through, and leave the line still.
+
+   `list` is which row of cloth the wind is reaching. The gusts themselves are the place's
+   and stay on SHEETS — it is one washing line in one garden, and both chapters should get
+   the same weather — but each chapter hangs its own sheets, and every sheet carries its own
+   lag and swing. That was a bug worth the argument: this used to advance SHEETS.cloth and
+   nothing else, so the polluted line, which has its own array, kept swing at zero and hung
+   completely dead in a wind the soundtrack could be heard rising in. */
+function updSheetWind(dt, t, list){
+  list = list || SHEETS.cloth;
   /* A gust that appears at full strength and decays is a pop, and no amount of
      smoothing downstream hides the moment it arrives. So a gust has a shape:
      it rises over the better part of a second, holds, and falls away over two
@@ -137,8 +145,8 @@ function updSheetWind(dt, t){
     + 0.022*Math.sin(t*1.09 + 0.4);
   SHEETS.wind = Math.max(0.05, base + SHEETS.gust);
 
-  for (let i=0;i<SHEETS.cloth.length;i++){
-    const c = SHEETS.cloth[i];
+  for (let i=0;i<list.length;i++){
+    const c = list[i];
     // the wind reaches each sheet a moment after the one before it, and every
     // sheet has its own weight, so the line ripples instead of pulsing
     const drive = SHEETS.wind * (1 - i*0.035);
@@ -314,7 +322,8 @@ function drawSheetsScene(t, dt, o){
    all: it is a figure on pure white, and white under multiply is the identity.
    The white margin is genuinely 255,255,255 in every corner, which is the only
    thing that makes this safe. */
-let SHBUF = null;
+const SHBUF = new Map();
+const SHADOW_M = 0.07;                 // margin around the figure, in its own box
 /* The sprite is a hard-edged figure, and a shadow falling on the far side of a
    sheet is not: the cloth scatters it. So it is softened once, into its own
    buffer, and cached — the drawing never changes, only where it is put.
@@ -323,29 +332,53 @@ let SHBUF = null;
    twice: white is what multiply ignores, so the margin never darkens anything;
    and a blur samples outside whatever it is drawing, which on an empty canvas
    means transparent black and a dark rim round the figure. Against white there
-   is nothing to pull in but more white. */
-function shadowBuf(img, b, w, h){
+   is nothing to pull in but more white.
+
+   AND IT IS WHAT MAKES A TRANSPARENT SPRITE MULTIPLIABLE AT ALL. The clean
+   figure arrives already on white; the polluted scene's coughing figure is a
+   cut-out on transparency, and multiply against a transparent pixel returns the
+   source — which would put a hard rectangle of her own colour across the sheet.
+   Composited into this white buffer first she becomes the same kind of picture
+   the clean sprite already is, and the same multiply is then correct for both.
+   `ink` is how hard she goes in: the clean sprite is a soft grey and goes in
+   whole, the cut-out is nearly black and is let in part way, so both end up at
+   the density of a shadow rather than of a silhouette.
+
+   The figure is drawn INSIDE the margin rather than filling the buffer, so the
+   source rect never has to reach outside its own image to leave room for the
+   blur — which the cropped sprite, whose figure runs to the bottom edge of its
+   file, would otherwise do. */
+function shadowBuf(img, src, w, h, ink){
   w = Math.max(16, Math.round(w)); h = Math.max(16, Math.round(h));
-  if (SHBUF && SHBUF.w === w && SHBUF.h === h) return SHBUF.c;
+  const key = img.src + "|" + w + "x" + h + "|" + ink;
+  const hit = SHBUF.get(key);
+  if (hit) return hit;
   const c = document.createElement("canvas");
   c.width = w; c.height = h;
   const g = c.getContext("2d");
   g.fillStyle = "#ffffff"; g.fillRect(0, 0, w, h);
   const iw = img.naturalWidth, ih = img.naturalHeight;
+  const px = w*SHADOW_M/(1+2*SHADOW_M), py = h*SHADOW_M/(1+2*SHADOW_M);
   g.filter = "blur(" + Math.max(1.2, w*0.012) + "px)";
-  g.drawImage(img, b[0]*iw, b[1]*ih, b[2]*iw, b[3]*ih, 0, 0, w, h);
+  g.globalAlpha = ink;
+  g.drawImage(img, src[0]*iw, src[1]*ih, src[2]*iw, src[3]*ih,
+              px, py, w-2*px, h-2*py);
   g.filter = "none";
-  SHBUF = { w, h, c };
+  if (SHBUF.size > 6) SHBUF.clear();
+  SHBUF.set(key, c);
   return c;
 }
-function drawShadow(rect, a, deform, sb){
-  const sh = IMG[SHEETS.shadow.img];
+/* cfg: { img, box, src, ink, dens } — `box` is where she falls on the frame,
+   `src` what to read out of the file when the two are not the same rect. */
+function drawShadowOf(cfg, rect, a, deform, sb){
+  const sh = IMG[cfg.img];
   if (!imgReady(sh) || a < 0.005) return;
-  const b = SHEETS.shadow.box, m = 0.07;             // white margin, so the blur
+  const b = cfg.box, m = SHADOW_M;                   // white margin, so the blur
   const bx = b[0]-b[2]*m, by = b[1]-b[3]*m;          // has room to fall off
   const bw = b[2]*(1+2*m), bh = b[3]*(1+2*m);
   const dw = bw*rect.w, dh = bh*rect.h;
-  const buf = shadowBuf(sh, [bx,by,bw,bh], dw, dh);
+  const buf = shadowBuf(sh, cfg.src || cfg.box, dw, dh,
+                        cfg.ink === undefined ? 1 : cfg.ink);
 
   /* She does not ripple, but the surface she is being cast onto does travel,
      and a shadow pinned to the screen while the cloth slides out from under it
@@ -360,9 +393,15 @@ function drawShadow(rect, a, deform, sb){
   ctx.save();
   ctx.clip(clothPath(deform));
   ctx.globalCompositeOperation = "multiply";
-  ctx.globalAlpha = a*0.70;
-  ctx.drawImage(buf, rect.x + bx*rect.w + ox, rect.y + by*rect.h + oy, dw, dh);
+  ctx.globalAlpha = a*(cfg.dens === undefined ? 0.70 : cfg.dens);
+  /* and anything the figure herself is doing, in fractions of the frame — a
+     cough moves a body, and the shadow of a body that moves moves with it */
+  const kx = (cfg.ox || 0)*rect.w, ky = (cfg.oy || 0)*rect.h;
+  ctx.drawImage(buf, rect.x + bx*rect.w + ox + kx, rect.y + by*rect.h + oy + ky, dw, dh);
   ctx.restore();
+}
+function drawShadow(rect, a, deform, sb){
+  drawShadowOf(SHEETS.shadow, rect, a, deform, sb);
 }
 
 /* ------------------------------------------------------------------ her skirt
@@ -386,11 +425,15 @@ function drawShadow(rect, a, deform, sb){
    travels furthest, the waist not at all — which is what a gathered skirt does,
    and unlike the banded version it has no seams in it. The lag between hem and
    waist lives in the wind driving it, not in the geometry. */
-function drawSkirt(t, rect, a){
-  const skirt = IMG[SHEETS.skirt.img];
+/* cfg: { img, box, sk, hem } — the sprite, the rect to read out of it, her size
+   on the frame, and the sheet whose hem her waist goes behind. The polluted
+   chapter passes its own four; nothing else about her differs, which is the
+   point of taking them as arguments rather than writing this twice. */
+function drawSkirtOf(cfg, t, rect, a){
+  const skirt = IMG[cfg.img];
   if (!imgReady(skirt) || a < 0.01) return;
-  const sk = SHEETS.skirt.box, K = SHEETS.sk;
-  const sb = SHEETS.src[SHEETS.momAt].box;
+  const sk = cfg.box, K = cfg.sk;
+  const sb = cfg.hem;
 
   const w = K.w, h = K.h, cx = K.cx;
   const hem = sb[1] + sb[3];                     // the sheet she is standing behind
@@ -428,4 +471,8 @@ function drawSkirt(t, rect, a){
   ctx.drawImage(skirt, sx, sy + ih*0.006, sw, ih*0.004, -dw*0.5, -ext, dw, ext + 1);
   ctx.drawImage(skirt, sx, sy, sw, sh, -dw*0.5, 0, dw, dh);
   ctx.restore();
+}
+function drawSkirt(t, rect, a){
+  drawSkirtOf({ img: SHEETS.skirt.img, box: SHEETS.skirt.box, sk: SHEETS.sk,
+                hem: SHEETS.src[SHEETS.momAt].box }, t, rect, a);
 }

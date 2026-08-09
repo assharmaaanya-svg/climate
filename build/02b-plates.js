@@ -225,7 +225,10 @@ function preloadPlates(){
        `imgReady` quietly declines to draw it. */
     "sheetsafterpollution1.png","sheetsafterpollution2.png","sheetsafterpollution3.png",
     "sheetsafterpollution4.png","sheetsafterpollution5.png",
-    "momshadowcoughingafterpollution.png",
+    /* her, in two parts, exactly as the clean line has her: the shadow she casts on her
+       sheet, cropped at the hem because that is where the cloth stops, and her skirt below
+       it. The uncropped full-body version she used to be drawn from is not loaded any more. */
+    "momshadowcoughingcropped.png","skirtafterpollution.png",
     "postpollutionbedroomupdate.png"];
   /* the binocular overlay is not here any more: the lookout draws its field of
      view rather than loading it. See build/06g-lookout.js. */

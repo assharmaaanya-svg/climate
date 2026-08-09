@@ -65,6 +65,18 @@ Sound is not optional and there is no switch for it. Half of this work is in the
 starts from the Begin press, which is also the gesture a browser needs before it will let an audio
 context run.
 
+## Renamed source files
+
+Two of the artist's own files reached `assets/` under a different name, because the name they
+arrived with would not survive being written into code and a URL:
+
+| In `assets/` | As supplied |
+| --- | --- |
+| `momshadowcoughingcropped.png` | `momshadowcoughingafterpollution_cropped (2).png` |
+
+The image is byte-for-byte the file that was supplied; only the name is different. (A `(1)` copy
+of the same file was also supplied and is identical to it by checksum.)
+
 ## The star cards
 
 Tapping any of the five named stars opens a card: what the star is in one line, then what it has

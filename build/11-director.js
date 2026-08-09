@@ -1243,6 +1243,13 @@ window.__bluer = {
   get gates(){ return done; },
   get fps(){ return window.__fps; },
   get missing(){ return imgFailed.slice(); },
+  /* which sprites actually arrived, and at what size. IMG[] is only populated from the
+     preload order list, so "is it drawn" and "is it loaded" are different questions and
+     the second one has no visible answer without this. */
+  sprite(n){ const i = IMG[n];
+             return !i ? "not requested"
+                  : !i.complete || !i.naturalWidth ? "not loaded"
+                  : i.naturalWidth+"x"+i.naturalHeight; },
   audio(){ return { ctx: AC ? AC.state : "none", on: soundOn,
                     a1: AMB.state, a2: AMB2.state,
                     g1: AMB.gain ? +AMB.gain.gain.value.toFixed(3) : null,
