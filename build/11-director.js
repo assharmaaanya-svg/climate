@@ -1290,6 +1290,49 @@ window.__bluer = {
               for (const s of all) if (s.id === nm && s._p) return { x:s._p.x, y:s._p.y };
               return null; },
   progress(g){ return gateProgress(g); },
+  /* IS ANY PIXEL OF HER OUTSIDE THE CENTRE SHEET'S OWN ALPHA.
+     Not against the mesh outline — against the cloth as it is actually drawn, which is inset
+     inside that outline by the width of the transparent margin its sprite carries. Both are
+     re-rendered from the state this frame used, so nothing has moved between them: the sheet
+     alone into one buffer for its alpha, and her alone onto white in another, where "not
+     white" is her because multiply cannot brighten. Then every pixel of her is checked
+     against the cloth's alpha at the same point. */
+  momProbe(){
+    const L = SHEETS_AFTER.last;
+    if (!L) return null;
+    offscreen2(()=>{ drawCloth(IMG[L.img], L.box, L.opt); });
+    const cloth = tc2.getImageData(0, 0, W, H).data;
+    offscreen(()=>{
+      tc.fillStyle = "#ffffff"; tc.fillRect(0, 0, W, H);
+      drawShadowOf(SHEETS_AFTER.shadow, L.rect, 1, L.deform, L.box,
+                   ()=>drawCloth(IMG[L.img], L.box, L.opt));
+    });
+    const her = tc.getImageData(0, 0, W, H).data;
+    /* NO CLOTH means alpha exactly zero. An earlier version of this called anything under 8
+       "no cloth", which is not what the sheet's sprite thinks: its edge ramps through
+       single-digit alphas over a pixel or two, so that threshold reported her as escaping onto
+       cloth that was faintly but genuinely there. The pass criterion is alpha === 0; the
+       1-to-8 band is counted separately so it cannot hide in the same number. */
+    let n = 0, bare = 0, faint = 0, thin = 0, worst = null, lowest = -1, clothLow = -1;
+    for (let y = 0; y < H; y++){
+      for (let x = 0; x < W; x++){
+        const k = (y*W + x)*4;
+        const ca = cloth[k+3];
+        if (ca > 0 && y > clothLow) clothLow = y;
+        /* how far from white this pixel is: 0 is untouched, higher is more of her */
+        const v = 765 - (her[k] + her[k+1] + her[k+2]);
+        if (v < 3) continue;
+        n++;
+        if (y > lowest) lowest = y;
+        if (ca === 0){ bare++; if (!worst || v > worst.v) worst = { x, y, v, clothAlpha:ca }; }
+        else if (ca <= 8) faint++;
+        else if (ca <= 64) thin++;
+      }
+    }
+    return { her:n, outsideCloth:bare, onAlphaUnder8:faint, onFeatheredEdge:thin, worst:worst,
+             lowestHerRow:lowest, lowestClothRow:clothLow,
+             swing:+SHEETS_AFTER.cloth[SHEETS_AFTER.momAt].swing.toFixed(2) };
+  },
   get outliers(){ return OUTLIERS; },
   nightAudio(){ const f=L=>({state:L.state,playing:!!L.src,g:L.gain?+L.gain.gain.value.toFixed(4):null});
                 return { crickets:f(CRICK), nightbird:f(NBIRD) }; },
