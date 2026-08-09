@@ -111,6 +111,35 @@ const Z_BASE = 1.66, Z_MAX = 2.34;
 /* the out-of-focus copy of the frame, at half resolution. Its own buffer rather
    than the shared TMP2, because resizing a buffer that four other scenes draw
    full-frame into is a bug waiting for the next chapter. */
+/* THE SHARP FRAME IS BUILT AT DEVICE RESOLUTION, NOT AT CSS RESOLUTION.
+   This was the other half of the soft-zoom problem, and it was mine rather than the
+   painting's. The chapter assembled itself into the shared offscreen buffer, which is
+   sized in CSS pixels, and that buffer was then drawn to a canvas that carries a
+   devicePixelRatio transform — so on any 2x display the whole valley was built at half
+   the resolution of the screen it was going to and scaled up. Magnifying a 1537-pixel
+   painting is already asking a lot of it; magnifying it and then upscaling the result by
+   two is where the mush came from.
+
+   So the lookout gets its own buffer at true device resolution. The blurred copy is now
+   reduced from that instead, which is strictly better as well: a downsample from a
+   sharper source. Nothing else in the piece is touched — this is one chapter's buffer,
+   not a change to the shared one. */
+const LSHARP = document.createElement("canvas"), lsc = LSHARP.getContext("2d");
+function lookSharp(fn){
+  const dw = Math.max(2, Math.round(W*DPR)), dh = Math.max(2, Math.round(H*DPR));
+  if (LSHARP.width !== dw || LSHARP.height !== dh){ LSHARP.width = dw; LSHARP.height = dh; }
+  const keep = ctx;
+  ctx = lsc;
+  lsc.setTransform(DPR, 0, 0, DPR, 0, 0);
+  lsc.globalCompositeOperation = "source-over";
+  lsc.globalAlpha = 1;
+  lsc.imageSmoothingQuality = "high";
+  lsc.clearRect(0, 0, W, H);
+  lsc.lineJoin = "round";
+  fn();
+  ctx = keep;
+}
+
 const LBLUR = document.createElement("canvas"), lbc = LBLUR.getContext("2d");
 
 /* THE TWO PAINTINGS, ALREADY MIXED.
@@ -425,7 +454,7 @@ function drawLookout(t, dt, o){
   const airNow = lerp(air0, air1, rec);
   const world = lookComposite(im, imh, airNow);
   const OV = 10;                                   // overscan: see the blur note
-  offscreen(()=>{
+  lookSharp(()=>{
     ctx.drawImage(world, sx, sy, wsrc, hsrc, -OV, -OV, W+OV*2, H+OV*2);
     /* things that are alive, drawn in here so the lens softness applies to them
        as it does to everything else */
@@ -481,11 +510,13 @@ function drawLookout(t, dt, o){
     lbc.imageSmoothingQuality = "high";
     lbc.clearRect(0,0,qw,qh);
     lbc.filter = "blur(" + Rb.toFixed(2) + "px)";
-    lbc.drawImage(TMP, -OV2, -OV2, qw+OV2*2, qh+OV2*2);
+    lbc.drawImage(LSHARP, -OV2, -OV2, qw+OV2*2, qh+OV2*2);
     lbc.filter = "none";
   }
 
-  ctx.drawImage(TMP, 0, 0);
+  /* drawn back at its CSS size, which is its device size divided by the ratio, so it
+     lands one buffer pixel per screen pixel */
+  ctx.drawImage(LSHARP, 0, 0, W, H);
   if (needBlur){
     if (soft > 0.012){
       ctx.globalAlpha = soft;

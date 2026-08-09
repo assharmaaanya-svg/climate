@@ -440,9 +440,16 @@ const CH_NAME = { 1:"i · the world came inside", 2:"ii · life happened outdoor
    this must not feel like. `shirt`, the walk through the washing, has no instruction and
    therefore no wall. And the release in HOLD_PATIENCE below is the backstop for anything
    that cannot be satisfied for a reason nobody predicted. */
+/* AND EXPLORATION IS NEVER A TOLL GATE.
+   The lookout's four places are opportunities, not requirements. Holding the scroll until
+   somebody has found three of them turns a valley you were invited to look around into a
+   list you have to clear, which is the opposite of what the chapter is for. The checklist,
+   the ticks, the per-place memories and the guidance all stay exactly as they are, and a
+   visitor who finds none of them carries on unimpeded. */
+const HOLD_NEVER = { find:1, rfind:1 };
 const HOLD_AT = {};
 for (const _b of BEATS){
-  if (!_b.gate || !_b.ask) continue;
+  if (!_b.gate || !_b.ask || HOLD_NEVER[_b.gate]) continue;
   const g = _b.gate;
   HOLD_AT[_b.id] = {
     done: () => gateMet(g),

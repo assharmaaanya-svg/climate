@@ -1329,6 +1329,7 @@ window.__bluer = {
   get blocked(){ return T.blocked; },
   get wait(){ return T.wait; },
   get onboarding(){ return onboarding; },
+  sharp(){ return { w:LSHARP.width, h:LSHARP.height, want:Math.round(W*DPR)+"x"+Math.round(H*DPR) }; },
   get pace(){ return { gone:paceGone, t:+paceT.toFixed(2), up:+paceUp.toFixed(2), ask:Math.round(paceAsk) }; },
   cord(){ return cordBall(); },
   card(id){ showStarStory(id); },

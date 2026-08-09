@@ -79,11 +79,13 @@
     /* colour is in the transition list on the base rule, not on .redshift, so the drift
        has somewhere to start from the instant the class arrives */
     transition:opacity 1.5s cubic-bezier(.4,0,.2,1), transform 1.5s cubic-bezier(.4,0,.2,1),
-               color 10s linear; }
+               color 6.5s cubic-bezier(.42,0,.75,1); }
   #cap.on{ opacity:1; transform:translate(-50%,0); }
   /* A LINE THAT LOSES ITS COLOUR WHILE YOU LOOK AT IT.
-     Ten seconds, linear, ending at a dusty brick that is nowhere near an alarm red and is
-     not far off the browns already in the room. Nothing flashes and nothing escalates: the
+     Six and a half seconds, ending at a dusty brick that is nowhere near an alarm red and
+     is not far off the browns already in the room. Eased rather than linear, so it holds
+     near ivory for a moment and then commits — a linear ramp spends most of its time in
+     the indistinguishable middle, which is why the change was not being noticed at all. Nothing flashes and nothing escalates: the
      sentence is simply not as white as it was when it arrived, and most visitors will not
      catch the moment it changed.
 
@@ -92,7 +94,7 @@
      done and the effect never actually landed. Ten seconds is inside the window the
      sequence now holds the scroll for, so it always completes, and the timing is kept in
      step with PRET_RED on the other side. */
-  #cap.redshift{ color:#b07068; }
+  #cap.redshift{ color:#a85347; }
   #cap.dark{ color:#241a12;
     text-shadow:0 1px 3px rgba(255,250,238,.95), 0 2px 18px rgba(255,248,232,.9),
                 0 0 42px rgba(255,246,226,.75); }
@@ -316,51 +318,67 @@
      drawn instead.
 
      The wording is untouched: this is the artist's own air-quality concept, rebuilt. */
-  #note{ position:fixed; right:max(16px,env(safe-area-inset-right)); bottom:6vh; z-index:14;
-    width:min(422px,calc(100vw - 32px));
-    padding:13px 15px 14px 15px;
-    background:rgba(250,250,251,.94);
-    border:.5px solid rgba(255,255,255,.66);
-    border-radius:21px;
-    -webkit-backdrop-filter:blur(26px) saturate(1.8); backdrop-filter:blur(26px) saturate(1.8);
-    /* MORE PRESENCE THAN ANYTHING ELSE IN THE INTERFACE, and it has earned it: this is
-       the one moment the outside world speaks directly to the visitor. Two shadows, a
-       tight contact one and a wide soft one, which is what lifts a real banner off the
-       screen it is sitting on. */
-    box-shadow:0 20px 48px rgba(0,0,0,.34), 0 4px 12px rgba(0,0,0,.16),
-               0 0 0 .5px rgba(0,0,0,.05);
+  /* A NOTIFICATION IN THIS ROOM, NOT A SCREENSHOT OF ONE.
+     The previous version was right about anatomy and wrong about light. A 94%-opaque white
+     card, 422 pixels across, with a 48-pixel shadow, dropped into a painting lit at a fifth
+     of daylight: the brightest object on the screen by a wide margin, and the eye went to it
+     before it went to the room. It read as an OS card pasted over the artwork.
+
+     So it keeps the anatomy — app tile, name in small caps, timestamp at the far edge,
+     headline, body, over a blurred translucent material — and takes the light of the scene
+     instead of bringing its own. Smoked glass rather than white plastic: a dark warm ground
+     the room's colour shows through, ivory type, and the same amber only on the tile and one
+     hairline. Nothing is dimmer than it needs to be — the headline sits near full ivory and
+     the body just under it, which measures better against this ground than near-black did
+     against white — and it is smaller, so it takes a corner of the frame rather than a third
+     of it.
+
+     It is deliberately NOT one of the interaction plaques: those are mono, borderless-quiet
+     and centred under the scene, and this is a system-font card with a tile and a timestamp
+     sitting in the corner where a phone would be. Nobody will mistake it for narration. */
+  #note{ position:fixed; right:max(18px,env(safe-area-inset-right)); bottom:6.5vh; z-index:14;
+    width:min(348px,calc(100vw - 36px));
+    padding:11px 13px 12px 14px;
+    background:
+      linear-gradient(158deg, rgba(34,27,21,.80), rgba(19,16,14,.86));
+    border:1px solid rgba(240,226,198,.14);
+    border-radius:17px;
+    -webkit-backdrop-filter:blur(20px) saturate(1.1); backdrop-filter:blur(20px) saturate(1.1);
+    /* low and soft: it is resting in the room, not floating over it */
+    box-shadow:0 12px 30px rgba(0,0,0,.40);
     font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-    color:#0b0d10;
-    opacity:0; transform:translateX(34px) scale(.965); transform-origin:100% 50%;
-    /* it arrives the way a banner arrives: quickly, and then it is simply there */
-    transition:opacity .42s cubic-bezier(.17,.84,.28,1), transform .52s cubic-bezier(.17,.84,.28,1);
+    color:#f2ece0;
+    opacity:0; transform:translate(20px,6px) scale(.975); transform-origin:100% 60%;
+    /* it settles in rather than sliding across: a short travel, a slight rise, no bounce */
+    transition:opacity .5s cubic-bezier(.22,.61,.36,1),
+               transform .62s cubic-bezier(.22,.61,.36,1);
     pointer-events:none; }
   #note.on{ opacity:1; transform:none; }
-  /* THE SEVERITY IS CARRIED BY THE TILE AND ONE HAIRLINE, NOT BY RED TYPE.
-     An amber-ochre tile and a thin warm rule down the leading edge read as a real
-     environmental alert, which is what this is. Nothing in it is emergency red, nothing
-     pulses, and the words are exactly the artist's own. */
-  #note::before{ content:""; position:absolute; left:0; top:13px; bottom:13px; width:2.5px;
-    border-radius:3px; background:linear-gradient(#e3ae4e,#c07f2a); }
-  #note .nhead{ display:flex; align-items:center; gap:8px; margin-bottom:6px; }
-  #note .napp{ flex:none; width:21px; height:21px; border-radius:6px;
-    background:linear-gradient(158deg,#f0b95c,#d8912f 58%,#b9741f);
-    box-shadow:0 .5px 2px rgba(120,70,10,.36), inset 0 .5px 0 rgba(255,255,255,.46);
-    display:flex; align-items:center; justify-content:center; }
-  #note .napp svg{ width:14px; height:14px; display:block; }
-  #note .nname{ font-size:.735rem; font-weight:650; letter-spacing:.05em;
-    text-transform:uppercase; color:#5c6067; }
-  #note .ntime{ margin-left:auto; font-size:.735rem; color:#8a8f96; letter-spacing:.01em; }
-  #note .nt{ font-size:1.01rem; font-weight:640; letter-spacing:-.012em; line-height:1.3; }
-  #note .nb{ margin:3px 0 0; font-size:.9rem; line-height:1.42; color:#33383f; }
+  /* the severity, carried by one warm hairline down the leading edge and nothing else */
+  #note::before{ content:""; position:absolute; left:0; top:14px; bottom:14px; width:2px;
+    border-radius:2px; background:linear-gradient(rgba(226,170,78,.9), rgba(184,120,42,.75)); }
+  #note .nhead{ display:flex; align-items:center; gap:7px; margin-bottom:5px; }
+  #note .napp{ flex:none; width:18px; height:18px; border-radius:5px;
+    background:linear-gradient(158deg,#e0a94f,#b8782a 62%,#95601f);
+    box-shadow:inset 0 .5px 0 rgba(255,255,255,.28); display:flex;
+    align-items:center; justify-content:center; }
+  #note .napp svg{ width:12px; height:12px; display:block; }
+  #note .nname{ font-size:.665rem; font-weight:600; letter-spacing:.07em;
+    text-transform:uppercase; color:rgba(238,228,206,.62); }
+  #note .ntime{ margin-left:auto; font-size:.665rem; color:rgba(238,228,206,.42);
+    letter-spacing:.01em; }
+  #note .nt{ font-size:.9rem; font-weight:600; letter-spacing:-.004em; line-height:1.32;
+    color:#f8f3e7; }
+  #note .nb{ margin:3px 0 0; font-size:.815rem; line-height:1.46;
+    color:rgba(238,229,212,.80); }
   @media (max-width:600px){
-    #note{ right:8px; left:8px; width:auto; bottom:auto;
+    #note{ right:9px; left:9px; width:auto; bottom:auto;
       top:max(10px,env(safe-area-inset-top));
-      transform:translateY(-30px) scale(.965); }
+      transform:translateY(-24px) scale(.975); }
     #note.on{ transform:none; }
   }
   @media (prefers-reduced-motion:reduce){
-    #note{ transition:opacity .42s; transform:none; }
+    #note{ transition:opacity .5s; transform:none; }
     #note.on{ transform:none; }
   }
 
@@ -583,7 +601,7 @@
 
 <!-- the phone, in the return. Content is swapped in from build/10b-return.js. -->
 <div id="note" aria-hidden="true" aria-live="polite">
-  <div class="nhead"><span class="napp" aria-hidden="true"><svg viewBox="0 0 16 16" fill="none" stroke="#eef2f6" stroke-width="1.5" stroke-linecap="round"><path d="M2.6 6.2h7.2M2.6 9.4h10.8M5.4 12.4h7.6"/></svg></span><span class="nname">Air Quality</span><span class="ntime">now</span></div>
+  <div class="nhead"><span class="napp" aria-hidden="true"><svg viewBox="0 0 16 16" fill="none" stroke="#2a1c0c" stroke-width="1.6" stroke-linecap="round"><path d="M2.6 6.2h7.2M2.6 9.4h10.8M5.4 12.4h7.6"/></svg></span><span class="nname">Air Quality</span><span class="ntime">now</span></div>
   <div class="nt"></div>
   <p class="nb"></p>
 </div>
@@ -1162,9 +1180,16 @@ const CH_NAME = { 1:"i · the world came inside", 2:"ii · life happened outdoor
    this must not feel like. `shirt`, the walk through the washing, has no instruction and
    therefore no wall. And the release in HOLD_PATIENCE below is the backstop for anything
    that cannot be satisfied for a reason nobody predicted. */
+/* AND EXPLORATION IS NEVER A TOLL GATE.
+   The lookout's four places are opportunities, not requirements. Holding the scroll until
+   somebody has found three of them turns a valley you were invited to look around into a
+   list you have to clear, which is the opposite of what the chapter is for. The checklist,
+   the ticks, the per-place memories and the guidance all stay exactly as they are, and a
+   visitor who finds none of them carries on unimpeded. */
+const HOLD_NEVER = { find:1, rfind:1 };
 const HOLD_AT = {};
 for (const _b of BEATS){
-  if (!_b.gate || !_b.ask) continue;
+  if (!_b.gate || !_b.ask || HOLD_NEVER[_b.gate]) continue;
   const g = _b.gate;
   HOLD_AT[_b.id] = {
     done: () => gateMet(g),
@@ -4904,8 +4929,15 @@ function startOne(layer){
   layer.src = s;
 }
 /* `v` is how loud, `open` is how little is in the way */
+/* HOW MUCH THE BED GETS OUT OF HER WAY.
+   Set by the washing line while she is humming. Making her audible by turning her up is the
+   wrong instrument: the ambience bed runs at around 0.7 and she was competing with it, so
+   raising her far enough to win would have made her an announcement. Ducking the bed by a
+   fifth opens a pocket for her instead, which is what a mix does, and it costs the garden
+   almost nothing because the ear follows whatever moved. */
+let HUMDUCK = 0;
 function ambience(v, open){
-  v = v * (1 - SILENCE);                 // the onslaught takes the world with it
+  v = v * (1 - SILENCE) * (1 - 0.20*cl01(HUMDUCK));   // the onslaught takes the world with it
   AMB.vol = v; AMB.open = open;
   if (!AC || !soundOn || !AMB.gain) return;
   if (AMB.state === "ready" && !AMB.src) startOne(AMB);
@@ -4936,13 +4968,21 @@ function lineSound(v, wind, mom){
   envGain(RUS.gain,  v*0.34, 0.6);
   envGain(RUS2.gain, v*0.42*w*w, 0.35);
   RUS2.filt.frequency.setTargetAtTime(3200 + 4200*w, AC.currentTime, 0.4);
-  /* Her humming ducks under a gust rather than fighting it, and goes when she
-     does. At 0.085 it was under the ambience bed and nobody could hear it at
-     all; the bed runs around 0.7. At 0.34 she is plainly there and still well
-     under the birds — company, not an announcement. It comes up over a second
-     and a half, so touching her feels like noticing something that was already
-     going on, and it leaves over four, so it is gone before you are sure. */
-  envGain(HUM.gain, v*0.58*cl01(mom)*(1 - w*0.30), mom > 0.02 ? 1.5 : 4.0);
+  /* Her humming ducks under a gust rather than fighting it, and goes when she does. It
+     comes up over a second and a half, so touching her feels like noticing something that
+     was already going on, and it leaves over four, so it is gone before you are sure.
+
+     MAKING HER AUDIBLE IS THREE THINGS, AND ONLY ONE OF THEM IS LEVEL. She was reported as
+     easy to miss at ordinary laptop volume, and the level was not the main reason: the
+     lowpass sat at 2200 Hz to place her behind a sheet some way off, which keeps the
+     fundamentals of a hum and throws away the breath and the edge on top of them — the
+     parts the ear actually uses to recognise a person humming rather than a low tone in the
+     mix. So the filter opens, the bed ducks to make room, and the level comes up a little.
+     Together she is unmistakable; on level alone she would have had to shout. */
+  const humOn = cl01(mom);
+  HUMDUCK = humOn;
+  envGain(HUM.gain, v*0.74*humOn*(1 - w*0.30), mom > 0.02 ? 1.5 : 4.0);
+  if (HUM.filt) HUM.filt.frequency.setTargetAtTime(2200 + 1500*humOn, AC.currentTime, 1.2);
 }
 
 /* The kite field. `v` is how loud, `night` is how far the evening has gone, and
@@ -5081,7 +5121,7 @@ function updSound(dt, t){
   /* the line's own layers belong to one chapter; when it stops asking for them
      they go, rather than following the visitor into the next room */
   if (LINEQ.t > 0){ LINEQ.t -= dt; }
-  else if (RUS.gain){ for (const L of [RUS, RUS2, HUM]) envGain(L.gain, 0, 0.9); }
+  else if (RUS.gain){ for (const L of [RUS, RUS2, HUM]) envGain(L.gain, 0, 0.9); HUMDUCK = 0; }
   if (KITEQ.t > 0){ KITEQ.t -= dt; }
   else if (KWIND.gain){ envGain(KWIND.gain, 0, 1.1); }
   if (NIGHTQ.t > 0){ NIGHTQ.t -= dt; }
@@ -8882,12 +8922,13 @@ stEl.setAttribute("aria-hidden", "true");
 stEl.innerHTML =
   '<button class="x" aria-label="Close"><svg viewBox="0 0 16 16" aria-hidden="true">' +
     '<path d="M4.2 4.2l7.6 7.6M11.8 4.2l-7.6 7.6"/></svg></button>' +
-  '<svg class="chart" viewBox="0 0 132 80" aria-hidden="true"></svg>' +
-  '<h2 class="nm"></h2>' +
-  '<p class="sub"></p>' +
+  '<div class="hd">' +
+    '<svg class="chart" viewBox="0 0 132 80" aria-hidden="true"></svg>' +
+    '<div class="ttl"><h2 class="nm"></h2><p class="sub"></p></div>' +
+  '</div>' +
   '<p class="lede"></p>' +
   '<div class="body"></div>' +
-  '<div class="fade" aria-hidden="true"></div>';
+  '<p class="more" aria-hidden="true">more</p>';
 document.body.appendChild(stEl);
 {
   const st = document.createElement("style");
@@ -8914,7 +8955,7 @@ document.body.appendChild(stEl);
      only colour anywhere on it is the muted gold on the one star the visitor touched.
      Hierarchy is space. There is not a single rule left in it. */
   #starcard{
-    position:fixed; z-index:14; bottom:3vh; max-height:46vh; width:min(93vw,30.5rem);
+    position:fixed; z-index:14; bottom:3vh; max-height:41vh; width:min(93vw,31.5rem);
     overflow-y:auto; transform:translateY(14px);
     opacity:0; pointer-events:none; visibility:hidden;
     transition:opacity .55s cubic-bezier(.2,.7,.3,1), transform .55s cubic-bezier(.2,.7,.3,1),
@@ -8941,11 +8982,9 @@ document.body.appendChild(stEl);
                 visibility:visible; transition-delay:0s,0s,0s; }
   /* going from one star straight to another: the card stays put and its
      contents change under a short dip, rather than the text jump-cutting */
-  #starcard.swap .chart, #starcard.swap .nm, #starcard.swap .sub,
-  #starcard.swap .lede, #starcard.swap .body{
+  #starcard.swap .hd, #starcard.swap .lede, #starcard.swap .body{
     opacity:0; transform:translateY(4px); }
-  #starcard .chart, #starcard .nm, #starcard .sub,
-  #starcard .lede, #starcard .body{
+  #starcard .hd, #starcard .lede, #starcard .body{
     transition:opacity .34s ease, transform .34s ease; }
 
   /* the close button: discoverable, and nowhere near the strongest thing on the card.
@@ -8959,23 +8998,31 @@ document.body.appendChild(stEl);
   #starcard .x:hover{ color:rgba(246,241,229,.92); background:rgba(240,226,198,.07); }
   #starcard .x:focus-visible{ outline:1.5px solid rgba(217,182,120,.8); outline-offset:2px; }
 
-  /* THE ILLUSTRATION, WITH ROOM AROUND IT.
-     It was 106 by 66 wedged to the left of a four-line header, which made it an icon in
-     a dashboard. Given its own line at the top of the card, and larger, it reads as a
-     small drawing at the head of a page — which is what it is. */
-  #starcard .chart{ display:block; width:150px; height:91px; overflow:visible;
-    margin:.1rem 0 1.15rem -7px; }
+  /* THE DRAWING AND THE NAME, ON ONE LINE.
+     On its own line the illustration left most of the card's width empty beside it and
+     pushed the writing down the page for nothing — a tall header with a hole in it. Set
+     next to the name they read as one thing, which is what they are: this star, and where
+     it sits in the shape. It also takes about sixty pixels of height out of the card,
+     which is most of what was causing the overflow the fade was covering up.
 
-  #starcard h2.nm{ margin:0; font-size:clamp(1.55rem,4.6vw,2.05rem); line-height:1.04;
+     The pair is baseline-led rather than centred: the name's cap-height lines up with the
+     body of the constellation, so the two feel hung from the same line. */
+  #starcard .hd{ display:flex; align-items:center; gap:1.15rem;
+    padding-right:2.1rem; margin:0 0 1.05rem; }
+  #starcard .chart{ display:block; flex:none; width:138px; height:84px; overflow:visible;
+    margin-left:-7px; }
+  #starcard .ttl{ min-width:0; }
+
+  #starcard h2.nm{ margin:0; font-size:clamp(1.5rem,4.4vw,1.95rem); line-height:1.05;
     font-weight:400; letter-spacing:-.014em; color:#f7f2e6; text-wrap:balance;
     text-shadow:0 0 30px rgba(0,0,0,.55); }
   /* the descriptor: plain words in the storytelling face, not a tiny gold caps label.
      It is the one line that says what this is, so it reads as speech, not as a tag. */
-  #starcard .sub{ margin:.42rem 0 0; font-size:clamp(.92rem,2.4vw,1rem); line-height:1.4;
+  #starcard .sub{ margin:.34rem 0 0; font-size:clamp(.9rem,2.3vw,.98rem); line-height:1.35;
     font-style:italic; color:rgba(233,223,204,.62); letter-spacing:.002em; }
   #starcard .sub:empty{ display:none; }
 
-  #starcard .lede{ margin:1.15rem 0 0; font-size:clamp(1.04rem,2.9vw,1.19rem); line-height:1.52;
+  #starcard .lede{ margin:0; font-size:clamp(1.04rem,2.9vw,1.19rem); line-height:1.52;
     color:#f1ebde; letter-spacing:-.004em; text-wrap:pretty; }
   /* no rule here, and none under it. The gap does the work the border used to. */
   #starcard .body{ margin-top:1.05rem; }
@@ -8983,10 +9030,23 @@ document.body.appendChild(stEl);
     color:rgba(225,214,195,.80); text-wrap:pretty; }
   #starcard .body p:last-child{ margin-bottom:0; }
 
-  #starcard .fade{ display:none; position:sticky; bottom:-1.4rem; height:3.6rem;
-    margin:-3.6rem 0 0; pointer-events:none;
-    background:linear-gradient(rgba(13,11,10,0) 0%, rgba(13,11,10,.78) 52%, rgba(13,11,10,.98) 100%); }
-  #starcard.scrolls .fade{ display:block; }
+  /* NOTHING IS ALLOWED TO SIT ON TOP OF THE WRITING.
+     There was a sticky gradient here, forty per cent opaque at its midpoint and nearly
+     solid at its foot, laid over the last three and a half rem of the card. On a card that
+     overflowed by two lines it did not suggest more text below, it made the last two
+     sentences of the story unreadable — which on the Megrez card meant most of the reason
+     the card exists. It is gone, and nothing replaces it that covers ink.
+
+     What replaces it lives IN the flow, below the last line, so it can never overlap
+     anything: one small word, only when the card can actually scroll, next to a thin
+     scrollbar that is now visible enough to be understood. Contrast is constant from the
+     first line to the last. */
+  #starcard .more{ display:none; margin:1.05rem 0 0; font-family:var(--mono);
+    font-size:.62rem; letter-spacing:.22em; text-transform:uppercase;
+    color:rgba(224,212,192,.42); }
+  #starcard .more::after{ content:" ↓"; letter-spacing:0; }
+  #starcard.scrolls .more{ display:block; }
+  #starcard.scrolls.atEnd .more{ opacity:0; transition:opacity .3s; }
 
   /* THE CONSTELLATION.
      Softened, not loosened. The links are drawn in warm ivory rather than blue, thin,
@@ -9007,11 +9067,12 @@ document.body.appendChild(stEl);
      the sky above it stays clear */
   @media (max-width:820px){
     #starcard, #starcard.dockL, #starcard.dockR{
-      left:50%; right:auto; bottom:2.4vh; max-height:48vh; width:min(93vw,30.5rem);
+      left:50%; right:auto; bottom:2.4vh; max-height:44vh; width:min(93vw,31.5rem);
       transform:translate(-50%,14px); }
     #starcard.on{ transform:translate(-50%,0); }
     #starcard{ padding:1.3rem 1.25rem 1.15rem; }
-    #starcard .chart{ width:126px; height:76px; margin-bottom:1rem; }
+    #starcard .hd{ gap:.85rem; margin-bottom:.9rem; padding-right:1.9rem; }
+    #starcard .chart{ width:112px; height:68px; }
   }
   @media (prefers-reduced-motion:reduce){
     #starcard{ transition:opacity .3s, visibility 0s linear .3s; transform:none; }
@@ -9021,6 +9082,10 @@ document.body.appendChild(stEl);
 }
 stEl.querySelector(".x").addEventListener("click", e => { e.stopPropagation(); hideStarStory(); });
 stEl.addEventListener("pointerdown", e => e.stopPropagation());
+/* and the "more" mark retires once there is no more */
+stEl.addEventListener("scroll", () => {
+  stEl.classList.toggle("atEnd", stEl.scrollTop + stEl.clientHeight >= stEl.scrollHeight - 4);
+}, { passive:true });
 
 /* The little constellation, built from the same coordinates as the sky. The two
    outliers are not in Ursa Major, so a chart of the Dipper would be a lie for
@@ -9136,6 +9201,7 @@ function fillStarCard(id){
      content genuinely overflows. */
   requestAnimationFrame(() => {
     stEl.classList.toggle("scrolls", stEl.scrollHeight > stEl.clientHeight + 2);
+    stEl.classList.remove("atEnd");
   });
 }
 function hideStarStory(){
@@ -9519,6 +9585,35 @@ const Z_BASE = 1.66, Z_MAX = 2.34;
 /* the out-of-focus copy of the frame, at half resolution. Its own buffer rather
    than the shared TMP2, because resizing a buffer that four other scenes draw
    full-frame into is a bug waiting for the next chapter. */
+/* THE SHARP FRAME IS BUILT AT DEVICE RESOLUTION, NOT AT CSS RESOLUTION.
+   This was the other half of the soft-zoom problem, and it was mine rather than the
+   painting's. The chapter assembled itself into the shared offscreen buffer, which is
+   sized in CSS pixels, and that buffer was then drawn to a canvas that carries a
+   devicePixelRatio transform — so on any 2x display the whole valley was built at half
+   the resolution of the screen it was going to and scaled up. Magnifying a 1537-pixel
+   painting is already asking a lot of it; magnifying it and then upscaling the result by
+   two is where the mush came from.
+
+   So the lookout gets its own buffer at true device resolution. The blurred copy is now
+   reduced from that instead, which is strictly better as well: a downsample from a
+   sharper source. Nothing else in the piece is touched — this is one chapter's buffer,
+   not a change to the shared one. */
+const LSHARP = document.createElement("canvas"), lsc = LSHARP.getContext("2d");
+function lookSharp(fn){
+  const dw = Math.max(2, Math.round(W*DPR)), dh = Math.max(2, Math.round(H*DPR));
+  if (LSHARP.width !== dw || LSHARP.height !== dh){ LSHARP.width = dw; LSHARP.height = dh; }
+  const keep = ctx;
+  ctx = lsc;
+  lsc.setTransform(DPR, 0, 0, DPR, 0, 0);
+  lsc.globalCompositeOperation = "source-over";
+  lsc.globalAlpha = 1;
+  lsc.imageSmoothingQuality = "high";
+  lsc.clearRect(0, 0, W, H);
+  lsc.lineJoin = "round";
+  fn();
+  ctx = keep;
+}
+
 const LBLUR = document.createElement("canvas"), lbc = LBLUR.getContext("2d");
 
 /* THE TWO PAINTINGS, ALREADY MIXED.
@@ -9833,7 +9928,7 @@ function drawLookout(t, dt, o){
   const airNow = lerp(air0, air1, rec);
   const world = lookComposite(im, imh, airNow);
   const OV = 10;                                   // overscan: see the blur note
-  offscreen(()=>{
+  lookSharp(()=>{
     ctx.drawImage(world, sx, sy, wsrc, hsrc, -OV, -OV, W+OV*2, H+OV*2);
     /* things that are alive, drawn in here so the lens softness applies to them
        as it does to everything else */
@@ -9889,11 +9984,13 @@ function drawLookout(t, dt, o){
     lbc.imageSmoothingQuality = "high";
     lbc.clearRect(0,0,qw,qh);
     lbc.filter = "blur(" + Rb.toFixed(2) + "px)";
-    lbc.drawImage(TMP, -OV2, -OV2, qw+OV2*2, qh+OV2*2);
+    lbc.drawImage(LSHARP, -OV2, -OV2, qw+OV2*2, qh+OV2*2);
     lbc.filter = "none";
   }
 
-  ctx.drawImage(TMP, 0, 0);
+  /* drawn back at its CSS size, which is its device size divided by the ratio, so it
+     lands one buffer pixel per screen pixel */
+  ctx.drawImage(LSHARP, 0, 0, W, H);
   if (needBlur){
     if (soft > 0.012){
       ctx.globalAlpha = soft;
@@ -13238,7 +13335,7 @@ const PRET_REVEAL = 4.0;
    with everything said and nothing to do. */
 const PRET_LOOK   = 3.4;
 const PRET_PAUSE  = 2.6;
-const PRET_RED    = 10.0;
+const PRET_RED    = 6.5;
 const PRET_BREATH = 3.2;
 
 /* WHAT THE TIMELINE ASKS BEFORE IT WILL LET ANYONE LEAVE.
@@ -13421,7 +13518,28 @@ function drawReturn(t, dt, o){
   const rev = ease.io(cl01(PROOM.open));
   curtainGeom(t, rev, 0.86);
 
-  /* the room is as dark as the curtains are still shut, exactly as before */
+  /* EVERYTHING IN THE ROOM IS DRAWN FIRST, AND THEN THE ROOM IS LIT.
+     This is the whole of the curtain-brightness fix and it is an ordering problem, not a
+     shading one. The room's exposure is a multiply pass over the frame, and the cloth, the
+     rod, the cord and the taped drawing were all drawn AFTER it — so every one of them
+     escaped the darkness the room was under and the curtains in particular read as
+     self-illuminated: a bright red pair of panels hanging in a room lit at a fifth of
+     daylight. Nothing was wrong with the cloth. It simply was not in the room.
+
+     Drawing them before the pass puts them inside the same exposure as the paint, which
+     also makes the whole thing respond coherently for free: the panels lighten exactly as
+     far as the room does as they are drawn back, because it is one multiply over both. The
+     slit of light between them gets darkened too, which is correct — a shut curtain in an
+     unlit room shows a thin line, not a lamp.
+
+     A transparent overlay on top of the cloth would have produced the flat, pasted-on
+     result the brief warned against. This is the exposure itself. */
+  drawTapedDrawing(t, rev, 0.86);
+  updCord(dt, t);
+  drawCord(t, dt, { rev, quiet:true });
+  drawRod(t, rev, 0.86);
+  drawCurtains(t, dt, { rev, air:0.86 });
+
   const dark = 1 - rev;
   if (dark > 0.004){
     const gp = curtainGap();
@@ -13456,34 +13574,23 @@ function drawReturn(t, dt, o){
     ctx.restore();
   }
 
-  /* THE ROOM IS THE SAME ROOM, so it keeps the things that were in it.
-     Both of these were simply missing, and their absence is exactly the kind of
-     absence this scene cannot afford: the whole argument is that nothing here has
-     changed except what is outside the glass, and a bedroom that has quietly lost
-     its light pull and the picture over its bed argues the opposite.
-
-     The drawing is the one he is handed years later, still taped where it has been
-     since the first frame. The bulb's pull hangs in the window recess as before.
-     Neither is wired to anything — this scene has two interactions and gets no more
-     — but they are furniture, not interactions, and they belong to the room. */
-  drawTapedDrawing(t, rev, 0.86);
-  updCord(dt, t);
-  drawCord(t, dt, { rev, quiet:true });
-
-  drawRod(t, rev, 0.86);
-  drawCurtains(t, dt, { rev, air:0.86 });
-
   /* THE CORD IS LIVE THE MOMENT THE CURTAINS ARE OPEN, IN EITHER BEAT.
      Both interactions belong to the same beat, so nothing in this sequence is behind a
      scroll: the visitor is placed in the room, opens the curtains, and the cord is
      already there. It used to require the second beat, which meant the second half of
      the chapter did not exist until somebody scrolled into it. */
+  /* ALL THE WAY OPEN, NOT FAR ENOUGH TO COUNT.
+     `CTR.need` is 0.52, the point at which the curtain gate is satisfied, and the look
+     clock used to start there — so the reveal was declared complete with the panels
+     barely more than half drawn and the cord was offered over an exterior the visitor had
+     only partly been shown. The clock starts when they are actually open. */
   const open = Math.min(PROOM.cL, PROOM.cR);
-  if (open > CTR.need){ PRET.seen += dt; PRET.look += dt; }
+  const wide = open > 0.93;
+  if (wide){ PRET.seen += dt; PRET.look += dt; }
   /* the cord waits its turn. The curtains have just come apart on a view the visitor has
      not seen yet, and putting the next instruction up on top of that would make the
      polluted landscape something they scrolled past on the way to a task. */
-  const live = open > 0.80 && PRET.reveal > 0.985 && PRET.look > PRET_LOOK;
+  const live = wide && PRET.reveal > 0.985 && PRET.look > PRET_LOOK;
   if (open > 0.6) returnCord(t, dt, live);
 
   /* THE AIR, MADE VISIBLE ONCE AND QUIETLY.
@@ -13538,7 +13645,7 @@ function drawReturn(t, dt, o){
   OUTSIDE = 0;
   MUFFLE = 1;
   ambience(0.09 + 0.05*rev, 0.10);
-  if (!PRET.pulling && PRET.hover < 0.2) cv.className = open > CTR.need ? "" : "grabbable";
+  if (!PRET.pulling && PRET.hover < 0.2) cv.className = wide ? "" : "grabbable";
 }
 
 /* ------------------------------------------------------------ the notification
@@ -14903,6 +15010,7 @@ window.__bluer = {
   get blocked(){ return T.blocked; },
   get wait(){ return T.wait; },
   get onboarding(){ return onboarding; },
+  sharp(){ return { w:LSHARP.width, h:LSHARP.height, want:Math.round(W*DPR)+"x"+Math.round(H*DPR) }; },
   get pace(){ return { gone:paceGone, t:+paceT.toFixed(2), up:+paceUp.toFixed(2), ask:Math.round(paceAsk) }; },
   cord(){ return cordBall(); },
   card(id){ showStarStory(id); },

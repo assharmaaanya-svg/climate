@@ -265,8 +265,15 @@ function startOne(layer){
   layer.src = s;
 }
 /* `v` is how loud, `open` is how little is in the way */
+/* HOW MUCH THE BED GETS OUT OF HER WAY.
+   Set by the washing line while she is humming. Making her audible by turning her up is the
+   wrong instrument: the ambience bed runs at around 0.7 and she was competing with it, so
+   raising her far enough to win would have made her an announcement. Ducking the bed by a
+   fifth opens a pocket for her instead, which is what a mix does, and it costs the garden
+   almost nothing because the ear follows whatever moved. */
+let HUMDUCK = 0;
 function ambience(v, open){
-  v = v * (1 - SILENCE);                 // the onslaught takes the world with it
+  v = v * (1 - SILENCE) * (1 - 0.20*cl01(HUMDUCK));   // the onslaught takes the world with it
   AMB.vol = v; AMB.open = open;
   if (!AC || !soundOn || !AMB.gain) return;
   if (AMB.state === "ready" && !AMB.src) startOne(AMB);
@@ -297,13 +304,21 @@ function lineSound(v, wind, mom){
   envGain(RUS.gain,  v*0.34, 0.6);
   envGain(RUS2.gain, v*0.42*w*w, 0.35);
   RUS2.filt.frequency.setTargetAtTime(3200 + 4200*w, AC.currentTime, 0.4);
-  /* Her humming ducks under a gust rather than fighting it, and goes when she
-     does. At 0.085 it was under the ambience bed and nobody could hear it at
-     all; the bed runs around 0.7. At 0.34 she is plainly there and still well
-     under the birds — company, not an announcement. It comes up over a second
-     and a half, so touching her feels like noticing something that was already
-     going on, and it leaves over four, so it is gone before you are sure. */
-  envGain(HUM.gain, v*0.58*cl01(mom)*(1 - w*0.30), mom > 0.02 ? 1.5 : 4.0);
+  /* Her humming ducks under a gust rather than fighting it, and goes when she does. It
+     comes up over a second and a half, so touching her feels like noticing something that
+     was already going on, and it leaves over four, so it is gone before you are sure.
+
+     MAKING HER AUDIBLE IS THREE THINGS, AND ONLY ONE OF THEM IS LEVEL. She was reported as
+     easy to miss at ordinary laptop volume, and the level was not the main reason: the
+     lowpass sat at 2200 Hz to place her behind a sheet some way off, which keeps the
+     fundamentals of a hum and throws away the breath and the edge on top of them — the
+     parts the ear actually uses to recognise a person humming rather than a low tone in the
+     mix. So the filter opens, the bed ducks to make room, and the level comes up a little.
+     Together she is unmistakable; on level alone she would have had to shout. */
+  const humOn = cl01(mom);
+  HUMDUCK = humOn;
+  envGain(HUM.gain, v*0.74*humOn*(1 - w*0.30), mom > 0.02 ? 1.5 : 4.0);
+  if (HUM.filt) HUM.filt.frequency.setTargetAtTime(2200 + 1500*humOn, AC.currentTime, 1.2);
 }
 
 /* The kite field. `v` is how loud, `night` is how far the evening has gone, and
@@ -442,7 +457,7 @@ function updSound(dt, t){
   /* the line's own layers belong to one chapter; when it stops asking for them
      they go, rather than following the visitor into the next room */
   if (LINEQ.t > 0){ LINEQ.t -= dt; }
-  else if (RUS.gain){ for (const L of [RUS, RUS2, HUM]) envGain(L.gain, 0, 0.9); }
+  else if (RUS.gain){ for (const L of [RUS, RUS2, HUM]) envGain(L.gain, 0, 0.9); HUMDUCK = 0; }
   if (KITEQ.t > 0){ KITEQ.t -= dt; }
   else if (KWIND.gain){ envGain(KWIND.gain, 0, 1.1); }
   if (NIGHTQ.t > 0){ NIGHTQ.t -= dt; }

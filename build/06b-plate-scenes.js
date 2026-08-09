@@ -596,12 +596,13 @@ stEl.setAttribute("aria-hidden", "true");
 stEl.innerHTML =
   '<button class="x" aria-label="Close"><svg viewBox="0 0 16 16" aria-hidden="true">' +
     '<path d="M4.2 4.2l7.6 7.6M11.8 4.2l-7.6 7.6"/></svg></button>' +
-  '<svg class="chart" viewBox="0 0 132 80" aria-hidden="true"></svg>' +
-  '<h2 class="nm"></h2>' +
-  '<p class="sub"></p>' +
+  '<div class="hd">' +
+    '<svg class="chart" viewBox="0 0 132 80" aria-hidden="true"></svg>' +
+    '<div class="ttl"><h2 class="nm"></h2><p class="sub"></p></div>' +
+  '</div>' +
   '<p class="lede"></p>' +
   '<div class="body"></div>' +
-  '<div class="fade" aria-hidden="true"></div>';
+  '<p class="more" aria-hidden="true">more</p>';
 document.body.appendChild(stEl);
 {
   const st = document.createElement("style");
@@ -628,7 +629,7 @@ document.body.appendChild(stEl);
      only colour anywhere on it is the muted gold on the one star the visitor touched.
      Hierarchy is space. There is not a single rule left in it. */
   #starcard{
-    position:fixed; z-index:14; bottom:3vh; max-height:46vh; width:min(93vw,30.5rem);
+    position:fixed; z-index:14; bottom:3vh; max-height:41vh; width:min(93vw,31.5rem);
     overflow-y:auto; transform:translateY(14px);
     opacity:0; pointer-events:none; visibility:hidden;
     transition:opacity .55s cubic-bezier(.2,.7,.3,1), transform .55s cubic-bezier(.2,.7,.3,1),
@@ -655,11 +656,9 @@ document.body.appendChild(stEl);
                 visibility:visible; transition-delay:0s,0s,0s; }
   /* going from one star straight to another: the card stays put and its
      contents change under a short dip, rather than the text jump-cutting */
-  #starcard.swap .chart, #starcard.swap .nm, #starcard.swap .sub,
-  #starcard.swap .lede, #starcard.swap .body{
+  #starcard.swap .hd, #starcard.swap .lede, #starcard.swap .body{
     opacity:0; transform:translateY(4px); }
-  #starcard .chart, #starcard .nm, #starcard .sub,
-  #starcard .lede, #starcard .body{
+  #starcard .hd, #starcard .lede, #starcard .body{
     transition:opacity .34s ease, transform .34s ease; }
 
   /* the close button: discoverable, and nowhere near the strongest thing on the card.
@@ -673,23 +672,31 @@ document.body.appendChild(stEl);
   #starcard .x:hover{ color:rgba(246,241,229,.92); background:rgba(240,226,198,.07); }
   #starcard .x:focus-visible{ outline:1.5px solid rgba(217,182,120,.8); outline-offset:2px; }
 
-  /* THE ILLUSTRATION, WITH ROOM AROUND IT.
-     It was 106 by 66 wedged to the left of a four-line header, which made it an icon in
-     a dashboard. Given its own line at the top of the card, and larger, it reads as a
-     small drawing at the head of a page — which is what it is. */
-  #starcard .chart{ display:block; width:150px; height:91px; overflow:visible;
-    margin:.1rem 0 1.15rem -7px; }
+  /* THE DRAWING AND THE NAME, ON ONE LINE.
+     On its own line the illustration left most of the card's width empty beside it and
+     pushed the writing down the page for nothing — a tall header with a hole in it. Set
+     next to the name they read as one thing, which is what they are: this star, and where
+     it sits in the shape. It also takes about sixty pixels of height out of the card,
+     which is most of what was causing the overflow the fade was covering up.
 
-  #starcard h2.nm{ margin:0; font-size:clamp(1.55rem,4.6vw,2.05rem); line-height:1.04;
+     The pair is baseline-led rather than centred: the name's cap-height lines up with the
+     body of the constellation, so the two feel hung from the same line. */
+  #starcard .hd{ display:flex; align-items:center; gap:1.15rem;
+    padding-right:2.1rem; margin:0 0 1.05rem; }
+  #starcard .chart{ display:block; flex:none; width:138px; height:84px; overflow:visible;
+    margin-left:-7px; }
+  #starcard .ttl{ min-width:0; }
+
+  #starcard h2.nm{ margin:0; font-size:clamp(1.5rem,4.4vw,1.95rem); line-height:1.05;
     font-weight:400; letter-spacing:-.014em; color:#f7f2e6; text-wrap:balance;
     text-shadow:0 0 30px rgba(0,0,0,.55); }
   /* the descriptor: plain words in the storytelling face, not a tiny gold caps label.
      It is the one line that says what this is, so it reads as speech, not as a tag. */
-  #starcard .sub{ margin:.42rem 0 0; font-size:clamp(.92rem,2.4vw,1rem); line-height:1.4;
+  #starcard .sub{ margin:.34rem 0 0; font-size:clamp(.9rem,2.3vw,.98rem); line-height:1.35;
     font-style:italic; color:rgba(233,223,204,.62); letter-spacing:.002em; }
   #starcard .sub:empty{ display:none; }
 
-  #starcard .lede{ margin:1.15rem 0 0; font-size:clamp(1.04rem,2.9vw,1.19rem); line-height:1.52;
+  #starcard .lede{ margin:0; font-size:clamp(1.04rem,2.9vw,1.19rem); line-height:1.52;
     color:#f1ebde; letter-spacing:-.004em; text-wrap:pretty; }
   /* no rule here, and none under it. The gap does the work the border used to. */
   #starcard .body{ margin-top:1.05rem; }
@@ -697,10 +704,23 @@ document.body.appendChild(stEl);
     color:rgba(225,214,195,.80); text-wrap:pretty; }
   #starcard .body p:last-child{ margin-bottom:0; }
 
-  #starcard .fade{ display:none; position:sticky; bottom:-1.4rem; height:3.6rem;
-    margin:-3.6rem 0 0; pointer-events:none;
-    background:linear-gradient(rgba(13,11,10,0) 0%, rgba(13,11,10,.78) 52%, rgba(13,11,10,.98) 100%); }
-  #starcard.scrolls .fade{ display:block; }
+  /* NOTHING IS ALLOWED TO SIT ON TOP OF THE WRITING.
+     There was a sticky gradient here, forty per cent opaque at its midpoint and nearly
+     solid at its foot, laid over the last three and a half rem of the card. On a card that
+     overflowed by two lines it did not suggest more text below, it made the last two
+     sentences of the story unreadable — which on the Megrez card meant most of the reason
+     the card exists. It is gone, and nothing replaces it that covers ink.
+
+     What replaces it lives IN the flow, below the last line, so it can never overlap
+     anything: one small word, only when the card can actually scroll, next to a thin
+     scrollbar that is now visible enough to be understood. Contrast is constant from the
+     first line to the last. */
+  #starcard .more{ display:none; margin:1.05rem 0 0; font-family:var(--mono);
+    font-size:.62rem; letter-spacing:.22em; text-transform:uppercase;
+    color:rgba(224,212,192,.42); }
+  #starcard .more::after{ content:" ↓"; letter-spacing:0; }
+  #starcard.scrolls .more{ display:block; }
+  #starcard.scrolls.atEnd .more{ opacity:0; transition:opacity .3s; }
 
   /* THE CONSTELLATION.
      Softened, not loosened. The links are drawn in warm ivory rather than blue, thin,
@@ -721,11 +741,12 @@ document.body.appendChild(stEl);
      the sky above it stays clear */
   @media (max-width:820px){
     #starcard, #starcard.dockL, #starcard.dockR{
-      left:50%; right:auto; bottom:2.4vh; max-height:48vh; width:min(93vw,30.5rem);
+      left:50%; right:auto; bottom:2.4vh; max-height:44vh; width:min(93vw,31.5rem);
       transform:translate(-50%,14px); }
     #starcard.on{ transform:translate(-50%,0); }
     #starcard{ padding:1.3rem 1.25rem 1.15rem; }
-    #starcard .chart{ width:126px; height:76px; margin-bottom:1rem; }
+    #starcard .hd{ gap:.85rem; margin-bottom:.9rem; padding-right:1.9rem; }
+    #starcard .chart{ width:112px; height:68px; }
   }
   @media (prefers-reduced-motion:reduce){
     #starcard{ transition:opacity .3s, visibility 0s linear .3s; transform:none; }
@@ -735,6 +756,10 @@ document.body.appendChild(stEl);
 }
 stEl.querySelector(".x").addEventListener("click", e => { e.stopPropagation(); hideStarStory(); });
 stEl.addEventListener("pointerdown", e => e.stopPropagation());
+/* and the "more" mark retires once there is no more */
+stEl.addEventListener("scroll", () => {
+  stEl.classList.toggle("atEnd", stEl.scrollTop + stEl.clientHeight >= stEl.scrollHeight - 4);
+}, { passive:true });
 
 /* The little constellation, built from the same coordinates as the sky. The two
    outliers are not in Ursa Major, so a chart of the Dipper would be a lie for
@@ -850,6 +875,7 @@ function fillStarCard(id){
      content genuinely overflows. */
   requestAnimationFrame(() => {
     stEl.classList.toggle("scrolls", stEl.scrollHeight > stEl.clientHeight + 2);
+    stEl.classList.remove("atEnd");
   });
 }
 function hideStarStory(){

@@ -79,11 +79,13 @@
     /* colour is in the transition list on the base rule, not on .redshift, so the drift
        has somewhere to start from the instant the class arrives */
     transition:opacity 1.5s cubic-bezier(.4,0,.2,1), transform 1.5s cubic-bezier(.4,0,.2,1),
-               color 10s linear; }
+               color 6.5s cubic-bezier(.42,0,.75,1); }
   #cap.on{ opacity:1; transform:translate(-50%,0); }
   /* A LINE THAT LOSES ITS COLOUR WHILE YOU LOOK AT IT.
-     Ten seconds, linear, ending at a dusty brick that is nowhere near an alarm red and is
-     not far off the browns already in the room. Nothing flashes and nothing escalates: the
+     Six and a half seconds, ending at a dusty brick that is nowhere near an alarm red and
+     is not far off the browns already in the room. Eased rather than linear, so it holds
+     near ivory for a moment and then commits — a linear ramp spends most of its time in
+     the indistinguishable middle, which is why the change was not being noticed at all. Nothing flashes and nothing escalates: the
      sentence is simply not as white as it was when it arrived, and most visitors will not
      catch the moment it changed.
 
@@ -92,7 +94,7 @@
      done and the effect never actually landed. Ten seconds is inside the window the
      sequence now holds the scroll for, so it always completes, and the timing is kept in
      step with PRET_RED on the other side. */
-  #cap.redshift{ color:#b07068; }
+  #cap.redshift{ color:#a85347; }
   #cap.dark{ color:#241a12;
     text-shadow:0 1px 3px rgba(255,250,238,.95), 0 2px 18px rgba(255,248,232,.9),
                 0 0 42px rgba(255,246,226,.75); }
@@ -316,51 +318,67 @@
      drawn instead.
 
      The wording is untouched: this is the artist's own air-quality concept, rebuilt. */
-  #note{ position:fixed; right:max(16px,env(safe-area-inset-right)); bottom:6vh; z-index:14;
-    width:min(422px,calc(100vw - 32px));
-    padding:13px 15px 14px 15px;
-    background:rgba(250,250,251,.94);
-    border:.5px solid rgba(255,255,255,.66);
-    border-radius:21px;
-    -webkit-backdrop-filter:blur(26px) saturate(1.8); backdrop-filter:blur(26px) saturate(1.8);
-    /* MORE PRESENCE THAN ANYTHING ELSE IN THE INTERFACE, and it has earned it: this is
-       the one moment the outside world speaks directly to the visitor. Two shadows, a
-       tight contact one and a wide soft one, which is what lifts a real banner off the
-       screen it is sitting on. */
-    box-shadow:0 20px 48px rgba(0,0,0,.34), 0 4px 12px rgba(0,0,0,.16),
-               0 0 0 .5px rgba(0,0,0,.05);
+  /* A NOTIFICATION IN THIS ROOM, NOT A SCREENSHOT OF ONE.
+     The previous version was right about anatomy and wrong about light. A 94%-opaque white
+     card, 422 pixels across, with a 48-pixel shadow, dropped into a painting lit at a fifth
+     of daylight: the brightest object on the screen by a wide margin, and the eye went to it
+     before it went to the room. It read as an OS card pasted over the artwork.
+
+     So it keeps the anatomy — app tile, name in small caps, timestamp at the far edge,
+     headline, body, over a blurred translucent material — and takes the light of the scene
+     instead of bringing its own. Smoked glass rather than white plastic: a dark warm ground
+     the room's colour shows through, ivory type, and the same amber only on the tile and one
+     hairline. Nothing is dimmer than it needs to be — the headline sits near full ivory and
+     the body just under it, which measures better against this ground than near-black did
+     against white — and it is smaller, so it takes a corner of the frame rather than a third
+     of it.
+
+     It is deliberately NOT one of the interaction plaques: those are mono, borderless-quiet
+     and centred under the scene, and this is a system-font card with a tile and a timestamp
+     sitting in the corner where a phone would be. Nobody will mistake it for narration. */
+  #note{ position:fixed; right:max(18px,env(safe-area-inset-right)); bottom:6.5vh; z-index:14;
+    width:min(348px,calc(100vw - 36px));
+    padding:11px 13px 12px 14px;
+    background:
+      linear-gradient(158deg, rgba(34,27,21,.80), rgba(19,16,14,.86));
+    border:1px solid rgba(240,226,198,.14);
+    border-radius:17px;
+    -webkit-backdrop-filter:blur(20px) saturate(1.1); backdrop-filter:blur(20px) saturate(1.1);
+    /* low and soft: it is resting in the room, not floating over it */
+    box-shadow:0 12px 30px rgba(0,0,0,.40);
     font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-    color:#0b0d10;
-    opacity:0; transform:translateX(34px) scale(.965); transform-origin:100% 50%;
-    /* it arrives the way a banner arrives: quickly, and then it is simply there */
-    transition:opacity .42s cubic-bezier(.17,.84,.28,1), transform .52s cubic-bezier(.17,.84,.28,1);
+    color:#f2ece0;
+    opacity:0; transform:translate(20px,6px) scale(.975); transform-origin:100% 60%;
+    /* it settles in rather than sliding across: a short travel, a slight rise, no bounce */
+    transition:opacity .5s cubic-bezier(.22,.61,.36,1),
+               transform .62s cubic-bezier(.22,.61,.36,1);
     pointer-events:none; }
   #note.on{ opacity:1; transform:none; }
-  /* THE SEVERITY IS CARRIED BY THE TILE AND ONE HAIRLINE, NOT BY RED TYPE.
-     An amber-ochre tile and a thin warm rule down the leading edge read as a real
-     environmental alert, which is what this is. Nothing in it is emergency red, nothing
-     pulses, and the words are exactly the artist's own. */
-  #note::before{ content:""; position:absolute; left:0; top:13px; bottom:13px; width:2.5px;
-    border-radius:3px; background:linear-gradient(#e3ae4e,#c07f2a); }
-  #note .nhead{ display:flex; align-items:center; gap:8px; margin-bottom:6px; }
-  #note .napp{ flex:none; width:21px; height:21px; border-radius:6px;
-    background:linear-gradient(158deg,#f0b95c,#d8912f 58%,#b9741f);
-    box-shadow:0 .5px 2px rgba(120,70,10,.36), inset 0 .5px 0 rgba(255,255,255,.46);
-    display:flex; align-items:center; justify-content:center; }
-  #note .napp svg{ width:14px; height:14px; display:block; }
-  #note .nname{ font-size:.735rem; font-weight:650; letter-spacing:.05em;
-    text-transform:uppercase; color:#5c6067; }
-  #note .ntime{ margin-left:auto; font-size:.735rem; color:#8a8f96; letter-spacing:.01em; }
-  #note .nt{ font-size:1.01rem; font-weight:640; letter-spacing:-.012em; line-height:1.3; }
-  #note .nb{ margin:3px 0 0; font-size:.9rem; line-height:1.42; color:#33383f; }
+  /* the severity, carried by one warm hairline down the leading edge and nothing else */
+  #note::before{ content:""; position:absolute; left:0; top:14px; bottom:14px; width:2px;
+    border-radius:2px; background:linear-gradient(rgba(226,170,78,.9), rgba(184,120,42,.75)); }
+  #note .nhead{ display:flex; align-items:center; gap:7px; margin-bottom:5px; }
+  #note .napp{ flex:none; width:18px; height:18px; border-radius:5px;
+    background:linear-gradient(158deg,#e0a94f,#b8782a 62%,#95601f);
+    box-shadow:inset 0 .5px 0 rgba(255,255,255,.28); display:flex;
+    align-items:center; justify-content:center; }
+  #note .napp svg{ width:12px; height:12px; display:block; }
+  #note .nname{ font-size:.665rem; font-weight:600; letter-spacing:.07em;
+    text-transform:uppercase; color:rgba(238,228,206,.62); }
+  #note .ntime{ margin-left:auto; font-size:.665rem; color:rgba(238,228,206,.42);
+    letter-spacing:.01em; }
+  #note .nt{ font-size:.9rem; font-weight:600; letter-spacing:-.004em; line-height:1.32;
+    color:#f8f3e7; }
+  #note .nb{ margin:3px 0 0; font-size:.815rem; line-height:1.46;
+    color:rgba(238,229,212,.80); }
   @media (max-width:600px){
-    #note{ right:8px; left:8px; width:auto; bottom:auto;
+    #note{ right:9px; left:9px; width:auto; bottom:auto;
       top:max(10px,env(safe-area-inset-top));
-      transform:translateY(-30px) scale(.965); }
+      transform:translateY(-24px) scale(.975); }
     #note.on{ transform:none; }
   }
   @media (prefers-reduced-motion:reduce){
-    #note{ transition:opacity .42s; transform:none; }
+    #note{ transition:opacity .5s; transform:none; }
     #note.on{ transform:none; }
   }
 
@@ -583,7 +601,7 @@
 
 <!-- the phone, in the return. Content is swapped in from build/10b-return.js. -->
 <div id="note" aria-hidden="true" aria-live="polite">
-  <div class="nhead"><span class="napp" aria-hidden="true"><svg viewBox="0 0 16 16" fill="none" stroke="#eef2f6" stroke-width="1.5" stroke-linecap="round"><path d="M2.6 6.2h7.2M2.6 9.4h10.8M5.4 12.4h7.6"/></svg></span><span class="nname">Air Quality</span><span class="ntime">now</span></div>
+  <div class="nhead"><span class="napp" aria-hidden="true"><svg viewBox="0 0 16 16" fill="none" stroke="#2a1c0c" stroke-width="1.6" stroke-linecap="round"><path d="M2.6 6.2h7.2M2.6 9.4h10.8M5.4 12.4h7.6"/></svg></span><span class="nname">Air Quality</span><span class="ntime">now</span></div>
   <div class="nt"></div>
   <p class="nb"></p>
 </div>

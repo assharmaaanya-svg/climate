@@ -61,7 +61,7 @@ const PRET_REVEAL = 4.0;
    with everything said and nothing to do. */
 const PRET_LOOK   = 3.4;
 const PRET_PAUSE  = 2.6;
-const PRET_RED    = 10.0;
+const PRET_RED    = 6.5;
 const PRET_BREATH = 3.2;
 
 /* WHAT THE TIMELINE ASKS BEFORE IT WILL LET ANYONE LEAVE.
@@ -244,7 +244,28 @@ function drawReturn(t, dt, o){
   const rev = ease.io(cl01(PROOM.open));
   curtainGeom(t, rev, 0.86);
 
-  /* the room is as dark as the curtains are still shut, exactly as before */
+  /* EVERYTHING IN THE ROOM IS DRAWN FIRST, AND THEN THE ROOM IS LIT.
+     This is the whole of the curtain-brightness fix and it is an ordering problem, not a
+     shading one. The room's exposure is a multiply pass over the frame, and the cloth, the
+     rod, the cord and the taped drawing were all drawn AFTER it — so every one of them
+     escaped the darkness the room was under and the curtains in particular read as
+     self-illuminated: a bright red pair of panels hanging in a room lit at a fifth of
+     daylight. Nothing was wrong with the cloth. It simply was not in the room.
+
+     Drawing them before the pass puts them inside the same exposure as the paint, which
+     also makes the whole thing respond coherently for free: the panels lighten exactly as
+     far as the room does as they are drawn back, because it is one multiply over both. The
+     slit of light between them gets darkened too, which is correct — a shut curtain in an
+     unlit room shows a thin line, not a lamp.
+
+     A transparent overlay on top of the cloth would have produced the flat, pasted-on
+     result the brief warned against. This is the exposure itself. */
+  drawTapedDrawing(t, rev, 0.86);
+  updCord(dt, t);
+  drawCord(t, dt, { rev, quiet:true });
+  drawRod(t, rev, 0.86);
+  drawCurtains(t, dt, { rev, air:0.86 });
+
   const dark = 1 - rev;
   if (dark > 0.004){
     const gp = curtainGap();
@@ -279,34 +300,23 @@ function drawReturn(t, dt, o){
     ctx.restore();
   }
 
-  /* THE ROOM IS THE SAME ROOM, so it keeps the things that were in it.
-     Both of these were simply missing, and their absence is exactly the kind of
-     absence this scene cannot afford: the whole argument is that nothing here has
-     changed except what is outside the glass, and a bedroom that has quietly lost
-     its light pull and the picture over its bed argues the opposite.
-
-     The drawing is the one he is handed years later, still taped where it has been
-     since the first frame. The bulb's pull hangs in the window recess as before.
-     Neither is wired to anything — this scene has two interactions and gets no more
-     — but they are furniture, not interactions, and they belong to the room. */
-  drawTapedDrawing(t, rev, 0.86);
-  updCord(dt, t);
-  drawCord(t, dt, { rev, quiet:true });
-
-  drawRod(t, rev, 0.86);
-  drawCurtains(t, dt, { rev, air:0.86 });
-
   /* THE CORD IS LIVE THE MOMENT THE CURTAINS ARE OPEN, IN EITHER BEAT.
      Both interactions belong to the same beat, so nothing in this sequence is behind a
      scroll: the visitor is placed in the room, opens the curtains, and the cord is
      already there. It used to require the second beat, which meant the second half of
      the chapter did not exist until somebody scrolled into it. */
+  /* ALL THE WAY OPEN, NOT FAR ENOUGH TO COUNT.
+     `CTR.need` is 0.52, the point at which the curtain gate is satisfied, and the look
+     clock used to start there — so the reveal was declared complete with the panels
+     barely more than half drawn and the cord was offered over an exterior the visitor had
+     only partly been shown. The clock starts when they are actually open. */
   const open = Math.min(PROOM.cL, PROOM.cR);
-  if (open > CTR.need){ PRET.seen += dt; PRET.look += dt; }
+  const wide = open > 0.93;
+  if (wide){ PRET.seen += dt; PRET.look += dt; }
   /* the cord waits its turn. The curtains have just come apart on a view the visitor has
      not seen yet, and putting the next instruction up on top of that would make the
      polluted landscape something they scrolled past on the way to a task. */
-  const live = open > 0.80 && PRET.reveal > 0.985 && PRET.look > PRET_LOOK;
+  const live = wide && PRET.reveal > 0.985 && PRET.look > PRET_LOOK;
   if (open > 0.6) returnCord(t, dt, live);
 
   /* THE AIR, MADE VISIBLE ONCE AND QUIETLY.
@@ -361,7 +371,7 @@ function drawReturn(t, dt, o){
   OUTSIDE = 0;
   MUFFLE = 1;
   ambience(0.09 + 0.05*rev, 0.10);
-  if (!PRET.pulling && PRET.hover < 0.2) cv.className = open > CTR.need ? "" : "grabbable";
+  if (!PRET.pulling && PRET.hover < 0.2) cv.className = wide ? "" : "grabbable";
 }
 
 /* ------------------------------------------------------------ the notification
