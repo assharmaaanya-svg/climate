@@ -305,13 +305,20 @@ function drawReturn(t, dt, o){
      scroll: the visitor is placed in the room, opens the curtains, and the cord is
      already there. It used to require the second beat, which meant the second half of
      the chapter did not exist until somebody scrolled into it. */
-  /* ALL THE WAY OPEN, NOT FAR ENOUGH TO COUNT.
-     `CTR.need` is 0.52, the point at which the curtain gate is satisfied, and the look
-     clock used to start there — so the reveal was declared complete with the panels
-     barely more than half drawn and the cord was offered over an exterior the visitor had
-     only partly been shown. The clock starts when they are actually open. */
+  /* FAR ENOUGH TO SEE OUT OF, WHICH IS NOT ALL THE WAY.
+     This asked for 0.93 and that was too much: it made the visitor drag both panels to the
+     very end of the rod before the room would go on, which is not something anybody does to
+     a curtain and not something this moment needs. What it actually needs is that the
+     visitor has been shown the view before the cord is offered, and the view is the glass.
+
+     The panels meet at 0.523 and draw back to 0.378 and 0.664; the glass runs 0.382 to
+     0.658. So the gap between them uncovers 1.04 of the glass for every unit of pull, and
+     0.72 leaves about three quarters of the window clear — plainly open, the whole horizon
+     visible, and reached with an ordinary pull rather than a determined one. The curtain
+     gate itself is unchanged at CTR.need. */
+  const PRET_SEEN = 0.72;
   const open = Math.min(PROOM.cL, PROOM.cR);
-  const wide = open > 0.93;
+  const wide = open > PRET_SEEN;
   if (wide){ PRET.seen += dt; PRET.look += dt; }
   /* the cord waits its turn. The curtains have just come apart on a view the visitor has
      not seen yet, and putting the next instruction up on top of that would make the

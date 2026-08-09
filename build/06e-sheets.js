@@ -41,7 +41,7 @@ const SHEETS = {
      exactly for cloth to look pinned. */
   src: [
     { img:"sheet1.png",    box:[0.0000,0.1273,0.1542,0.4213] },
-    { img:"sheet2.png",    box:[0.1976,0.1528,0.1577,0.4074] },
+    { img:"sheet2.png",    box:[0.1976,0.1528,0.1577,0.4074] },   // see the note on the polluted line's sheet 2
     { img:"sheet3.png",    box:[0.3917,0.1640,0.1958,0.4573] },
     { img:"sheet4.png",    box:[0.6014,0.1663,0.1924,0.4042] },
     { img:"sheet5.png",    box:[0.8232,0.1505,0.1525,0.5000] }

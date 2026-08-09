@@ -31,7 +31,18 @@
 const SHEETS_AFTER = {
   src: [
     { img:"sheetsafterpollution1.png", src:[0.0000,0.1816,0.1792,0.5019], box:[-0.0075,0.1273,0.1692,0.4213] },
-    { img:"sheetsafterpollution2.png", src:[0.1481,0.2086,0.2233,0.4946], box:[ 0.1730,0.1528,0.2069,0.4074] },
+    /* SHEET 2 HANGS 24 PIXELS FURTHER LEFT THAN THE ARITHMETIC PUT IT.
+       Every sheet on this line has a painted pin a few pixels inside each of its top
+       corners — sheet 1's left pin is 16 px in, sheet 3's is 9, sheet 4's is 2 — and this
+       one had its pin 16 px OUTSIDE the cloth, hanging in the air beside a sheet it was
+       not holding. The cause is upstream: these crops were measured with the alpha
+       threshold low enough to include the faint cast shadow each file carries beside the
+       cloth, so every source rect is a little wider than the sheet in it and every sheet
+       is drawn slightly inset inside its own box. Sheets 1, 3, 4 and 5 absorb that and
+       still land on their pins; sheet 2 did not, because the pin either side of it is
+       closer in than the rest. Moved by measurement off the render, not by re-deriving
+       the crop, which would move all five. */
+    { img:"sheetsafterpollution2.png", src:[0.1481,0.2086,0.2233,0.4946], box:[ 0.1563,0.1528,0.2069,0.4074] },
     { img:"sheetsafterpollution3.png", src:[0.3785,0.2208,0.2397,0.5510], box:[ 0.3777,0.1640,0.2238,0.4573] },
     { img:"sheetsafterpollution4.png", src:[0.6155,0.2159,0.2184,0.4897], box:[ 0.5962,0.1663,0.2028,0.4042] },
     { img:"sheetsafterpollution5.png", src:[0.8262,0.1865,0.1738,0.5853], box:[ 0.8160,0.1505,0.1670,0.5000] }
@@ -52,13 +63,18 @@ const SHEETS_AFTER = {
      rect she was therefore stood up to where the fingertips had been — head against the
      pins, shoulders across the middle of the cloth, looming.
 
-     So she is placed off the two landmarks the poses do share. Her waist, at the bottom of
-     both crops, is 0.728 of this crop's width against 0.545 of the clean one's, and it has
-     to match the top of the skirt drawn under it — that fixes the scale at 0.748 of the
-     clean box and puts her waist centre on the skirt's centre. Both crops end at the hem,
-     so her feet are anchored there. And the check that the two agree: this leaves 0.116 of
-     the frame of clear cloth above her head, where the clean chapter leaves 0.117. Same
-     woman, same distance, same amount of sheet over her head.
+     So she is placed off the one landmark the poses share and the one thing she has to
+     agree with: her waist. It is the bottom of both crops, and it is where her skirt
+     starts. The skirt sprite is drawn from a fixed place on the frame, and at the sheet's
+     hem its cloth runs from 0.4446 to 0.5438 — so her waist has to fit inside that, or her
+     shadow is a woman wider than her own skirt. Her waist is 0.724 of this crop's width,
+     which fixes the scale; the crops both end at the hem, which anchors her feet; and her
+     waist centre goes on the skirt's centre at 0.4942.
+
+     Scaled uniformly, so nothing about her is stretched: at 0.1326 by 0.3116 her waist is
+     0.0960 against the skirt's 0.0992, which leaves her about two pixels inside the cloth
+     on each side at 1440. Contained, not flush — a shadow that meets the skirt exactly at
+     its edges reads as a mistake even when it is arithmetically right.
 
      The sprite is a cut-out on transparency rather than a figure on white, so it goes
      through the white buffer in shadowBuf and is let in at `ink` — the file is nearly
@@ -66,7 +82,7 @@ const SHEETS_AFTER = {
      same mean density, so she reads as a shadow on cloth and not as a hole in it. */
   shadow: { img:"momshadowcoughingcropped.png",
             src:[0.3788,0.2730,0.2137,0.7270],
-            box:[0.4045,0.2738,0.1426,0.3350],
+            box:[0.4125,0.2972,0.1326,0.3116],
             ink:0.66, dens:0.78, ox:0, oy:0 },
   /* and her real skirt, below the hem, in the same wind. The after-pollution painting of it
      is a 1254-square with the skirt filling the frame, so it needs its own source rect; the

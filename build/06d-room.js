@@ -726,6 +726,22 @@ function drawRoom(t, dt, o){
   /* the room is one room. How dark it is, is how far the curtains are still
      shut — so the light in here always agrees with the cloth in front of it. */
   curtainGeom(t, rev, air);
+
+  /* EVERYTHING IN THE ROOM IS DRAWN FIRST, AND THEN THE ROOM IS LIT.
+     The same ordering fault the polluted bedroom had, in the room the piece opens in. The
+     exposure below is a multiply over the whole frame, and the drawing, the cord, the rod
+     and the cloth were all drawn after it, so every one of them escaped the darkness the
+     room was under: the visitor's first sight of the piece was a dim room with a pair of
+     curtains hanging in it at full daylight brightness, lit by nothing.
+     Drawn before the pass they are inside the same exposure as the paint, which also makes
+     them respond coherently for nothing — the panels lighten exactly as far as the room
+     does as they come apart, because it is one multiply over both. */
+  drawTapedDrawing(t, rev, air);
+  updCord(dt, t);
+  if (!o.noCord) drawCord(t, dt, { rev, quiet: o.quietCord || rev < 0.55 });
+  drawRod(t, rev, air);
+  drawCurtains(t, dt, { air });
+
   const dark = 1 - rev;
   if (dark > 0.004){
     /* The dark is built in its own buffer and the opening is erased out of it
@@ -772,16 +788,8 @@ function drawRoom(t, dt, o){
      solves picking a sprite up by its own drawn content rather than its file box, and
      that is worth keeping to hand. Nothing calls it. */
 
-  /* the drawing taped over the bed, years before it is handed over */
-  drawTapedDrawing(t, rev, air);
-
-  /* the cord hangs in the window recess — behind the cloth, in front of nothing */
-  updCord(dt, t);
-  if (!o.noCord) drawCord(t, dt, { rev, quiet: o.quietCord || rev < 0.55 });
-
-  /* the rod, then the cloth on it */
-  drawRod(t, rev, air);
-  drawCurtains(t, dt, { air });
+  /* the drawing taped over the bed, the cord in the window recess, the rod and the cloth
+     on it are all drawn above, before the exposure — see the note there. */
 
   /* dust in the light, once there is light. The painting already has the pool
      of it on the boards; this is only what a still image cannot hold. */
