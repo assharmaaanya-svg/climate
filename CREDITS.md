@@ -25,6 +25,7 @@ originals are kept at the repository root; `assets/` holds only the loops built 
 | `assets/line-cloth.wav` | the washing, almost still |
 | `assets/line-gust.wav` | the washing in a gust, layered over the first, never crossfaded |
 | `assets/line-hum.wav` | her, once you have touched her, running down over half a minute |
+| `assets/cough-mother.wav` | her, on the same washing line, afterwards |
 | `assets/kite-wind.wav` | open wind off the water |
 | `assets/kite-laugh.wav` | him, played whole and occasionally, never looped |
 | `assets/night-crickets.wav` | from dusk onward |
@@ -40,6 +41,19 @@ Each looping file was decoded, downmixed to mono, resampled to 22.05 kHz, cut to
 and then had its own tail folded back over its head under an equal-power crossfade so the loop
 point is inaudible. They are deliberately different lengths so the combination does not come back
 into phase.
+
+Two of them reached `assets/` without that treatment and were rebuilt with it. The polluted line's
+bed was the original recording renamed: sixteen kilohertz, stereo, eight-bit, two minutes long, with
+a fade at each end. Its half-second level is flat to within four decibels across the whole recording
+except at those two ends, so the chapter opened ten decibels quiet and then dipped and jumped every
+two minutes — the only bed in the piece with an audible seam, under the one chapter meant to feel
+like a place with less in it rather than a place with a fault in it. It is now thirty-four seconds
+cut from the flat middle, downmixed, folded, and left at sixteen kilohertz, because the recording
+has nothing above eight and resampling it up would only make the file larger. And the cough was
+kept at forty-eight kilohertz in thirty-two-bit float for a sound that plays at two thirds gain
+through a low-pass; it is now twenty-two-oh-five and sixteen-bit like everything else, resampled
+through a windowed-sinc filter rather than by interpolation, since dropping from forty-eight without
+one folds the top of the recording back down into it. Neither was filtered, gained or equalised.
 
 The laugh is the exception: four seconds of a child cannot be looped, because looped laughter is a
 horror-film cue. It is played whole, occasionally, on its own envelope, faded up over its first

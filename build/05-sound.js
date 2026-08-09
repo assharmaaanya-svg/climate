@@ -249,7 +249,7 @@ function loadAmbience(){
   loadOne(HUM,  "line-hum.wav");
   loadOne(KWIND, "kite-wind.wav");
   loadOne(LAUGH, "kite-laugh.wav");
-  loadOne(COUGH, "mothercoughing.wav");
+  loadOne(COUGH, "cough-mother.wav");
   /* The artist's tunnel field recording, renamed on disk from its original
      839653__guidofm__ambpubl_cinematis_fieldrecording_tunnelambience_distant (1).wav.
      Same audio, untouched; the name is shortened because spaces and parentheses travel

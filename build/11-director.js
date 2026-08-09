@@ -1250,6 +1250,19 @@ window.__bluer = {
              return !i ? "not requested"
                   : !i.complete || !i.naturalWidth ? "not loaded"
                   : i.naturalWidth+"x"+i.naturalHeight; },
+  /* DID EVERY RECORDING ACTUALLY DECODE. In the self-contained build each one arrives as a
+     data URI, and a URI that is truncated or carries the wrong mime does not throw anywhere
+     visible: decodeAudioData simply never resolves, the layer stays silent, and the piece
+     looks perfectly fine. So this reports each layer's buffer length in seconds — a null is
+     a recording that is not there. */
+  bufs(){ const o = {};
+          const put = (n, L) => { o[n] = L && L.buf ? +L.buf.duration.toFixed(2) : null; };
+          put("amb-garden", AMB); put("amb-open", AMB2); put("amb-tunnel", AMB3);
+          put("line-cloth", RUS); put("line-gust", RUS2); put("line-hum", HUM);
+          put("kite-wind", KWIND); put("kite-laugh", LAUGH); put("cough", COUGH);
+          put("crickets", CRICK); put("night-birds", NBIRD);
+          for (const k in LOOKA) put("look-"+k, LOOKA[k]);
+          return o; },
   audio(){ return { ctx: AC ? AC.state : "none", on: soundOn,
                     a1: AMB.state, a2: AMB2.state,
                     g1: AMB.gain ? +AMB.gain.gain.value.toFixed(3) : null,
