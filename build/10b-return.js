@@ -31,13 +31,18 @@ const PRET = {
   hover: 0,         // the handle, under the pointer
   tried: 0,         // how many times the window has been asked
   give: 0,          // the millimetre it moves and comes back
+  look: 0,          // seconds since the outside was revealed, before the cord is offered
   noteT: -1,        // countdown to the notification
   lineT: -1,        // and then to the answer that follows it
+  redT: -1,         // and then the colour drifting, and the breath after it
   note: 0,          // 0 nothing, 1 the reading
+  said: 0,          // the line has been spoken
+  settled: 0,       // the whole moment is over, and the scroll may go on
   begun: 0,         // the scene has been set up; do not set it up again
   wasDown: 0,       // the pointer last frame, to catch the instant of a press
   arm: 0,           // this press began on the handle, so it is a try at the window
-  hold: 0           // and how long it has stayed there, so a passing drag is not a pull
+  hold: 0,          // and how long it has stayed there, so a passing drag is not a pull
+  snap: 0           // the recoil, just after the attempt
 };
 
 /* The reveal is four seconds. It is the slowest thing in the piece and it should
@@ -45,6 +50,41 @@ const PRET = {
    the room has to arrive quietly enough that recognising it is their own thought
    rather than a cut. */
 const PRET_REVEAL = 4.0;
+/* HOW LONG EACH PART OF THE CLOSING SEQUENCE LASTS.
+   `LOOK` is the beat after the curtains open before the cord is offered, so the polluted
+   view is looked at rather than skipped past on the way to the next instruction. `PAUSE`
+   is the silence between the phone and the answer, and it is the most important number
+   here: the two must not share the moment or the phone reads as speaking for her. `RED`
+   is the colour drift, shortened from nineteen seconds to ten so that it is certain to
+   finish inside the sequence rather than being scrolled away from half done — still slow
+   enough that most visitors will not catch it happening. `BREATH` is the room afterwards,
+   with everything said and nothing to do. */
+const PRET_LOOK   = 3.4;
+const PRET_PAUSE  = 2.6;
+const PRET_RED    = 10.0;
+const PRET_BREATH = 3.2;
+
+/* WHAT THE TIMELINE ASKS BEFORE IT WILL LET ANYONE LEAVE.
+   The polluted bedroom is not one interaction, it is a sequence, and it holds the scroll
+   until the sequence is over rather than until the first thing in it is done. Otherwise a
+   visitor who opened the curtains could scroll on mid-notification and the whole point of
+   the chapter would happen off screen behind them. */
+function returnDone(){
+  if (!getPlate("roomAfter")) return true;      // nothing to wait for if it never loaded
+  return !!PRET.settled;
+}
+function returnProgress(){
+  if (PRET.settled) return 1;
+  if (!gateMet("pcurtain")) return 0.34*cl01(gateProgress("pcurtain"));
+  if (!PRET.tried)          return 0.34 + 0.26*cl01(PRET.give/RCORD_FIRE);
+  /* and through the phone, the pause, the answer and the breath */
+  const total = 1.2 + PRET_PAUSE + PRET_RED + PRET_BREATH;
+  let left = PRET_RED + PRET_BREATH;
+  if (PRET.noteT > 0)      left = 1.2 + PRET_PAUSE + PRET_RED + PRET_BREATH;
+  else if (PRET.lineT > 0) left = PRET_PAUSE + PRET_RED + PRET_BREATH;
+  else if (PRET.redT > 0)  left = PRET.redT;
+  return 0.60 + 0.40*cl01(1 - left/total);
+}
 
 function resetReturn(){
   /* ONCE. THIS WAS THE GLITCH.
@@ -60,8 +100,9 @@ function resetReturn(){
   PRET.begun = 1;
   PRET.reveal = 0; PRET.seen = 0; PRET.hover = 0;
   PRET.tried = 0; PRET.give = 0;
-  PRET.noteT = -1; PRET.lineT = -1; PRET.note = 0;
-  PRET.wasDown = 0; PRET.arm = 0; PRET.hold = 0;
+  PRET.noteT = -1; PRET.lineT = -1; PRET.redT = -1;
+  PRET.note = 0; PRET.said = 0; PRET.settled = 0; PRET.look = 0;
+  PRET.wasDown = 0; PRET.arm = 0; PRET.hold = 0; PRET.snap = 0;
   /* The curtains start shut, exactly as they did at the beginning. The opening
      room's own state is reused rather than duplicated, so the drag is not a
      lookalike of the first one, it is the same code with the same weight and the
@@ -121,18 +162,30 @@ function returnCord(t, dt, live){
     CORD.swingV += (P.dx/W)*5.0;
     if (PRET.give > RCORD_FIRE && !PRET.tried){
       PRET.tried = 1;
-      sfx.cloth(0.22);
+      /* A RESTRAINED PHYSICAL ANSWER, SO THE ATTEMPT PLAINLY REGISTERED.
+         Not a judder, not a rattle, nothing stuck. The cord itself takes the whole of the
+         response: it comes back faster than a slow release would, and the weight on the
+         end swings, which is exactly what a pull cord does when the thing at the other end
+         of it does not move. One soft catch of a sound underneath. The window is not
+         broken and never behaves as though it is — all the weight of this moment is in
+         what arrives afterwards. */
+      PRET.snap = 1;
+      CORD.swingV += 1.5;
+      sfx.cloth(0.20);
+      if (sfx.dull) sfx.dull(0.9);
       /* THE PHONE FIRST, THEN THE ANSWER.
          The order matters and it was the other way round. A phone tells you the number
          and only then does anybody say anything, so the reading arrives on its own,
          impersonally, and the line follows it as the response to it. Said first, the
          line made the notification look like it was explaining her. */
-      PRET.noteT = 1.6;
+      PRET.noteT = 1.2;
     }
   } else {
     if (near && !P.down) cv.className = "grabbable";
-    /* it comes back. Slowly enough to read as weight rather than as a spring. */
-    PRET.give = Math.max(0, PRET.give - dt*1.15);
+    /* it comes back. Slowly enough to read as weight rather than as a spring, and once,
+       just after the attempt, a little faster, because that is the recoil. */
+    PRET.give = Math.max(0, PRET.give - dt*(PRET.snap > 0 ? 2.6 : 1.15));
+    if (PRET.snap > 0) PRET.snap = Math.max(0, PRET.snap - dt*1.4);
     if (!PRET.tried && !near) PRET.arm = 0;
   }
   /* the cord's own length, which is all the sash does in this scene: no casement is
@@ -198,7 +251,12 @@ function drawReturn(t, dt, o){
     const fe = W*0.028;
     offscreen(()=>{
       const dg = tc.createLinearGradient(0, 0, 0, H);
-      const k0 = lerp(1, 0.40, dark), k1 = lerp(1, 0.29, dark);
+      /* DARKER THAN THE OPENING ROOM WAS, because this one has to read as dark.
+         At 0.40 and 0.29 the room was dim but plainly legible, which made the curtains a
+         formality rather than a reveal. Down to a fifth of the light: the bed, the wardrobe
+         and the cord are all still readable, so the room can be understood and reached
+         into, but nothing about it looks like daytime until it is opened. */
+      const k0 = lerp(1, 0.21, dark), k1 = lerp(1, 0.14, dark);
       dg.addColorStop(0,    rgb([255*k0, 244*k0, 232*k0]));
       dg.addColorStop(0.62, rgb([255*k1, 240*k1, 230*k1]));
       dg.addColorStop(1,    rgb([255*k1*0.92, 238*k1*0.92, 232*k1*0.92]));
@@ -244,9 +302,12 @@ function drawReturn(t, dt, o){
      already there. It used to require the second beat, which meant the second half of
      the chapter did not exist until somebody scrolled into it. */
   const open = Math.min(PROOM.cL, PROOM.cR);
-  const live = open > 0.80 && PRET.reveal > 0.985;
+  if (open > CTR.need){ PRET.seen += dt; PRET.look += dt; }
+  /* the cord waits its turn. The curtains have just come apart on a view the visitor has
+     not seen yet, and putting the next instruction up on top of that would make the
+     polluted landscape something they scrolled past on the way to a task. */
+  const live = open > 0.80 && PRET.reveal > 0.985 && PRET.look > PRET_LOOK;
   if (open > 0.6) returnCord(t, dt, live);
-  if (open > CTR.need) PRET.seen += dt;
 
   /* THE AIR, MADE VISIBLE ONCE AND QUIETLY.
      Barely anything: a slow dust that hangs rather than drifts, only in the light
@@ -266,21 +327,33 @@ function drawReturn(t, dt, o){
   /* the hands, only after a long wait and never during the reveal */
   if (phase === "room" && PRET.reveal > 0.999) curtainHelp(t, dt);
 
-  /* ---- the phone, and then the answer ----
-     Two waits, not one. The cord is let go, and after a beat and a half the phone says
-     what the air is; a moment after that, somebody in the house answers. Each arrives
-     on its own so neither reads as the cause of the other. */
+  /* ---- THE CHAIN, AND THE SCROLL IS SHUT FOR ALL OF IT ----
+     Four waits, each arriving on its own so that none of them reads as the cause of the
+     one before. The cord is let go; a beat later the phone says what the air is; two and
+     a half seconds of nothing, which is the part that does the work; then somebody in the
+     house answers; then the answer loses its colour while it sits there; then a breath.
+     Only after the breath does `settled` go up and the scroll open again. */
   if (PRET.noteT > 0){
     PRET.noteT -= dt;
-    if (PRET.noteT <= 0){ PRET.note = 1; showNote(); PRET.lineT = 1.25; }
+    if (PRET.noteT <= 0){ PRET.note = 1; showNote(); PRET.lineT = PRET_PAUSE; }
   }
   if (PRET.lineT > 0){
     PRET.lineT -= dt;
     if (PRET.lineT <= 0 && typeof sayLine === "function"){
-      /* it holds a long time and reddens while it holds, then goes out on its own and
-         leaves the room quiet — the last thing said in the chapter */
-      sayLine("Leave it closed.", 24.0, { red:true });
+      PRET.said = 1;
+      /* it holds for the whole of the colour drift and the breath after it, and goes out
+         on its own — the last thing said in the chapter */
+      /* exactly as long as the drift and the breath after it, and no longer. With an extra
+         second and a half on the end the sentence was still on screen, fully red, once the
+         scroll had opened — so it sat over the top of the next chapter's washing line. It
+         begins its own fade at the moment the scroll is released. */
+      sayLine("Leave it closed.", PRET_RED + PRET_BREATH, { red:true });
+      PRET.redT = PRET_RED + PRET_BREATH;
     }
+  }
+  if (PRET.redT > 0){
+    PRET.redT -= dt;
+    if (PRET.redT <= 0) PRET.settled = 1;
   }
 
   /* A closed room with bad air outside it. Quiet, muffled, and no gust: there is

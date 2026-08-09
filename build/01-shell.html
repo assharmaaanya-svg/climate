@@ -79,14 +79,19 @@
     /* colour is in the transition list on the base rule, not on .redshift, so the drift
        has somewhere to start from the instant the class arrives */
     transition:opacity 1.5s cubic-bezier(.4,0,.2,1), transform 1.5s cubic-bezier(.4,0,.2,1),
-               color 19s linear; }
+               color 10s linear; }
   #cap.on{ opacity:1; transform:translate(-50%,0); }
   /* A LINE THAT LOSES ITS COLOUR WHILE YOU LOOK AT IT.
-     Nineteen seconds, linear, ending at a dusty brick that is nowhere near an alarm red
-     and is not far off the browns already in the room. Nothing flashes and nothing
-     escalates: the sentence is simply not as white as it was when it arrived, and most
-     visitors will not catch the moment it changed. That is the intent — emotional
-     weight, arriving at the speed weight actually arrives at. */
+     Ten seconds, linear, ending at a dusty brick that is nowhere near an alarm red and is
+     not far off the browns already in the room. Nothing flashes and nothing escalates: the
+     sentence is simply not as white as it was when it arrived, and most visitors will not
+     catch the moment it changed.
+
+     It was nineteen seconds, which is where it went wrong: nothing guaranteed the visitor
+     was still in the scene by the end of it, so the drift was routinely abandoned half
+     done and the effect never actually landed. Ten seconds is inside the window the
+     sequence now holds the scroll for, so it always completes, and the timing is kept in
+     step with PRET_RED on the other side. */
   #cap.redshift{ color:#b07068; }
   #cap.dark{ color:#241a12;
     text-shadow:0 1px 3px rgba(255,250,238,.95), 0 2px 18px rgba(255,248,232,.9),
@@ -114,7 +119,7 @@
      as a lozenge, and the radius sits where the corner is clearly softened but the shape
      is still unmistakably a rectangle. */
   #ask{ position:fixed; left:50%; bottom:var(--instr-bottom); transform:translate(-50%,5px);
-    z-index:6; display:inline-flex; align-items:center; gap:.78em; white-space:nowrap;
+    z-index:6; display:block; white-space:nowrap;
     font-family:var(--mono); font-weight:400;
     font-size:clamp(.8rem,.64rem + .3vw,.94rem);
     letter-spacing:.12em; text-transform:uppercase;
@@ -137,12 +142,6 @@
   #ask .tx{ display:block; filter:blur(2.2px); opacity:.5;
     transition:filter .62s cubic-bezier(.22,.61,.36,1), opacity .62s cubic-bezier(.22,.61,.36,1); }
   #ask.on .tx{ filter:blur(0); opacity:1; }
-  /* the gesture mark: same ivory, quieter, and sized off the type so it tracks it */
-  #ask .ic{ flex:none; width:1.16em; height:1.16em; opacity:.55; display:block;
-    transition:opacity .62s; }
-  #ask .ic:empty{ display:none; }
-  #ask .ic svg{ width:100%; height:100%; display:block; overflow:visible; }
-  #ask .ic svg *{ vector-effect:non-scaling-stroke; }
   @media (prefers-reduced-motion:reduce){
     #ask .tx{ filter:none; } #ask{ transform:translate(-50%,0); }
   }
@@ -200,7 +199,7 @@
   body.onslaught #cap, body.onslaught #ask, body.onslaught #gate,
   body.onslaught #sdown, body.onslaught #chapter, body.onslaught #look,
   body.onslaught #cc, body.onslaught .ctl, body.onslaught #whisper,
-  body.onslaught #sdown svg, body.onslaught #ask .ic, body.onslaught #ask .tx{
+  body.onslaught #sdown svg, body.onslaught #ask .tx{
     opacity:0 !important; visibility:hidden !important; animation:none !important;
     pointer-events:none; }
   body.onslaught{ background:#000; }
@@ -317,40 +316,51 @@
      drawn instead.
 
      The wording is untouched: this is the artist's own air-quality concept, rebuilt. */
-  #note{ position:fixed; right:max(14px,env(safe-area-inset-right)); bottom:5.5vh; z-index:14;
-    width:min(392px,calc(100vw - 28px));
-    padding:12px 14px 13px;
-    background:rgba(250,250,252,.9);
-    border:.5px solid rgba(255,255,255,.6);
-    border-radius:20px;
-    -webkit-backdrop-filter:blur(22px) saturate(1.7); backdrop-filter:blur(22px) saturate(1.7);
-    box-shadow:0 12px 30px rgba(0,0,0,.24), 0 2px 6px rgba(0,0,0,.10);
+  #note{ position:fixed; right:max(16px,env(safe-area-inset-right)); bottom:6vh; z-index:14;
+    width:min(422px,calc(100vw - 32px));
+    padding:13px 15px 14px 15px;
+    background:rgba(250,250,251,.94);
+    border:.5px solid rgba(255,255,255,.66);
+    border-radius:21px;
+    -webkit-backdrop-filter:blur(26px) saturate(1.8); backdrop-filter:blur(26px) saturate(1.8);
+    /* MORE PRESENCE THAN ANYTHING ELSE IN THE INTERFACE, and it has earned it: this is
+       the one moment the outside world speaks directly to the visitor. Two shadows, a
+       tight contact one and a wide soft one, which is what lifts a real banner off the
+       screen it is sitting on. */
+    box-shadow:0 20px 48px rgba(0,0,0,.34), 0 4px 12px rgba(0,0,0,.16),
+               0 0 0 .5px rgba(0,0,0,.05);
     font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-    color:#0d0f12;
-    opacity:0; transform:translateX(30px) scale(.97); transform-origin:100% 50%;
-    transition:opacity .58s cubic-bezier(.2,.7,.3,1), transform .58s cubic-bezier(.2,.7,.3,1);
+    color:#0b0d10;
+    opacity:0; transform:translateX(34px) scale(.965); transform-origin:100% 50%;
+    /* it arrives the way a banner arrives: quickly, and then it is simply there */
+    transition:opacity .42s cubic-bezier(.17,.84,.28,1), transform .52s cubic-bezier(.17,.84,.28,1);
     pointer-events:none; }
   #note.on{ opacity:1; transform:none; }
-  #note .nhead{ display:flex; align-items:center; gap:7px; margin-bottom:5px; }
-  /* the app tile: a squircle with the haze mark in it, drawn rather than lettered */
-  #note .napp{ flex:none; width:19px; height:19px; border-radius:5.5px;
-    background:linear-gradient(160deg,#8d9aa6,#5d6b78 62%,#4a5765);
-    box-shadow:0 .5px 1.5px rgba(0,0,0,.28), inset 0 .5px 0 rgba(255,255,255,.34);
+  /* THE SEVERITY IS CARRIED BY THE TILE AND ONE HAIRLINE, NOT BY RED TYPE.
+     An amber-ochre tile and a thin warm rule down the leading edge read as a real
+     environmental alert, which is what this is. Nothing in it is emergency red, nothing
+     pulses, and the words are exactly the artist's own. */
+  #note::before{ content:""; position:absolute; left:0; top:13px; bottom:13px; width:2.5px;
+    border-radius:3px; background:linear-gradient(#e3ae4e,#c07f2a); }
+  #note .nhead{ display:flex; align-items:center; gap:8px; margin-bottom:6px; }
+  #note .napp{ flex:none; width:21px; height:21px; border-radius:6px;
+    background:linear-gradient(158deg,#f0b95c,#d8912f 58%,#b9741f);
+    box-shadow:0 .5px 2px rgba(120,70,10,.36), inset 0 .5px 0 rgba(255,255,255,.46);
     display:flex; align-items:center; justify-content:center; }
-  #note .napp svg{ width:13px; height:13px; display:block; }
-  #note .nname{ font-size:.72rem; font-weight:600; letter-spacing:.045em;
-    text-transform:uppercase; color:#61666d; }
-  #note .ntime{ margin-left:auto; font-size:.72rem; color:#8b9097; letter-spacing:.01em; }
-  #note .nt{ font-size:.95rem; font-weight:600; letter-spacing:-.008em; line-height:1.3; }
-  #note .nb{ margin:2px 0 0; font-size:.88rem; line-height:1.4; color:#3a4048; }
+  #note .napp svg{ width:14px; height:14px; display:block; }
+  #note .nname{ font-size:.735rem; font-weight:650; letter-spacing:.05em;
+    text-transform:uppercase; color:#5c6067; }
+  #note .ntime{ margin-left:auto; font-size:.735rem; color:#8a8f96; letter-spacing:.01em; }
+  #note .nt{ font-size:1.01rem; font-weight:640; letter-spacing:-.012em; line-height:1.3; }
+  #note .nb{ margin:3px 0 0; font-size:.9rem; line-height:1.42; color:#33383f; }
   @media (max-width:600px){
     #note{ right:8px; left:8px; width:auto; bottom:auto;
       top:max(10px,env(safe-area-inset-top));
-      transform:translateY(-26px) scale(.97); }
+      transform:translateY(-30px) scale(.965); }
     #note.on{ transform:none; }
   }
   @media (prefers-reduced-motion:reduce){
-    #note{ transition:opacity .58s; transform:none; }
+    #note{ transition:opacity .42s; transform:none; }
     #note.on{ transform:none; }
   }
 
@@ -587,7 +597,7 @@
 </div>
 
 <p id="cap" aria-live="polite"></p>
-<div id="ask" aria-live="polite"><span class="ic" aria-hidden="true"></span><span class="tx"></span></div>
+<div id="ask" aria-live="polite"><span class="tx"></span></div>
 <div id="gate" aria-hidden="true"><span id="gateTxt"></span><span class="bar"><i id="gateBar"></i></span><span class="chev"></span></div>
 <div id="cc" aria-hidden="true"></div>
 <div id="sdown" aria-hidden="true"><span>scroll</span>

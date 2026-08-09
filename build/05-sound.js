@@ -484,6 +484,10 @@ const sfx = {
   flap(){ cc("wings"); burst(1500, 0.7, 0.22, 0.05); burst(700,1.2,0.3,0.03); },
   cloth(v){ cc("fabric moving"); burst(1100+Math.random()*700, 0.55, 0.30, 0.028*(v===undefined?1:v)); },
   latch(){ cc("a metal latch turning"); burst(3200, 9, 0.09, 0.05); tone(760,0.10,"square",0.016); },
+  /* a sash taking a pull and not moving. Low, short, and completely undramatic: it is
+     the sound of a window declining, not of one jamming. */
+  dull(v){ cc("a window not moving"); const g=(v===undefined?1:v);
+           burst(210, 0.7, 0.16, 0.030*g, "lowpass"); tone(96, 0.13, "sine", 0.020*g); },
   slide(){ cc("the window sliding up"); burst(340, 0.9, 0.52, 0.055, "lowpass"); },
   thud(){ cc("wood settling"); burst(140, 1.2, 0.20, 0.06, "lowpass"); },
   /* One chirp. `v` is how near it sounds: through a shut window it is faint and

@@ -79,14 +79,19 @@
     /* colour is in the transition list on the base rule, not on .redshift, so the drift
        has somewhere to start from the instant the class arrives */
     transition:opacity 1.5s cubic-bezier(.4,0,.2,1), transform 1.5s cubic-bezier(.4,0,.2,1),
-               color 19s linear; }
+               color 10s linear; }
   #cap.on{ opacity:1; transform:translate(-50%,0); }
   /* A LINE THAT LOSES ITS COLOUR WHILE YOU LOOK AT IT.
-     Nineteen seconds, linear, ending at a dusty brick that is nowhere near an alarm red
-     and is not far off the browns already in the room. Nothing flashes and nothing
-     escalates: the sentence is simply not as white as it was when it arrived, and most
-     visitors will not catch the moment it changed. That is the intent — emotional
-     weight, arriving at the speed weight actually arrives at. */
+     Ten seconds, linear, ending at a dusty brick that is nowhere near an alarm red and is
+     not far off the browns already in the room. Nothing flashes and nothing escalates: the
+     sentence is simply not as white as it was when it arrived, and most visitors will not
+     catch the moment it changed.
+
+     It was nineteen seconds, which is where it went wrong: nothing guaranteed the visitor
+     was still in the scene by the end of it, so the drift was routinely abandoned half
+     done and the effect never actually landed. Ten seconds is inside the window the
+     sequence now holds the scroll for, so it always completes, and the timing is kept in
+     step with PRET_RED on the other side. */
   #cap.redshift{ color:#b07068; }
   #cap.dark{ color:#241a12;
     text-shadow:0 1px 3px rgba(255,250,238,.95), 0 2px 18px rgba(255,248,232,.9),
@@ -114,7 +119,7 @@
      as a lozenge, and the radius sits where the corner is clearly softened but the shape
      is still unmistakably a rectangle. */
   #ask{ position:fixed; left:50%; bottom:var(--instr-bottom); transform:translate(-50%,5px);
-    z-index:6; display:inline-flex; align-items:center; gap:.78em; white-space:nowrap;
+    z-index:6; display:block; white-space:nowrap;
     font-family:var(--mono); font-weight:400;
     font-size:clamp(.8rem,.64rem + .3vw,.94rem);
     letter-spacing:.12em; text-transform:uppercase;
@@ -137,12 +142,6 @@
   #ask .tx{ display:block; filter:blur(2.2px); opacity:.5;
     transition:filter .62s cubic-bezier(.22,.61,.36,1), opacity .62s cubic-bezier(.22,.61,.36,1); }
   #ask.on .tx{ filter:blur(0); opacity:1; }
-  /* the gesture mark: same ivory, quieter, and sized off the type so it tracks it */
-  #ask .ic{ flex:none; width:1.16em; height:1.16em; opacity:.55; display:block;
-    transition:opacity .62s; }
-  #ask .ic:empty{ display:none; }
-  #ask .ic svg{ width:100%; height:100%; display:block; overflow:visible; }
-  #ask .ic svg *{ vector-effect:non-scaling-stroke; }
   @media (prefers-reduced-motion:reduce){
     #ask .tx{ filter:none; } #ask{ transform:translate(-50%,0); }
   }
@@ -200,7 +199,7 @@
   body.onslaught #cap, body.onslaught #ask, body.onslaught #gate,
   body.onslaught #sdown, body.onslaught #chapter, body.onslaught #look,
   body.onslaught #cc, body.onslaught .ctl, body.onslaught #whisper,
-  body.onslaught #sdown svg, body.onslaught #ask .ic, body.onslaught #ask .tx{
+  body.onslaught #sdown svg, body.onslaught #ask .tx{
     opacity:0 !important; visibility:hidden !important; animation:none !important;
     pointer-events:none; }
   body.onslaught{ background:#000; }
@@ -317,40 +316,51 @@
      drawn instead.
 
      The wording is untouched: this is the artist's own air-quality concept, rebuilt. */
-  #note{ position:fixed; right:max(14px,env(safe-area-inset-right)); bottom:5.5vh; z-index:14;
-    width:min(392px,calc(100vw - 28px));
-    padding:12px 14px 13px;
-    background:rgba(250,250,252,.9);
-    border:.5px solid rgba(255,255,255,.6);
-    border-radius:20px;
-    -webkit-backdrop-filter:blur(22px) saturate(1.7); backdrop-filter:blur(22px) saturate(1.7);
-    box-shadow:0 12px 30px rgba(0,0,0,.24), 0 2px 6px rgba(0,0,0,.10);
+  #note{ position:fixed; right:max(16px,env(safe-area-inset-right)); bottom:6vh; z-index:14;
+    width:min(422px,calc(100vw - 32px));
+    padding:13px 15px 14px 15px;
+    background:rgba(250,250,251,.94);
+    border:.5px solid rgba(255,255,255,.66);
+    border-radius:21px;
+    -webkit-backdrop-filter:blur(26px) saturate(1.8); backdrop-filter:blur(26px) saturate(1.8);
+    /* MORE PRESENCE THAN ANYTHING ELSE IN THE INTERFACE, and it has earned it: this is
+       the one moment the outside world speaks directly to the visitor. Two shadows, a
+       tight contact one and a wide soft one, which is what lifts a real banner off the
+       screen it is sitting on. */
+    box-shadow:0 20px 48px rgba(0,0,0,.34), 0 4px 12px rgba(0,0,0,.16),
+               0 0 0 .5px rgba(0,0,0,.05);
     font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-    color:#0d0f12;
-    opacity:0; transform:translateX(30px) scale(.97); transform-origin:100% 50%;
-    transition:opacity .58s cubic-bezier(.2,.7,.3,1), transform .58s cubic-bezier(.2,.7,.3,1);
+    color:#0b0d10;
+    opacity:0; transform:translateX(34px) scale(.965); transform-origin:100% 50%;
+    /* it arrives the way a banner arrives: quickly, and then it is simply there */
+    transition:opacity .42s cubic-bezier(.17,.84,.28,1), transform .52s cubic-bezier(.17,.84,.28,1);
     pointer-events:none; }
   #note.on{ opacity:1; transform:none; }
-  #note .nhead{ display:flex; align-items:center; gap:7px; margin-bottom:5px; }
-  /* the app tile: a squircle with the haze mark in it, drawn rather than lettered */
-  #note .napp{ flex:none; width:19px; height:19px; border-radius:5.5px;
-    background:linear-gradient(160deg,#8d9aa6,#5d6b78 62%,#4a5765);
-    box-shadow:0 .5px 1.5px rgba(0,0,0,.28), inset 0 .5px 0 rgba(255,255,255,.34);
+  /* THE SEVERITY IS CARRIED BY THE TILE AND ONE HAIRLINE, NOT BY RED TYPE.
+     An amber-ochre tile and a thin warm rule down the leading edge read as a real
+     environmental alert, which is what this is. Nothing in it is emergency red, nothing
+     pulses, and the words are exactly the artist's own. */
+  #note::before{ content:""; position:absolute; left:0; top:13px; bottom:13px; width:2.5px;
+    border-radius:3px; background:linear-gradient(#e3ae4e,#c07f2a); }
+  #note .nhead{ display:flex; align-items:center; gap:8px; margin-bottom:6px; }
+  #note .napp{ flex:none; width:21px; height:21px; border-radius:6px;
+    background:linear-gradient(158deg,#f0b95c,#d8912f 58%,#b9741f);
+    box-shadow:0 .5px 2px rgba(120,70,10,.36), inset 0 .5px 0 rgba(255,255,255,.46);
     display:flex; align-items:center; justify-content:center; }
-  #note .napp svg{ width:13px; height:13px; display:block; }
-  #note .nname{ font-size:.72rem; font-weight:600; letter-spacing:.045em;
-    text-transform:uppercase; color:#61666d; }
-  #note .ntime{ margin-left:auto; font-size:.72rem; color:#8b9097; letter-spacing:.01em; }
-  #note .nt{ font-size:.95rem; font-weight:600; letter-spacing:-.008em; line-height:1.3; }
-  #note .nb{ margin:2px 0 0; font-size:.88rem; line-height:1.4; color:#3a4048; }
+  #note .napp svg{ width:14px; height:14px; display:block; }
+  #note .nname{ font-size:.735rem; font-weight:650; letter-spacing:.05em;
+    text-transform:uppercase; color:#5c6067; }
+  #note .ntime{ margin-left:auto; font-size:.735rem; color:#8a8f96; letter-spacing:.01em; }
+  #note .nt{ font-size:1.01rem; font-weight:640; letter-spacing:-.012em; line-height:1.3; }
+  #note .nb{ margin:3px 0 0; font-size:.9rem; line-height:1.42; color:#33383f; }
   @media (max-width:600px){
     #note{ right:8px; left:8px; width:auto; bottom:auto;
       top:max(10px,env(safe-area-inset-top));
-      transform:translateY(-26px) scale(.97); }
+      transform:translateY(-30px) scale(.965); }
     #note.on{ transform:none; }
   }
   @media (prefers-reduced-motion:reduce){
-    #note{ transition:opacity .58s; transform:none; }
+    #note{ transition:opacity .42s; transform:none; }
     #note.on{ transform:none; }
   }
 
@@ -587,7 +597,7 @@
 </div>
 
 <p id="cap" aria-live="polite"></p>
-<div id="ask" aria-live="polite"><span class="ic" aria-hidden="true"></span><span class="tx"></span></div>
+<div id="ask" aria-live="polite"><span class="tx"></span></div>
 <div id="gate" aria-hidden="true"><span id="gateTxt"></span><span class="bar"><i id="gateBar"></i></span><span class="chev"></span></div>
 <div id="cc" aria-hidden="true"></div>
 <div id="sdown" aria-hidden="true"><span>scroll</span>
@@ -1139,35 +1149,43 @@ const CH_NAME = { 1:"i · the world came inside", 2:"ii · life happened outdoor
 
    `prog` only feeds the little progress mark under the prompt. The washing line has
    no gate of its own to measure, because the chapter never waited for her before. */
-const HOLD_AT = {
-  dark:    { done: () => gateMet("curtain"), prog: () => gateProgress("curtain"),
-             pass: () => { done.curtain = true; } },
-  laundry: { done: () => !!SHEETS.tapped,    prog: () => SHEETS.tapped ? 1 : 0,
-             pass: () => { SHEETS.tapped = 1; } },
-  kite:    { done: () => gateMet("kite"),    prog: () => gateProgress("kite"),
-             pass: () => { done.kite = true; } },
-  /* and the curtains again, on the way back. Same reason as the first pair: a
-     visitor who scrolls past them never finds out that the room is still here.
+/* EVERY REQUIRED INTERACTION HOLDS THE SCROLL, not a hand-picked three.
+   It used to be the curtains, her humming and the kite, on the reasoning that those were
+   the three moments worth insisting on. The rest were free, which meant a visitor
+   scrolling at any pace slid straight past the binoculars, the drawing, the stars and the
+   whole of the finale without touching them, and a piece you can scroll past is a
+   slideshow. So the table is built from the beat list: any beat that declares a gate
+   waits for that gate.
 
-     AND IT LETS GO IF THERE IS NO ROOM TO OPEN. This hold is the one that stranded a
-     reviewer completely: the bedroom painting was missing from their copy of the file,
-     so the scene drew as a black rectangle, so there were no curtains to pull, so the
-     gate could never be met, so the scroll waited on a black screen for ever. Asking
-     somebody to interact with a scene that failed to load is not a wait, it is a dead
-     end, and it must be impossible by construction rather than by the asset list
-     happening to be right.
+   With one condition. A beat only holds if it also has something to SAY — a wall with no
+   instruction behind it is indistinguishable from a broken page, which is the one thing
+   this must not feel like. `shirt`, the walk through the washing, has no instruction and
+   therefore no wall. And the release in HOLD_PATIENCE below is the backstop for anything
+   that cannot be satisfied for a reason nobody predicted. */
+const HOLD_AT = {};
+for (const _b of BEATS){
+  if (!_b.gate || !_b.ask) continue;
+  const g = _b.gate;
+  HOLD_AT[_b.id] = {
+    done: () => gateMet(g),
+    prog: () => gateProgress(g),
+    pass: () => { done[g] = true; }
+  };
+}
+/* and the three that are not simply "is the gate met" */
 
-     AND IT WAITS FOR BOTH OF THEM. The chapter is two interactions in one beat — the
-     curtains, then the cord — precisely so that nothing in the sequence sits behind a
-     scroll. The visitor is put in the room by the piece, and the room then waits until
-     it has been opened and the cord has been asked. */
-  "p-room":{ done: () => (gateMet("pcurtain") && !!PRET.tried) || !getPlate("roomAfter"),
-             prog: () => gateMet("pcurtain")
-                       ? 0.5 + 0.5*cl01(PRET.give/RCORD_FIRE)
-                       : 0.5*gateProgress("pcurtain"),
-             pass: () => { done.pcurtain = true; PRET.tried = 1; } }
-};
+/* The washing line never waited for its own gate, which is met the instant the scene
+   draws. What is actually worth waiting for there is touching her, and hearing her. */
+HOLD_AT.laundry = { done: () => !!SHEETS.tapped,
+                    prog: () => SHEETS.tapped ? 1 : 0,
+                    pass: () => { SHEETS.tapped = 1; } };
 
+/* The polluted bedroom is a whole sequence in one beat, and it holds until the sequence
+   has finished rather than until any single interaction has: the curtains, then the cord,
+   then the phone, then the line, and then a breath. Its own file owns the question. */
+HOLD_AT["p-room"] = { done: () => returnDone(),
+                      prog: () => returnProgress(),
+                      pass: () => { done.pcurtain = true; PRET.tried = 1; PRET.settled = 1; } };
 /* AND NO HOLD MAY EVER BECOME A WALL, whatever goes wrong behind it.
    The three deliberate waits are all satisfiable and all show a pair of hands after a
    few idle seconds, so nobody who is engaging with them will ever reach this. It is
@@ -5105,6 +5123,10 @@ const sfx = {
   flap(){ cc("wings"); burst(1500, 0.7, 0.22, 0.05); burst(700,1.2,0.3,0.03); },
   cloth(v){ cc("fabric moving"); burst(1100+Math.random()*700, 0.55, 0.30, 0.028*(v===undefined?1:v)); },
   latch(){ cc("a metal latch turning"); burst(3200, 9, 0.09, 0.05); tone(760,0.10,"square",0.016); },
+  /* a sash taking a pull and not moving. Low, short, and completely undramatic: it is
+     the sound of a window declining, not of one jamming. */
+  dull(v){ cc("a window not moving"); const g=(v===undefined?1:v);
+           burst(210, 0.7, 0.16, 0.030*g, "lowpass"); tone(96, 0.13, "sine", 0.020*g); },
   slide(){ cc("the window sliding up"); burst(340, 0.9, 0.52, 0.055, "lowpass"); },
   thud(){ cc("wood settling"); burst(140, 1.2, 0.20, 0.06, "lowpass"); },
   /* One chirp. `v` is how near it sounds: through a shut window it is faint and
@@ -6285,7 +6307,15 @@ function panelGeom(side, t, rev, W_, H_){
   const xOut = outF*W_ + CC.x;
   const wClosed = Math.abs(CG.mid - outF)*W_;
   const fab = wClosed*CG.slack;                            // arc length, fixed
-  const xInClosed = CG.mid*W_ + CC.x, xInOpen = inOpenF*W_ + CC.x;
+  /* THEY OVERLAP WHEN THEY ARE SHUT.
+     Both inner edges used to rest exactly on the centre line, and each panel breathes
+     with its own phase, so the two of them parted by a few pixels and the lit window
+     behind showed as a bright seam straight down the middle of a closed curtain. In the
+     polluted bedroom that seam was the polluted view leaking through a scene whose whole
+     job is to be dark until the visitor opens it. So the closed position carries an
+     overlap comfortably wider than the sway can ever be, and the existing lerp toward the
+     open position tapers it away as they are drawn back. */
+  const xInClosed = CG.mid*W_ + CC.x + dirn*W_*0.008, xInOpen = inOpenF*W_ + CC.x;
   const xIn0 = lerp(xInClosed, xInOpen, pull);
 
   const top = CG.top*H_ + CC.y;
@@ -8784,16 +8814,17 @@ function starsInteractP(g, dt, o){
   STARY.pan = (STARY.pan + STARY.panV*dt*7 + 1)%1;
   if (STARY.storyT>0){ STARY.storyT -= dt; if (STARY.storyT<=0) hideStarStory(); }
 
-  /* the gate is three of the five opened — enough to have understood that the
-     stars are things you can ask about, and forgiving enough not to demand all
-     five from someone who only wanted to look */
-  let lit=0, seen=0;
+  /* ONE STAR IS ENOUGH.
+     The gate used to want three of the five. Three is a collection: it turns looking at
+     the sky into clearing a list, and it means the scroll waits on somebody who has
+     already understood the idea perfectly well from the first card they opened. One is
+     the whole lesson — that the stars are things you can ask about — and the other four
+     stay there for anyone who wants them, which is what optional means. */
+  let lit=0;
   for (const s of DIPPER.concat(OUTLIERS)){
-    if (!hasCard(s)) continue;
-    if (STARY.lit[s.id]) lit++;
-    if (starSeen(s,air,glow)) seen++;
+    if (hasCard(s) && STARY.lit[s.id]) lit++;
   }
-  if (g && lit >= Math.min(3, seen) && seen > 0) meet(g);
+  if (g && lit >= 1) meet(g);
 }
 function tapStarP(x,y,air,glow){
   const all = DIPPER.concat(OUTLIERS);
@@ -13177,13 +13208,18 @@ const PRET = {
   hover: 0,         // the handle, under the pointer
   tried: 0,         // how many times the window has been asked
   give: 0,          // the millimetre it moves and comes back
+  look: 0,          // seconds since the outside was revealed, before the cord is offered
   noteT: -1,        // countdown to the notification
   lineT: -1,        // and then to the answer that follows it
+  redT: -1,         // and then the colour drifting, and the breath after it
   note: 0,          // 0 nothing, 1 the reading
+  said: 0,          // the line has been spoken
+  settled: 0,       // the whole moment is over, and the scroll may go on
   begun: 0,         // the scene has been set up; do not set it up again
   wasDown: 0,       // the pointer last frame, to catch the instant of a press
   arm: 0,           // this press began on the handle, so it is a try at the window
-  hold: 0           // and how long it has stayed there, so a passing drag is not a pull
+  hold: 0,          // and how long it has stayed there, so a passing drag is not a pull
+  snap: 0           // the recoil, just after the attempt
 };
 
 /* The reveal is four seconds. It is the slowest thing in the piece and it should
@@ -13191,6 +13227,41 @@ const PRET = {
    the room has to arrive quietly enough that recognising it is their own thought
    rather than a cut. */
 const PRET_REVEAL = 4.0;
+/* HOW LONG EACH PART OF THE CLOSING SEQUENCE LASTS.
+   `LOOK` is the beat after the curtains open before the cord is offered, so the polluted
+   view is looked at rather than skipped past on the way to the next instruction. `PAUSE`
+   is the silence between the phone and the answer, and it is the most important number
+   here: the two must not share the moment or the phone reads as speaking for her. `RED`
+   is the colour drift, shortened from nineteen seconds to ten so that it is certain to
+   finish inside the sequence rather than being scrolled away from half done — still slow
+   enough that most visitors will not catch it happening. `BREATH` is the room afterwards,
+   with everything said and nothing to do. */
+const PRET_LOOK   = 3.4;
+const PRET_PAUSE  = 2.6;
+const PRET_RED    = 10.0;
+const PRET_BREATH = 3.2;
+
+/* WHAT THE TIMELINE ASKS BEFORE IT WILL LET ANYONE LEAVE.
+   The polluted bedroom is not one interaction, it is a sequence, and it holds the scroll
+   until the sequence is over rather than until the first thing in it is done. Otherwise a
+   visitor who opened the curtains could scroll on mid-notification and the whole point of
+   the chapter would happen off screen behind them. */
+function returnDone(){
+  if (!getPlate("roomAfter")) return true;      // nothing to wait for if it never loaded
+  return !!PRET.settled;
+}
+function returnProgress(){
+  if (PRET.settled) return 1;
+  if (!gateMet("pcurtain")) return 0.34*cl01(gateProgress("pcurtain"));
+  if (!PRET.tried)          return 0.34 + 0.26*cl01(PRET.give/RCORD_FIRE);
+  /* and through the phone, the pause, the answer and the breath */
+  const total = 1.2 + PRET_PAUSE + PRET_RED + PRET_BREATH;
+  let left = PRET_RED + PRET_BREATH;
+  if (PRET.noteT > 0)      left = 1.2 + PRET_PAUSE + PRET_RED + PRET_BREATH;
+  else if (PRET.lineT > 0) left = PRET_PAUSE + PRET_RED + PRET_BREATH;
+  else if (PRET.redT > 0)  left = PRET.redT;
+  return 0.60 + 0.40*cl01(1 - left/total);
+}
 
 function resetReturn(){
   /* ONCE. THIS WAS THE GLITCH.
@@ -13206,8 +13277,9 @@ function resetReturn(){
   PRET.begun = 1;
   PRET.reveal = 0; PRET.seen = 0; PRET.hover = 0;
   PRET.tried = 0; PRET.give = 0;
-  PRET.noteT = -1; PRET.lineT = -1; PRET.note = 0;
-  PRET.wasDown = 0; PRET.arm = 0; PRET.hold = 0;
+  PRET.noteT = -1; PRET.lineT = -1; PRET.redT = -1;
+  PRET.note = 0; PRET.said = 0; PRET.settled = 0; PRET.look = 0;
+  PRET.wasDown = 0; PRET.arm = 0; PRET.hold = 0; PRET.snap = 0;
   /* The curtains start shut, exactly as they did at the beginning. The opening
      room's own state is reused rather than duplicated, so the drag is not a
      lookalike of the first one, it is the same code with the same weight and the
@@ -13267,18 +13339,30 @@ function returnCord(t, dt, live){
     CORD.swingV += (P.dx/W)*5.0;
     if (PRET.give > RCORD_FIRE && !PRET.tried){
       PRET.tried = 1;
-      sfx.cloth(0.22);
+      /* A RESTRAINED PHYSICAL ANSWER, SO THE ATTEMPT PLAINLY REGISTERED.
+         Not a judder, not a rattle, nothing stuck. The cord itself takes the whole of the
+         response: it comes back faster than a slow release would, and the weight on the
+         end swings, which is exactly what a pull cord does when the thing at the other end
+         of it does not move. One soft catch of a sound underneath. The window is not
+         broken and never behaves as though it is — all the weight of this moment is in
+         what arrives afterwards. */
+      PRET.snap = 1;
+      CORD.swingV += 1.5;
+      sfx.cloth(0.20);
+      if (sfx.dull) sfx.dull(0.9);
       /* THE PHONE FIRST, THEN THE ANSWER.
          The order matters and it was the other way round. A phone tells you the number
          and only then does anybody say anything, so the reading arrives on its own,
          impersonally, and the line follows it as the response to it. Said first, the
          line made the notification look like it was explaining her. */
-      PRET.noteT = 1.6;
+      PRET.noteT = 1.2;
     }
   } else {
     if (near && !P.down) cv.className = "grabbable";
-    /* it comes back. Slowly enough to read as weight rather than as a spring. */
-    PRET.give = Math.max(0, PRET.give - dt*1.15);
+    /* it comes back. Slowly enough to read as weight rather than as a spring, and once,
+       just after the attempt, a little faster, because that is the recoil. */
+    PRET.give = Math.max(0, PRET.give - dt*(PRET.snap > 0 ? 2.6 : 1.15));
+    if (PRET.snap > 0) PRET.snap = Math.max(0, PRET.snap - dt*1.4);
     if (!PRET.tried && !near) PRET.arm = 0;
   }
   /* the cord's own length, which is all the sash does in this scene: no casement is
@@ -13344,7 +13428,12 @@ function drawReturn(t, dt, o){
     const fe = W*0.028;
     offscreen(()=>{
       const dg = tc.createLinearGradient(0, 0, 0, H);
-      const k0 = lerp(1, 0.40, dark), k1 = lerp(1, 0.29, dark);
+      /* DARKER THAN THE OPENING ROOM WAS, because this one has to read as dark.
+         At 0.40 and 0.29 the room was dim but plainly legible, which made the curtains a
+         formality rather than a reveal. Down to a fifth of the light: the bed, the wardrobe
+         and the cord are all still readable, so the room can be understood and reached
+         into, but nothing about it looks like daytime until it is opened. */
+      const k0 = lerp(1, 0.21, dark), k1 = lerp(1, 0.14, dark);
       dg.addColorStop(0,    rgb([255*k0, 244*k0, 232*k0]));
       dg.addColorStop(0.62, rgb([255*k1, 240*k1, 230*k1]));
       dg.addColorStop(1,    rgb([255*k1*0.92, 238*k1*0.92, 232*k1*0.92]));
@@ -13390,9 +13479,12 @@ function drawReturn(t, dt, o){
      already there. It used to require the second beat, which meant the second half of
      the chapter did not exist until somebody scrolled into it. */
   const open = Math.min(PROOM.cL, PROOM.cR);
-  const live = open > 0.80 && PRET.reveal > 0.985;
+  if (open > CTR.need){ PRET.seen += dt; PRET.look += dt; }
+  /* the cord waits its turn. The curtains have just come apart on a view the visitor has
+     not seen yet, and putting the next instruction up on top of that would make the
+     polluted landscape something they scrolled past on the way to a task. */
+  const live = open > 0.80 && PRET.reveal > 0.985 && PRET.look > PRET_LOOK;
   if (open > 0.6) returnCord(t, dt, live);
-  if (open > CTR.need) PRET.seen += dt;
 
   /* THE AIR, MADE VISIBLE ONCE AND QUIETLY.
      Barely anything: a slow dust that hangs rather than drifts, only in the light
@@ -13412,21 +13504,33 @@ function drawReturn(t, dt, o){
   /* the hands, only after a long wait and never during the reveal */
   if (phase === "room" && PRET.reveal > 0.999) curtainHelp(t, dt);
 
-  /* ---- the phone, and then the answer ----
-     Two waits, not one. The cord is let go, and after a beat and a half the phone says
-     what the air is; a moment after that, somebody in the house answers. Each arrives
-     on its own so neither reads as the cause of the other. */
+  /* ---- THE CHAIN, AND THE SCROLL IS SHUT FOR ALL OF IT ----
+     Four waits, each arriving on its own so that none of them reads as the cause of the
+     one before. The cord is let go; a beat later the phone says what the air is; two and
+     a half seconds of nothing, which is the part that does the work; then somebody in the
+     house answers; then the answer loses its colour while it sits there; then a breath.
+     Only after the breath does `settled` go up and the scroll open again. */
   if (PRET.noteT > 0){
     PRET.noteT -= dt;
-    if (PRET.noteT <= 0){ PRET.note = 1; showNote(); PRET.lineT = 1.25; }
+    if (PRET.noteT <= 0){ PRET.note = 1; showNote(); PRET.lineT = PRET_PAUSE; }
   }
   if (PRET.lineT > 0){
     PRET.lineT -= dt;
     if (PRET.lineT <= 0 && typeof sayLine === "function"){
-      /* it holds a long time and reddens while it holds, then goes out on its own and
-         leaves the room quiet — the last thing said in the chapter */
-      sayLine("Leave it closed.", 24.0, { red:true });
+      PRET.said = 1;
+      /* it holds for the whole of the colour drift and the breath after it, and goes out
+         on its own — the last thing said in the chapter */
+      /* exactly as long as the drift and the breath after it, and no longer. With an extra
+         second and a half on the end the sentence was still on screen, fully red, once the
+         scroll had opened — so it sat over the top of the next chapter's washing line. It
+         begins its own fade at the moment the scroll is released. */
+      sayLine("Leave it closed.", PRET_RED + PRET_BREATH, { red:true });
+      PRET.redT = PRET_RED + PRET_BREATH;
     }
+  }
+  if (PRET.redT > 0){
+    PRET.redT -= dt;
+    if (PRET.redT <= 0) PRET.settled = 1;
   }
 
   /* A closed room with bad air outside it. Quiet, muffled, and no gust: there is
@@ -14193,80 +14297,26 @@ const FIN_LINES = [
 ];
 let shownFin = -1, lastCap="", lastCh=-1;
 
-/* ============================================================================
-   THE GESTURE MARK
-   One small stroked glyph at the head of the instruction, saying what KIND of thing
-   this is with a shape rather than with more words. It replaced a pulsing amber dot,
-   which said only "look at me".
-
-   They are drawn rather than lettered — no icon font, no emoji. Emoji would arrive in
-   somebody else's colours and somebody else's drawing style on every platform, which
-   is the one thing an interface this quiet cannot survive. All of them are stroke-only
-   in the inherited ivory at reduced opacity, on a 16-unit grid, sized off the type so
-   they track it at every breakpoint. */
-const ASK_ICON_SVG = (() => {
-  const w = (d) => '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" '+
-    'stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">'+d+'</svg>';
-  const dot = '<circle cx="8" cy="9.7" r="1.5" fill="currentColor" stroke="none"/>';
-  return {
-    /* two hands going opposite ways: the curtains, the air, anything pulled apart */
-    drag: w('<path d="M4.7 5.5 2.2 8l2.5 2.5"/><path d="M11.3 5.5 13.8 8l-2.5 2.5"/>'+
-            '<path d="M7.2 4.8v6.4M8.8 4.8v6.4"/>'),
-    /* a cord with a weight on the end, and the direction it wants to go. The arrow
-       used to start where the ball ended, so at caption size the two fused into one
-       blob that read as a map pin — it needs clear air between them. */
-    pull: w('<path d="M8 1.4v5.6"/><circle cx="8" cy="8.9" r="1.9"/>'+
-            '<path d="M8 12.2v2.4"/><path d="M6.5 13.1 8 14.6l1.5-1.5"/>'),
-    /* a press that is being kept there */
-    hold: w(dot+'<circle cx="8" cy="9.7" r="4"/>'+
-            '<path d="M13.6 5.6a7.2 7.2 0 0 1 0 8.2"/>'),
-    /* a press that is not. Two concentric arcs over a dot IS the wifi glyph — it was
-       unmistakably wifi and nothing else — so this is a spark instead: the mark a tap
-       leaves, three short strokes coming off the point of contact. */
-    tap:  w(dot+'<path d="M8 6.3V4.4"/><path d="M5.5 7.1 4.2 5.8"/>'+
-            '<path d="M10.5 7.1 11.8 5.8"/>'),
-    /* a spark rather than a cartoon five-pointer, which would read as a reward */
-    star: w('<path d="M8 2.1 9.25 6.75 13.9 8 9.25 9.25 8 13.9 6.75 9.25 2.1 8l4.65-1.25Z"/>'),
-    /* a mark being made */
-    draw: w('<path d="M2.5 13.7c1.9.2 3.3-.5 4.6-2.1"/>'+
-            '<path d="M7.7 10.9 12.5 6a1.75 1.75 0 0 0-2.5-2.5L5.2 8.4l.7 1.8z"/>'),
-    /* something taken up off a surface */
-    lift: w('<path d="M8 12.2V4.1"/><path d="M4.9 7.2 8 4.1l3.1 3.1"/>'+
-            '<path d="M3.3 14.3h9.4"/>')
-  };
-})();
-
-/* which gesture each scene asks for. Kept as one table rather than a field on twenty
-   beats so the whole vocabulary of the piece can be read at once — and so a scene that
-   wants a different mark is a one-line change here. */
-const ASK_ICON = {
-  dark:"drag", light:"pull", laundry:"tap", kite:"hold", stars:"star",
-  horizon:"hold", drawing:"draw",
-  "p-room":"drag", "p-shut":"pull",
-  "r-laundry":"drag", "r-kite":"hold", "r-stars":"star", "r-horizon":"hold",
-  return:"drag", stopped:"pull",
-  "e-dust":"lift", "e-hills":"drag",
-  "f-curtain":"drag", "f-both":"hold", "f-open":"pull", "f-crayon":"draw"
-};
-const askIc = askEl.querySelector(".ic"), askTx = askEl.querySelector(".tx");
+/* THERE IS NO GESTURE MARK ANY MORE.
+   A small drawn glyph sat at the head of every instruction saying what kind of gesture it
+   was: drag, pull, hold, tap, star, draw, lift. It replaced a pulsing amber dot, and it
+   was better than the dot, but it was still a symbol competing with the sentence beside
+   it — and a symbol is exactly the thing this interface is trying not to be. The words
+   already say "hold to bring the kite closer". The plaque stays; the mark is gone, and it
+   is not replaced with a cursor, a hand, a circle or a dot. */
+const askTx = askEl.querySelector(".tx");
 let lastAskIcon = " ";
-function setAsk(text, iconKey){
-  if (text !== askTx.textContent) askTx.textContent = text;
-  const k = text ? (iconKey || "") : "";
-  if (k !== lastAskIcon){
-    lastAskIcon = k;
-    askIc.innerHTML = ASK_ICON_SVG[k] || "";
-  }
-}
+function setAsk(text){ if (text !== askTx.textContent) askTx.textContent = text; }
 
 /* A LINE SAID IN ANSWER TO SOMETHING, rather than at a point in a beat.
    Every other line in the piece is a property of where the visitor is: the beat
    carries it and it comes up a fraction of the way in. The window needs the other
    kind — the room only says "Leave it closed." because somebody just tried the
    handle, and it has to arrive on the action, not on a scroll position. */
-let evLine = "", evLineT = 0, evRed = 0;
+let evLine = "", evLineT = 0, evRed = 0, evLineBeat = "";
 function sayLine(text, secs, o){
   evLine = text; evLineT = secs===undefined ? 5.5 : secs;
+  evLineBeat = id();
   /* `red` marks a line that is allowed to lose its colour while it sits there. It is
      not a state and not a warning — see the transition on #cap.redshift. */
   evRed = (o && o.red) ? 1 : 0;
@@ -14307,8 +14357,19 @@ function updText(now, dt){
     ((bid.startsWith("f-")) ? f>=0.28 : (f>0.06 && f<0.62));
   let want = show ? line : "";
   /* and an answer outranks whatever the beat had to say, for as long as it lasts */
-  if (evLineT > 0){ evLineT -= dt; want = evLine; }
-  else evRed = 0;
+  if (evLineT > 0){
+    evLineT -= dt;
+    /* AND IT BELONGS TO THE SCENE THAT SAID IT.
+       An answer is a property of the moment, not of the piece, so leaving the moment ends
+       it. Without this the bedroom's line could be carried into the next chapter by its
+       own remaining duration and read over a different painting entirely. */
+    if (evLineBeat && bid !== evLineBeat && !(evLineBeat === "p-room" && bid === "p-shut")){
+      evLineT = 0;
+    } else {
+      want = evLine;
+    }
+  }
+  if (evLineT <= 0) evRed = 0;
   capEl.classList.toggle("redshift", !!evRed && want === evLine);
   if (want!==lastCap){
     lastCap=want;
@@ -14316,8 +14377,12 @@ function updText(now, dt){
     else capEl.classList.remove("on");
   }
 
-  /* the prompt: only while the action is still undone, and it steps back once
-     the visitor is clearly getting on with it */
+  /* DIALOGUE FIRST, INTERACTION SECOND.
+     A scene that has something to say says it before it asks for anything. The narration
+     runs from 6% to 62% of a beat, and the instruction used to be allowed up the moment
+     the beat began, so the two shared the screen and the sentence was read over the top
+     of a task. The prompt now waits until the line has finished and a breath has passed.
+     Beats with nothing to say are unaffected and offer their interaction straight away. */
   const g = B.gate;
   const needed = g && !gateMet(g);
   /* Some things a visitor can do are not gates. Touching her on the washing line
@@ -14337,7 +14402,7 @@ function updText(now, dt){
      go on, for the better part of ten seconds. Recognition does not need that long. It
      comes up once the room is far enough out of the black to be understood, which is a
      little over half way through the reveal, while the rise is still finishing. */
-  let askIcon = ASK_ICON[bid];
+  const lineFirst = !B.line || f >= 0.69;
   if (bid === "p-room"){
     /* TWO INSTRUCTIONS IN ONE BEAT, IN ORDER.
        The chapter's whole point is that nothing here is behind a scroll, so both of its
@@ -14346,11 +14411,14 @@ function updText(now, dt){
        wording is reused verbatim from the first chapter, where the same cord opened the
        same window — the echo is deliberate. */
     if (PRET.reveal < 0.55) askTxt = "";
-    else if (!gateMet("pcurtain")){ askTxt = B.ask; askIcon = "drag"; }
-    else if (!PRET.tried){ askTxt = "Pull the cord down"; askIcon = "pull"; }
+    else if (!gateMet("pcurtain")) askTxt = B.ask;
+    /* and the cord is not offered until the polluted view has been looked at */
+    else if (!PRET.tried) askTxt = (PRET.look > PRET_LOOK) ? "Pull the cord down" : "";
     else askTxt = "";
+  } else if (!lineFirst){
+    askTxt = "";
   }
-  setAsk(askTxt, askIcon);
+  setAsk(askTxt);
   /* AND IT LEAVES THE MOMENT THE INTERACTION IS UNDER WAY.
      Not when it is finished — when it has visibly started. A caption that hangs around
      while the curtains are already moving is reading instructions over somebody's
@@ -14422,7 +14490,8 @@ function gateProgress(g){
     case "sheets":  return 1;
     case "shirt":   return PWASH.through/5;
     case "kite":  return KSKY.best/0.52;
-    case "stars": { let n=0; for (const id of ["mizar","alkaid","megrez","alrischa","polaris"]) if (STARY.lit[id]) n++; return n/3; }
+    /* one is enough, so the bar is full as soon as a single card has been opened */
+    case "stars": { for (const id of ["mizar","alkaid","megrez","alrischa","polaris"]) if (STARY.lit[id]) return 1; return 0; }
     case "rkite": return PKITE.best/0.40;
     case "stars":   { let n=0; for(const s2 of DIPPER) if(STARY.lit[s2.id])n++; return n/DIPPER.length; }
     case "rstars":  { let v=0,n=0; for(const s2 of DIPPER){ if(starSeen(s2,0.78,0.55)){v++; if(STARY.lit[s2.id])n++;} } return v? n/v : 1; }
@@ -14583,7 +14652,24 @@ let introOn = false;   // the way-in card is up, and the piece waits
 /* a rolling frame time, so the piece can quietly shed detail on a slow machine
    rather than becoming a slideshow */
 let ftAvg = 16, autoLow = false;
+/* ONE THROW USED TO KILL THE WHOLE PIECE.
+   `requestAnimationFrame(frame)` is the last statement in this function, so any exception
+   anywhere above it stopped the loop for good: the canvas froze on its last frame, the
+   scroll came unclamped and ran free, and every state machine in the work stopped where it
+   stood — silently, with the page still looking alive. It cost a confusing hour to find,
+   because the symptom was "the story never starts" and the cause was one undefined
+   identifier in the caption code. The frame is re-armed in a finally now, so a fault in one
+   scene is a glitch in that scene rather than the end of the piece, and it is reported once
+   rather than every frame. */
+let frameFaults = 0;
 function frame(now){
+  try { frameBody(now); }
+  catch (err){
+    if (frameFaults++ < 3 && typeof console !== "undefined") console.error("frame:", err);
+  }
+  finally { requestAnimationFrame(frame); }
+}
+function frameBody(now){
   let dt = (now-last)/1000; last = now;
   if (dt>0.05) dt=0.05; if (dt<=0) dt=1/60;
   ftAvg = ftAvg*0.94 + (dt*1000)*0.06;
@@ -14626,7 +14712,6 @@ function frame(now){
 
   render(t, dt);
   updText(now, dt);
-  requestAnimationFrame(frame);
 }
 
 /* ============================================================================
@@ -14817,7 +14902,8 @@ window.__bluer = {
   get floor(){ return T.floor; },
   get blocked(){ return T.blocked; },
   get wait(){ return T.wait; },
-  icon(k){ return ASK_ICON_SVG[k] || ""; },
+  get onboarding(){ return onboarding; },
+  get pace(){ return { gone:paceGone, t:+paceT.toFixed(2), up:+paceUp.toFixed(2), ask:Math.round(paceAsk) }; },
   cord(){ return cordBall(); },
   card(id){ showStarStory(id); },
   cardHide(){ hideStarStory(); },

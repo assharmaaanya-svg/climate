@@ -427,35 +427,43 @@ const CH_NAME = { 1:"i · the world came inside", 2:"ii · life happened outdoor
 
    `prog` only feeds the little progress mark under the prompt. The washing line has
    no gate of its own to measure, because the chapter never waited for her before. */
-const HOLD_AT = {
-  dark:    { done: () => gateMet("curtain"), prog: () => gateProgress("curtain"),
-             pass: () => { done.curtain = true; } },
-  laundry: { done: () => !!SHEETS.tapped,    prog: () => SHEETS.tapped ? 1 : 0,
-             pass: () => { SHEETS.tapped = 1; } },
-  kite:    { done: () => gateMet("kite"),    prog: () => gateProgress("kite"),
-             pass: () => { done.kite = true; } },
-  /* and the curtains again, on the way back. Same reason as the first pair: a
-     visitor who scrolls past them never finds out that the room is still here.
+/* EVERY REQUIRED INTERACTION HOLDS THE SCROLL, not a hand-picked three.
+   It used to be the curtains, her humming and the kite, on the reasoning that those were
+   the three moments worth insisting on. The rest were free, which meant a visitor
+   scrolling at any pace slid straight past the binoculars, the drawing, the stars and the
+   whole of the finale without touching them, and a piece you can scroll past is a
+   slideshow. So the table is built from the beat list: any beat that declares a gate
+   waits for that gate.
 
-     AND IT LETS GO IF THERE IS NO ROOM TO OPEN. This hold is the one that stranded a
-     reviewer completely: the bedroom painting was missing from their copy of the file,
-     so the scene drew as a black rectangle, so there were no curtains to pull, so the
-     gate could never be met, so the scroll waited on a black screen for ever. Asking
-     somebody to interact with a scene that failed to load is not a wait, it is a dead
-     end, and it must be impossible by construction rather than by the asset list
-     happening to be right.
+   With one condition. A beat only holds if it also has something to SAY — a wall with no
+   instruction behind it is indistinguishable from a broken page, which is the one thing
+   this must not feel like. `shirt`, the walk through the washing, has no instruction and
+   therefore no wall. And the release in HOLD_PATIENCE below is the backstop for anything
+   that cannot be satisfied for a reason nobody predicted. */
+const HOLD_AT = {};
+for (const _b of BEATS){
+  if (!_b.gate || !_b.ask) continue;
+  const g = _b.gate;
+  HOLD_AT[_b.id] = {
+    done: () => gateMet(g),
+    prog: () => gateProgress(g),
+    pass: () => { done[g] = true; }
+  };
+}
+/* and the three that are not simply "is the gate met" */
 
-     AND IT WAITS FOR BOTH OF THEM. The chapter is two interactions in one beat — the
-     curtains, then the cord — precisely so that nothing in the sequence sits behind a
-     scroll. The visitor is put in the room by the piece, and the room then waits until
-     it has been opened and the cord has been asked. */
-  "p-room":{ done: () => (gateMet("pcurtain") && !!PRET.tried) || !getPlate("roomAfter"),
-             prog: () => gateMet("pcurtain")
-                       ? 0.5 + 0.5*cl01(PRET.give/RCORD_FIRE)
-                       : 0.5*gateProgress("pcurtain"),
-             pass: () => { done.pcurtain = true; PRET.tried = 1; } }
-};
+/* The washing line never waited for its own gate, which is met the instant the scene
+   draws. What is actually worth waiting for there is touching her, and hearing her. */
+HOLD_AT.laundry = { done: () => !!SHEETS.tapped,
+                    prog: () => SHEETS.tapped ? 1 : 0,
+                    pass: () => { SHEETS.tapped = 1; } };
 
+/* The polluted bedroom is a whole sequence in one beat, and it holds until the sequence
+   has finished rather than until any single interaction has: the curtains, then the cord,
+   then the phone, then the line, and then a breath. Its own file owns the question. */
+HOLD_AT["p-room"] = { done: () => returnDone(),
+                      prog: () => returnProgress(),
+                      pass: () => { done.pcurtain = true; PRET.tried = 1; PRET.settled = 1; } };
 /* AND NO HOLD MAY EVER BECOME A WALL, whatever goes wrong behind it.
    The three deliberate waits are all satisfiable and all show a pair of hands after a
    few idle seconds, so nobody who is engaging with them will ever reach this. It is

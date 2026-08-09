@@ -723,80 +723,26 @@ const FIN_LINES = [
 ];
 let shownFin = -1, lastCap="", lastCh=-1;
 
-/* ============================================================================
-   THE GESTURE MARK
-   One small stroked glyph at the head of the instruction, saying what KIND of thing
-   this is with a shape rather than with more words. It replaced a pulsing amber dot,
-   which said only "look at me".
-
-   They are drawn rather than lettered — no icon font, no emoji. Emoji would arrive in
-   somebody else's colours and somebody else's drawing style on every platform, which
-   is the one thing an interface this quiet cannot survive. All of them are stroke-only
-   in the inherited ivory at reduced opacity, on a 16-unit grid, sized off the type so
-   they track it at every breakpoint. */
-const ASK_ICON_SVG = (() => {
-  const w = (d) => '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" '+
-    'stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">'+d+'</svg>';
-  const dot = '<circle cx="8" cy="9.7" r="1.5" fill="currentColor" stroke="none"/>';
-  return {
-    /* two hands going opposite ways: the curtains, the air, anything pulled apart */
-    drag: w('<path d="M4.7 5.5 2.2 8l2.5 2.5"/><path d="M11.3 5.5 13.8 8l-2.5 2.5"/>'+
-            '<path d="M7.2 4.8v6.4M8.8 4.8v6.4"/>'),
-    /* a cord with a weight on the end, and the direction it wants to go. The arrow
-       used to start where the ball ended, so at caption size the two fused into one
-       blob that read as a map pin — it needs clear air between them. */
-    pull: w('<path d="M8 1.4v5.6"/><circle cx="8" cy="8.9" r="1.9"/>'+
-            '<path d="M8 12.2v2.4"/><path d="M6.5 13.1 8 14.6l1.5-1.5"/>'),
-    /* a press that is being kept there */
-    hold: w(dot+'<circle cx="8" cy="9.7" r="4"/>'+
-            '<path d="M13.6 5.6a7.2 7.2 0 0 1 0 8.2"/>'),
-    /* a press that is not. Two concentric arcs over a dot IS the wifi glyph — it was
-       unmistakably wifi and nothing else — so this is a spark instead: the mark a tap
-       leaves, three short strokes coming off the point of contact. */
-    tap:  w(dot+'<path d="M8 6.3V4.4"/><path d="M5.5 7.1 4.2 5.8"/>'+
-            '<path d="M10.5 7.1 11.8 5.8"/>'),
-    /* a spark rather than a cartoon five-pointer, which would read as a reward */
-    star: w('<path d="M8 2.1 9.25 6.75 13.9 8 9.25 9.25 8 13.9 6.75 9.25 2.1 8l4.65-1.25Z"/>'),
-    /* a mark being made */
-    draw: w('<path d="M2.5 13.7c1.9.2 3.3-.5 4.6-2.1"/>'+
-            '<path d="M7.7 10.9 12.5 6a1.75 1.75 0 0 0-2.5-2.5L5.2 8.4l.7 1.8z"/>'),
-    /* something taken up off a surface */
-    lift: w('<path d="M8 12.2V4.1"/><path d="M4.9 7.2 8 4.1l3.1 3.1"/>'+
-            '<path d="M3.3 14.3h9.4"/>')
-  };
-})();
-
-/* which gesture each scene asks for. Kept as one table rather than a field on twenty
-   beats so the whole vocabulary of the piece can be read at once — and so a scene that
-   wants a different mark is a one-line change here. */
-const ASK_ICON = {
-  dark:"drag", light:"pull", laundry:"tap", kite:"hold", stars:"star",
-  horizon:"hold", drawing:"draw",
-  "p-room":"drag", "p-shut":"pull",
-  "r-laundry":"drag", "r-kite":"hold", "r-stars":"star", "r-horizon":"hold",
-  return:"drag", stopped:"pull",
-  "e-dust":"lift", "e-hills":"drag",
-  "f-curtain":"drag", "f-both":"hold", "f-open":"pull", "f-crayon":"draw"
-};
-const askIc = askEl.querySelector(".ic"), askTx = askEl.querySelector(".tx");
+/* THERE IS NO GESTURE MARK ANY MORE.
+   A small drawn glyph sat at the head of every instruction saying what kind of gesture it
+   was: drag, pull, hold, tap, star, draw, lift. It replaced a pulsing amber dot, and it
+   was better than the dot, but it was still a symbol competing with the sentence beside
+   it — and a symbol is exactly the thing this interface is trying not to be. The words
+   already say "hold to bring the kite closer". The plaque stays; the mark is gone, and it
+   is not replaced with a cursor, a hand, a circle or a dot. */
+const askTx = askEl.querySelector(".tx");
 let lastAskIcon = " ";
-function setAsk(text, iconKey){
-  if (text !== askTx.textContent) askTx.textContent = text;
-  const k = text ? (iconKey || "") : "";
-  if (k !== lastAskIcon){
-    lastAskIcon = k;
-    askIc.innerHTML = ASK_ICON_SVG[k] || "";
-  }
-}
+function setAsk(text){ if (text !== askTx.textContent) askTx.textContent = text; }
 
 /* A LINE SAID IN ANSWER TO SOMETHING, rather than at a point in a beat.
    Every other line in the piece is a property of where the visitor is: the beat
    carries it and it comes up a fraction of the way in. The window needs the other
    kind — the room only says "Leave it closed." because somebody just tried the
    handle, and it has to arrive on the action, not on a scroll position. */
-let evLine = "", evLineT = 0, evRed = 0;
+let evLine = "", evLineT = 0, evRed = 0, evLineBeat = "";
 function sayLine(text, secs, o){
   evLine = text; evLineT = secs===undefined ? 5.5 : secs;
+  evLineBeat = id();
   /* `red` marks a line that is allowed to lose its colour while it sits there. It is
      not a state and not a warning — see the transition on #cap.redshift. */
   evRed = (o && o.red) ? 1 : 0;
@@ -837,8 +783,19 @@ function updText(now, dt){
     ((bid.startsWith("f-")) ? f>=0.28 : (f>0.06 && f<0.62));
   let want = show ? line : "";
   /* and an answer outranks whatever the beat had to say, for as long as it lasts */
-  if (evLineT > 0){ evLineT -= dt; want = evLine; }
-  else evRed = 0;
+  if (evLineT > 0){
+    evLineT -= dt;
+    /* AND IT BELONGS TO THE SCENE THAT SAID IT.
+       An answer is a property of the moment, not of the piece, so leaving the moment ends
+       it. Without this the bedroom's line could be carried into the next chapter by its
+       own remaining duration and read over a different painting entirely. */
+    if (evLineBeat && bid !== evLineBeat && !(evLineBeat === "p-room" && bid === "p-shut")){
+      evLineT = 0;
+    } else {
+      want = evLine;
+    }
+  }
+  if (evLineT <= 0) evRed = 0;
   capEl.classList.toggle("redshift", !!evRed && want === evLine);
   if (want!==lastCap){
     lastCap=want;
@@ -846,8 +803,12 @@ function updText(now, dt){
     else capEl.classList.remove("on");
   }
 
-  /* the prompt: only while the action is still undone, and it steps back once
-     the visitor is clearly getting on with it */
+  /* DIALOGUE FIRST, INTERACTION SECOND.
+     A scene that has something to say says it before it asks for anything. The narration
+     runs from 6% to 62% of a beat, and the instruction used to be allowed up the moment
+     the beat began, so the two shared the screen and the sentence was read over the top
+     of a task. The prompt now waits until the line has finished and a breath has passed.
+     Beats with nothing to say are unaffected and offer their interaction straight away. */
   const g = B.gate;
   const needed = g && !gateMet(g);
   /* Some things a visitor can do are not gates. Touching her on the washing line
@@ -867,7 +828,7 @@ function updText(now, dt){
      go on, for the better part of ten seconds. Recognition does not need that long. It
      comes up once the room is far enough out of the black to be understood, which is a
      little over half way through the reveal, while the rise is still finishing. */
-  let askIcon = ASK_ICON[bid];
+  const lineFirst = !B.line || f >= 0.69;
   if (bid === "p-room"){
     /* TWO INSTRUCTIONS IN ONE BEAT, IN ORDER.
        The chapter's whole point is that nothing here is behind a scroll, so both of its
@@ -876,11 +837,14 @@ function updText(now, dt){
        wording is reused verbatim from the first chapter, where the same cord opened the
        same window — the echo is deliberate. */
     if (PRET.reveal < 0.55) askTxt = "";
-    else if (!gateMet("pcurtain")){ askTxt = B.ask; askIcon = "drag"; }
-    else if (!PRET.tried){ askTxt = "Pull the cord down"; askIcon = "pull"; }
+    else if (!gateMet("pcurtain")) askTxt = B.ask;
+    /* and the cord is not offered until the polluted view has been looked at */
+    else if (!PRET.tried) askTxt = (PRET.look > PRET_LOOK) ? "Pull the cord down" : "";
     else askTxt = "";
+  } else if (!lineFirst){
+    askTxt = "";
   }
-  setAsk(askTxt, askIcon);
+  setAsk(askTxt);
   /* AND IT LEAVES THE MOMENT THE INTERACTION IS UNDER WAY.
      Not when it is finished — when it has visibly started. A caption that hangs around
      while the curtains are already moving is reading instructions over somebody's
@@ -952,7 +916,8 @@ function gateProgress(g){
     case "sheets":  return 1;
     case "shirt":   return PWASH.through/5;
     case "kite":  return KSKY.best/0.52;
-    case "stars": { let n=0; for (const id of ["mizar","alkaid","megrez","alrischa","polaris"]) if (STARY.lit[id]) n++; return n/3; }
+    /* one is enough, so the bar is full as soon as a single card has been opened */
+    case "stars": { for (const id of ["mizar","alkaid","megrez","alrischa","polaris"]) if (STARY.lit[id]) return 1; return 0; }
     case "rkite": return PKITE.best/0.40;
     case "stars":   { let n=0; for(const s2 of DIPPER) if(STARY.lit[s2.id])n++; return n/DIPPER.length; }
     case "rstars":  { let v=0,n=0; for(const s2 of DIPPER){ if(starSeen(s2,0.78,0.55)){v++; if(STARY.lit[s2.id])n++;} } return v? n/v : 1; }
@@ -1113,7 +1078,24 @@ let introOn = false;   // the way-in card is up, and the piece waits
 /* a rolling frame time, so the piece can quietly shed detail on a slow machine
    rather than becoming a slideshow */
 let ftAvg = 16, autoLow = false;
+/* ONE THROW USED TO KILL THE WHOLE PIECE.
+   `requestAnimationFrame(frame)` is the last statement in this function, so any exception
+   anywhere above it stopped the loop for good: the canvas froze on its last frame, the
+   scroll came unclamped and ran free, and every state machine in the work stopped where it
+   stood — silently, with the page still looking alive. It cost a confusing hour to find,
+   because the symptom was "the story never starts" and the cause was one undefined
+   identifier in the caption code. The frame is re-armed in a finally now, so a fault in one
+   scene is a glitch in that scene rather than the end of the piece, and it is reported once
+   rather than every frame. */
+let frameFaults = 0;
 function frame(now){
+  try { frameBody(now); }
+  catch (err){
+    if (frameFaults++ < 3 && typeof console !== "undefined") console.error("frame:", err);
+  }
+  finally { requestAnimationFrame(frame); }
+}
+function frameBody(now){
   let dt = (now-last)/1000; last = now;
   if (dt>0.05) dt=0.05; if (dt<=0) dt=1/60;
   ftAvg = ftAvg*0.94 + (dt*1000)*0.06;
@@ -1156,7 +1138,6 @@ function frame(now){
 
   render(t, dt);
   updText(now, dt);
-  requestAnimationFrame(frame);
 }
 
 /* ============================================================================
@@ -1347,7 +1328,8 @@ window.__bluer = {
   get floor(){ return T.floor; },
   get blocked(){ return T.blocked; },
   get wait(){ return T.wait; },
-  icon(k){ return ASK_ICON_SVG[k] || ""; },
+  get onboarding(){ return onboarding; },
+  get pace(){ return { gone:paceGone, t:+paceT.toFixed(2), up:+paceUp.toFixed(2), ask:Math.round(paceAsk) }; },
   cord(){ return cordBall(); },
   card(id){ showStarStory(id); },
   cardHide(){ hideStarStory(); },

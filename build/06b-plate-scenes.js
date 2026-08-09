@@ -528,16 +528,17 @@ function starsInteractP(g, dt, o){
   STARY.pan = (STARY.pan + STARY.panV*dt*7 + 1)%1;
   if (STARY.storyT>0){ STARY.storyT -= dt; if (STARY.storyT<=0) hideStarStory(); }
 
-  /* the gate is three of the five opened — enough to have understood that the
-     stars are things you can ask about, and forgiving enough not to demand all
-     five from someone who only wanted to look */
-  let lit=0, seen=0;
+  /* ONE STAR IS ENOUGH.
+     The gate used to want three of the five. Three is a collection: it turns looking at
+     the sky into clearing a list, and it means the scroll waits on somebody who has
+     already understood the idea perfectly well from the first card they opened. One is
+     the whole lesson — that the stars are things you can ask about — and the other four
+     stay there for anyone who wants them, which is what optional means. */
+  let lit=0;
   for (const s of DIPPER.concat(OUTLIERS)){
-    if (!hasCard(s)) continue;
-    if (STARY.lit[s.id]) lit++;
-    if (starSeen(s,air,glow)) seen++;
+    if (hasCard(s) && STARY.lit[s.id]) lit++;
   }
-  if (g && lit >= Math.min(3, seen) && seen > 0) meet(g);
+  if (g && lit >= 1) meet(g);
 }
 function tapStarP(x,y,air,glow){
   const all = DIPPER.concat(OUTLIERS);

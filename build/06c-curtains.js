@@ -105,7 +105,15 @@ function panelGeom(side, t, rev, W_, H_){
   const xOut = outF*W_ + CC.x;
   const wClosed = Math.abs(CG.mid - outF)*W_;
   const fab = wClosed*CG.slack;                            // arc length, fixed
-  const xInClosed = CG.mid*W_ + CC.x, xInOpen = inOpenF*W_ + CC.x;
+  /* THEY OVERLAP WHEN THEY ARE SHUT.
+     Both inner edges used to rest exactly on the centre line, and each panel breathes
+     with its own phase, so the two of them parted by a few pixels and the lit window
+     behind showed as a bright seam straight down the middle of a closed curtain. In the
+     polluted bedroom that seam was the polluted view leaking through a scene whose whole
+     job is to be dark until the visitor opens it. So the closed position carries an
+     overlap comfortably wider than the sway can ever be, and the existing lerp toward the
+     open position tapers it away as they are drawn back. */
+  const xInClosed = CG.mid*W_ + CC.x + dirn*W_*0.008, xInOpen = inOpenF*W_ + CC.x;
   const xIn0 = lerp(xInClosed, xInOpen, pull);
 
   const top = CG.top*H_ + CC.y;
