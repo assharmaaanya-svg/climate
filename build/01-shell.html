@@ -7,10 +7,35 @@
 <meta name="description" content="Remember When — an interactive artwork by Aanya Sharma for the Earth Partner Prize, about the ordinary childhood moments air pollution quietly changed." />
 <meta name="theme-color" content="#0b1a2b" />
 <style>
+  /* IBM Plex Mono, SIL Open Font License 1.1, © 2017 IBM Corp with Reserved Font Name
+     "Plex". Full licence text ships alongside as LICENSE-IBMPlexMono.txt. Only the
+     Regular is embedded: one weight is all the interface needs, and at the sizes it is
+     used, with the tracking it carries, Regular over a dark plaque is the right weight
+     anyway — a Medium would thicken the caption without making it any clearer. */
+  @font-face{
+    font-family:"IBM Plex Mono"; font-style:normal; font-weight:400; font-display:swap;
+    src:url("assets/IBMPlexMono-Regular.ttf") format("truetype");
+  }
   :root{
     --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
-    --mono:ui-monospace,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+    /* TWO VOICES, AND THEY MUST NEVER BE MISTAKEN FOR EACH OTHER.
+       Serif is the story: narration, memory, the things the piece says. Mono is the
+       interface: what you can do, where you are, what the machine is telling you. That
+       split is the whole typographic system and every element picks one. */
+    --mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
     --ink:#fbfaf5;
+    /* the interface ivory — warm, and never pure white, so it sits in the same light as
+       the paintings instead of on top of them */
+    --ui-ink:#f4efe4;
+
+    /* THE BOTTOM OF THE SCREEN, AS ONE SYSTEM.
+       Three things stack down here and they were measured colliding: at 375px the
+       narration's last line ended five pixels above the instruction. They are now
+       driven from these three values, so the rhythm can be reasoned about in one place
+       and tightened per breakpoint without hunting through rules. */
+    --narr-bottom:22vh;
+    --instr-bottom:11.4vh;
+    --cue-bottom:2.2vh;
     /* Heavy, because every line in the piece is white now and some of them sit over a
        noon sky or a sunlit sheet. Three layers: a tight dark edge so the letterforms
        keep their shape, a mid halo, and a wide soft one that darkens the ground the
@@ -48,60 +73,93 @@
   #spine{ position:relative; z-index:1; pointer-events:none; }
 
   /* ---------- narration ---------- */
-  #cap{ position:fixed; left:50%; bottom:22vh; transform:translate(-50%,12px); z-index:6; margin:0;
+  #cap{ position:fixed; left:50%; bottom:var(--narr-bottom); transform:translate(-50%,12px); z-index:6; margin:0;
     width:min(90vw,34ch); text-align:center; font-size:clamp(1.1rem,3.5vw,1.75rem); line-height:1.4;
     letter-spacing:.004em; color:var(--ink); text-shadow:var(--sh); opacity:0; pointer-events:none;
-    transition:opacity 1.5s cubic-bezier(.4,0,.2,1), transform 1.5s cubic-bezier(.4,0,.2,1); }
+    /* colour is in the transition list on the base rule, not on .redshift, so the drift
+       has somewhere to start from the instant the class arrives */
+    transition:opacity 1.5s cubic-bezier(.4,0,.2,1), transform 1.5s cubic-bezier(.4,0,.2,1),
+               color 19s linear; }
   #cap.on{ opacity:1; transform:translate(-50%,0); }
+  /* A LINE THAT LOSES ITS COLOUR WHILE YOU LOOK AT IT.
+     Nineteen seconds, linear, ending at a dusty brick that is nowhere near an alarm red
+     and is not far off the browns already in the room. Nothing flashes and nothing
+     escalates: the sentence is simply not as white as it was when it arrived, and most
+     visitors will not catch the moment it changed. That is the intent — emotional
+     weight, arriving at the speed weight actually arrives at. */
+  #cap.redshift{ color:#b07068; }
   #cap.dark{ color:#241a12;
     text-shadow:0 1px 3px rgba(255,250,238,.95), 0 2px 18px rgba(255,248,232,.9),
                 0 0 42px rgba(255,246,226,.75); }
 
   /* ---------- interaction prompt ---------- */
-  /* THE BOTTOM OF THE SCREEN, IN ORDER.
-     Three things live down here and they were all in each other's way: the
-     narration, the instruction, and the scroll cue. They are stacked now, with
-     room between them, and the instruction is one line so it cannot grow up into
-     the sentence above it:
-         narration    22vh
-         instruction  11.5vh
-         scroll cue    2.2vh
-     The gate marker sat on top of the scroll cue as well, which is worse than
-     untidy: the two say opposite things, one meaning "you have to do something
-     here" and the other "carry on down". Only one of them shows at a time now. */
-  #ask{ position:fixed; left:50%; bottom:11.5vh; transform:translate(-50%,10px); z-index:6;
-    display:flex; align-items:center; gap:.9em; white-space:nowrap;
-    font-family:var(--mono); font-size:clamp(.7rem,1.95vw,.79rem); letter-spacing:.15em;
-    text-transform:uppercase; color:#fdfcf8; opacity:0; pointer-events:none;
-    max-width:92vw; line-height:1.4; transition:opacity 1s, transform 1s;
-    background:linear-gradient(rgba(14,18,28,.6), rgba(8,11,19,.72));
-    border:1px solid rgba(251,250,245,.24); border-radius:999px;
-    /* SYMMETRIC. It was 1.85em right against 1.5em left, which put the contents of
-       the pill two pixels left of the pill itself for no reason at all. */
-    padding:.85em 1.7em;
-    -webkit-backdrop-filter:blur(11px) saturate(1.15); backdrop-filter:blur(11px) saturate(1.15);
-    box-shadow:0 16px 48px rgba(0,0,0,.44), 0 1px 0 rgba(255,255,255,.07) inset; }
-  /* a lit dot: this is available now */
-  #ask::before{ content:""; width:6px; height:6px; border-radius:50%; flex:none;
-    background:#ffd9a6; box-shadow:0 0 13px rgba(255,190,110,.9);
-    animation:askdot 2.8s ease-in-out infinite; }
-  /* AND ITS COUNTERWEIGHT ON THE RIGHT.
-     The dot sits in the flex row, so it takes six pixels plus a gap out of the left
-     side and shoves the WORDS that far right of the pill's centre — measured at 6.5px.
-     The pill looked centred because it was; the sentence inside it was not. An
-     invisible twin on the other side balances the row, so the text is centred and the
-     dot still sits to the left of it. Nothing else in the piece is allowed to be
-     lopsided either: `letter-spacing` puts a space after the LAST letter too, which
-     drags centred text left by half of it, so both spaced labels pull that back. */
-  #ask::after{ content:""; width:6px; flex:none; }
-  @keyframes askdot{ 0%,100%{ opacity:.42; transform:scale(1) } 50%{ opacity:1; transform:scale(1.35) } }
+  /* A MUSEUM CAPTION, NOT A GAME OBJECTIVE.
+     What was here read as a call to action: a 999px pill 41 pixels tall carrying 12.6px
+     of type — mostly box — lit by a pulsing amber dot, over a heavy 48px drop shadow.
+     Every one of those is a button's vocabulary. The measurements below were taken from
+     this page rather than assumed, and they move in opposite directions on purpose: the
+     PLAQUE gets smaller and quieter while the TYPE gets slightly larger and easier to
+     read, because the problem was never that the words were too big.
+
+     Type lands at 14-15px across desktop widths against the narration's 28px — a ratio
+     near 1.9, which keeps the caption plainly subordinate while being easier to read
+     than the 12.6px it replaces. The two can never be confused anyway: that one is
+     serif and this is mono is the whole system. It floors at .8rem so it survives a
+     phone, and it is capped rather than left to grow, because past about 15px a mono
+     caption starts to read as a label on the artwork instead of beside it.
+
+     Box: measured 41px tall before, and 33 now, so it is meaningfully smaller while the
+     type inside it got bigger — the bulk was never the words. Vertical padding is under
+     a third of the horizontal, which is what makes a plaque read as a plaque rather than
+     as a lozenge, and the radius sits where the corner is clearly softened but the shape
+     is still unmistakably a rectangle. */
+  #ask{ position:fixed; left:50%; bottom:var(--instr-bottom); transform:translate(-50%,5px);
+    z-index:6; display:inline-flex; align-items:center; gap:.78em; white-space:nowrap;
+    font-family:var(--mono); font-weight:400;
+    font-size:clamp(.8rem,.64rem + .3vw,.94rem);
+    letter-spacing:.12em; text-transform:uppercase;
+    color:var(--ui-ink); opacity:0; pointer-events:none;
+    max-width:92vw; line-height:1.25;
+    /* 560ms, ease-out, no overshoot anywhere: it resolves, it does not arrive. */
+    transition:opacity .56s cubic-bezier(.22,.61,.36,1),
+               transform .56s cubic-bezier(.22,.61,.36,1);
+    background:rgba(13,15,20,.5);
+    border:1px solid rgba(244,239,228,.17); border-radius:9px;
+    /* Generous across, tight down. `letter-spacing` also puts a space after the LAST
+       letter, which drags the ink left of centre by half of it, so the two sides are
+       offset by that half to put the ink back where the eye expects it. */
+    padding:.42em calc(1.5em - .06em) .42em calc(1.5em + .06em);
+    -webkit-backdrop-filter:blur(10px) saturate(1.05); backdrop-filter:blur(10px) saturate(1.05);
+    box-shadow:0 4px 18px rgba(0,0,0,.26); }
   #ask.on{ opacity:1; transform:translate(-50%,0); }
-  /* narrow screens cannot hold a long line on one row, so let it wrap there */
-  /* On a narrow screen the line has to wrap, but it was also being LEFT-aligned
-     inside a pill up to 88vw wide, which put the instruction hard against the left of
-     the screen while everything else stayed centred. Centred, wrapped. */
+  /* the words themselves resolve out of a slight softness — the one thing here that
+     moves, and it is a focus pull rather than an animation */
+  #ask .tx{ display:block; filter:blur(2.2px); opacity:.5;
+    transition:filter .62s cubic-bezier(.22,.61,.36,1), opacity .62s cubic-bezier(.22,.61,.36,1); }
+  #ask.on .tx{ filter:blur(0); opacity:1; }
+  /* the gesture mark: same ivory, quieter, and sized off the type so it tracks it */
+  #ask .ic{ flex:none; width:1.16em; height:1.16em; opacity:.55; display:block;
+    transition:opacity .62s; }
+  #ask .ic:empty{ display:none; }
+  #ask .ic svg{ width:100%; height:100%; display:block; overflow:visible; }
+  #ask .ic svg *{ vector-effect:non-scaling-stroke; }
+  @media (prefers-reduced-motion:reduce){
+    #ask .tx{ filter:none; } #ask{ transform:translate(-50%,0); }
+  }
+  /* Narrow screens have to wrap, and a wrapped plaque must stay centred — it used to
+     go left-aligned inside a box up to 88vw wide, which put the instruction hard
+     against the edge of the screen while everything else stayed centred. It also gets
+     more room from the narration here, because that is where they were measured
+     colliding. */
   @media (max-width:600px){
-    #ask{ white-space:normal; text-align:center; max-width:88vw; bottom:13vh; }
+    :root{ --narr-bottom:27vh; --instr-bottom:12.4vh; }
+    #ask{ white-space:normal; text-align:center; max-width:84vw; line-height:1.45;
+      padding:.6em 1.15em; letter-spacing:.1em; }
+  }
+  /* and in a short landscape window there is no room for the middle layer at all, so
+     the instruction tucks closer to the bottom and the narration lifts away from it */
+  @media (max-height:560px){
+    :root{ --narr-bottom:30vh; --instr-bottom:9vh; --cue-bottom:1.6vh; }
   }
   /* a star card is a thing to read; the narration and the prompt get out of its
      way rather than being read over the top of it */
@@ -130,29 +188,36 @@
   body.onslaught #cap, body.onslaught #ask, body.onslaught #gate,
   body.onslaught #sdown, body.onslaught #chapter, body.onslaught #look,
   body.onslaught #cc, body.onslaught .ctl, body.onslaught #whisper,
-  body.onslaught #sdown svg, body.onslaught #ask::before, body.onslaught #gate .chev{
+  body.onslaught #sdown svg, body.onslaught #ask .ic, body.onslaught #ask .tx{
     opacity:0 !important; visibility:hidden !important; animation:none !important;
     pointer-events:none; }
   body.onslaught{ background:#000; }
-  #ask.dark{ color:#17222c; border-color:rgba(20,30,40,.22);
-    background:linear-gradient(rgba(255,253,246,.78), rgba(255,250,238,.68));
-    box-shadow:0 14px 44px rgba(90,60,20,.2), 0 1px 0 rgba(255,255,255,.5) inset; }
-  #ask.dark::before{ background:#b4671e; box-shadow:0 0 12px rgba(180,103,30,.55); }
-  #ask.urge{ animation:urge 2.6s ease-in-out infinite; }
-  @keyframes urge{ 0%,100%{ opacity:.88; } 50%{ opacity:.45; } }
+  /* the light-ground variant of the same plaque, kept in step with it */
+  #ask.dark{ color:#22282e; border-color:rgba(24,30,38,.16);
+    background:rgba(252,250,244,.62);
+    box-shadow:0 4px 18px rgba(80,58,26,.14); }
+  /* NO URGE. There was a pulsing opacity animation on the instruction whenever the
+     visitor pushed against a hold — a nag, and the single most game-like thing on the
+     screen. If somebody is pushing at a wait, the answer is the hairline below filling
+     up, not the caption breathing at them. */
 
   /* ---------- gate: held at a beat until you act ---------- */
-  #gate{ position:fixed; left:50%; bottom:3.1vh; transform:translateX(-50%); z-index:6;
+  /* The mark that says the scroll is waiting: now only a hairline that fills, sitting
+     where the scroll cue would be, in the same ivory as the instruction above it.
+     The bobbing chevron is gone. It pointed down, with a bouncing animation, at the
+     exact moment the piece will not let you go down — so it contradicted itself while
+     being the loudest thing on screen, and it undid the calm of the plaque it sits
+     under. A line that fills says the same thing without saying anything. */
+  #gate{ position:fixed; left:50%; bottom:var(--cue-bottom); transform:translateX(-50%); z-index:6;
     display:flex; flex-direction:column; align-items:center; gap:.5em;
     font-family:var(--mono); font-size:.6rem; letter-spacing:.18em; text-transform:uppercase;
-    color:var(--ink); text-shadow:var(--sh); opacity:0; transition:opacity .8s; pointer-events:none; }
-  #gate.on{ opacity:.7; }
-  #gate.dark{ color:#1d2a36; text-shadow:0 1px 14px rgba(255,255,255,.85); }
-  #gate .bar{ width:74px; height:1px; background:currentColor; opacity:.35; position:relative; overflow:hidden; }
-  #gate .bar i{ position:absolute; inset:0 auto 0 0; width:0%; background:currentColor; transition:width .35s ease; }
-  #gate .chev{ width:8px; height:8px; border-right:1.5px solid currentColor; border-bottom:1.5px solid currentColor;
-    transform:rotate(45deg); animation:bob 2.1s ease-in-out infinite; }
-  @keyframes bob{ 0%,100%{ transform:rotate(45deg) translateY(0); opacity:.5 } 50%{ transform:rotate(45deg) translateY(4px); opacity:1 } }
+    color:var(--ui-ink); opacity:0; transition:opacity .8s; pointer-events:none; }
+  #gate.on{ opacity:.52; }
+  #gate.dark{ color:#1d2a36; }
+  #gate .bar{ width:58px; height:1px; background:currentColor; opacity:.26; position:relative; overflow:hidden; }
+  #gate .bar i{ position:absolute; inset:0 auto 0 0; width:0%; background:currentColor;
+    transition:width .5s cubic-bezier(.22,.61,.36,1); }
+  #gate .chev{ display:none; }
 
   /* ---------- captions for sound ---------- */
   #cc{ position:fixed; left:50%; bottom:.9vh; transform:translateX(-50%); z-index:6; font-family:var(--mono);
@@ -227,22 +292,55 @@
      system sans, near-black on white, tight radius. That difference is deliberate.
      Everything else the visitor has read has been the artwork talking. This is not
      the artwork talking. */
-  #note{ position:fixed; right:max(18px,env(safe-area-inset-right)); bottom:5.5vh; z-index:14;
-    width:min(400px,86vw); padding:15px 18px 16px;
-    background:#fdfdfd; border-radius:17px;
-    box-shadow:0 18px 44px rgba(0,0,0,.42), 0 2px 6px rgba(0,0,0,.20);
+  /* ---------- the phone ----------
+     A REAL NOTIFICATION, NOT A DIALOGUE BOX.
+     What was here was a plain white card with an emoji in it, which reads as a website
+     telling you something. A phone banner has a specific and very familiar anatomy, and
+     getting it right is most of what makes it believable: a rounded app tile on the
+     left, the app's name in small grey caps beside it with a timestamp pushed to the far
+     edge, then the headline, then the body. The material is translucent and blurred
+     rather than flat white, the corner radius is large, and the shadow is soft and low.
+     Emoji are gone from it — they arrive in a different drawing style on every platform,
+     which is exactly what a believable system banner cannot afford — and the tile is
+     drawn instead.
+
+     The wording is untouched: this is the artist's own air-quality concept, rebuilt. */
+  #note{ position:fixed; right:max(14px,env(safe-area-inset-right)); bottom:5.5vh; z-index:14;
+    width:min(392px,calc(100vw - 28px));
+    padding:12px 14px 13px;
+    background:rgba(250,250,252,.9);
+    border:.5px solid rgba(255,255,255,.6);
+    border-radius:20px;
+    -webkit-backdrop-filter:blur(22px) saturate(1.7); backdrop-filter:blur(22px) saturate(1.7);
+    box-shadow:0 12px 30px rgba(0,0,0,.24), 0 2px 6px rgba(0,0,0,.10);
     font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-    color:#15171a; opacity:0; transform:translateX(28px);
-    transition:opacity .7s cubic-bezier(.2,.7,.3,1), transform .7s cubic-bezier(.2,.7,.3,1);
+    color:#0d0f12;
+    opacity:0; transform:translateX(30px) scale(.97); transform-origin:100% 50%;
+    transition:opacity .58s cubic-bezier(.2,.7,.3,1), transform .58s cubic-bezier(.2,.7,.3,1);
     pointer-events:none; }
   #note.on{ opacity:1; transform:none; }
-  #note .nrow{ display:flex; align-items:center; gap:.6em;
-    padding-bottom:11px; border-bottom:1px solid rgba(20,24,28,.13); }
-  #note .ni{ font-size:1.06rem; line-height:1; letter-spacing:-.06em; flex:none; }
-  #note .ni.off{ display:none; }
-  #note .nt{ font-size:1.02rem; font-weight:650; letter-spacing:-.008em; line-height:1.25; }
-  #note .nb{ margin:11px 0 0; font-size:.92rem; line-height:1.42; color:#1b1f24; }
-  @media (prefers-reduced-motion:reduce){ #note{ transition:opacity .7s; transform:none; } }
+  #note .nhead{ display:flex; align-items:center; gap:7px; margin-bottom:5px; }
+  /* the app tile: a squircle with the haze mark in it, drawn rather than lettered */
+  #note .napp{ flex:none; width:19px; height:19px; border-radius:5.5px;
+    background:linear-gradient(160deg,#8d9aa6,#5d6b78 62%,#4a5765);
+    box-shadow:0 .5px 1.5px rgba(0,0,0,.28), inset 0 .5px 0 rgba(255,255,255,.34);
+    display:flex; align-items:center; justify-content:center; }
+  #note .napp svg{ width:13px; height:13px; display:block; }
+  #note .nname{ font-size:.72rem; font-weight:600; letter-spacing:.045em;
+    text-transform:uppercase; color:#61666d; }
+  #note .ntime{ margin-left:auto; font-size:.72rem; color:#8b9097; letter-spacing:.01em; }
+  #note .nt{ font-size:.95rem; font-weight:600; letter-spacing:-.008em; line-height:1.3; }
+  #note .nb{ margin:2px 0 0; font-size:.88rem; line-height:1.4; color:#3a4048; }
+  @media (max-width:600px){
+    #note{ right:8px; left:8px; width:auto; bottom:auto;
+      top:max(10px,env(safe-area-inset-top));
+      transform:translateY(-26px) scale(.97); }
+    #note.on{ transform:none; }
+  }
+  @media (prefers-reduced-motion:reduce){
+    #note{ transition:opacity .58s; transform:none; }
+    #note.on{ transform:none; }
+  }
 
   /* ---------- air-quality warning (chapter 5) ---------- */
   #aq{ position:fixed; left:50%; top:50%; transform:translate(-50%,-50%) scale(.96); z-index:9;
@@ -426,7 +524,7 @@
   .sr{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
 
   @media (prefers-reduced-motion: reduce){
-    #gate .chev{ animation:none; } #ask.urge{ animation:none; } #aq .dot{ animation:none; }
+    #aq .dot{ animation:none; }
     #cap,#title,#ev,#ledger{ transition-duration:.4s; }
   }
 </style>
@@ -450,7 +548,8 @@
 
 <!-- the phone, in the return. Content is swapped in from build/10b-return.js. -->
 <div id="note" aria-hidden="true" aria-live="polite">
-  <div class="nrow"><span class="ni">⚠️🌫️</span><span class="nt"></span></div>
+  <div class="nhead"><span class="napp" aria-hidden="true"><svg viewBox="0 0 16 16" fill="none" stroke="#eef2f6" stroke-width="1.5" stroke-linecap="round"><path d="M2.6 6.2h7.2M2.6 9.4h10.8M5.4 12.4h7.6"/></svg></span><span class="nname">Air Quality</span><span class="ntime">now</span></div>
+  <div class="nt"></div>
   <p class="nb"></p>
 </div>
 
@@ -463,7 +562,7 @@
 </div>
 
 <p id="cap" aria-live="polite"></p>
-<div id="ask" aria-live="polite"></div>
+<div id="ask" aria-live="polite"><span class="ic" aria-hidden="true"></span><span class="tx"></span></div>
 <div id="gate" aria-hidden="true"><span id="gateTxt"></span><span class="bar"><i id="gateBar"></i></span><span class="chev"></span></div>
 <div id="cc" aria-hidden="true"></div>
 <div id="sdown" aria-hidden="true"><span>scroll</span>

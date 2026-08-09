@@ -723,13 +723,84 @@ const FIN_LINES = [
 ];
 let shownFin = -1, lastCap="", lastCh=-1;
 
+/* ============================================================================
+   THE GESTURE MARK
+   One small stroked glyph at the head of the instruction, saying what KIND of thing
+   this is with a shape rather than with more words. It replaced a pulsing amber dot,
+   which said only "look at me".
+
+   They are drawn rather than lettered — no icon font, no emoji. Emoji would arrive in
+   somebody else's colours and somebody else's drawing style on every platform, which
+   is the one thing an interface this quiet cannot survive. All of them are stroke-only
+   in the inherited ivory at reduced opacity, on a 16-unit grid, sized off the type so
+   they track it at every breakpoint. */
+const ASK_ICON_SVG = (() => {
+  const w = (d) => '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" '+
+    'stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">'+d+'</svg>';
+  const dot = '<circle cx="8" cy="9.7" r="1.5" fill="currentColor" stroke="none"/>';
+  return {
+    /* two hands going opposite ways: the curtains, the air, anything pulled apart */
+    drag: w('<path d="M4.7 5.5 2.2 8l2.5 2.5"/><path d="M11.3 5.5 13.8 8l-2.5 2.5"/>'+
+            '<path d="M7.2 4.8v6.4M8.8 4.8v6.4"/>'),
+    /* a cord with a weight on the end, and the direction it wants to go. The arrow
+       used to start where the ball ended, so at caption size the two fused into one
+       blob that read as a map pin — it needs clear air between them. */
+    pull: w('<path d="M8 1.4v5.6"/><circle cx="8" cy="8.9" r="1.9"/>'+
+            '<path d="M8 12.2v2.4"/><path d="M6.5 13.1 8 14.6l1.5-1.5"/>'),
+    /* a press that is being kept there */
+    hold: w(dot+'<circle cx="8" cy="9.7" r="4"/>'+
+            '<path d="M13.6 5.6a7.2 7.2 0 0 1 0 8.2"/>'),
+    /* a press that is not. Two concentric arcs over a dot IS the wifi glyph — it was
+       unmistakably wifi and nothing else — so this is a spark instead: the mark a tap
+       leaves, three short strokes coming off the point of contact. */
+    tap:  w(dot+'<path d="M8 6.3V4.4"/><path d="M5.5 7.1 4.2 5.8"/>'+
+            '<path d="M10.5 7.1 11.8 5.8"/>'),
+    /* a spark rather than a cartoon five-pointer, which would read as a reward */
+    star: w('<path d="M8 2.1 9.25 6.75 13.9 8 9.25 9.25 8 13.9 6.75 9.25 2.1 8l4.65-1.25Z"/>'),
+    /* a mark being made */
+    draw: w('<path d="M2.5 13.7c1.9.2 3.3-.5 4.6-2.1"/>'+
+            '<path d="M7.7 10.9 12.5 6a1.75 1.75 0 0 0-2.5-2.5L5.2 8.4l.7 1.8z"/>'),
+    /* something taken up off a surface */
+    lift: w('<path d="M8 12.2V4.1"/><path d="M4.9 7.2 8 4.1l3.1 3.1"/>'+
+            '<path d="M3.3 14.3h9.4"/>')
+  };
+})();
+
+/* which gesture each scene asks for. Kept as one table rather than a field on twenty
+   beats so the whole vocabulary of the piece can be read at once — and so a scene that
+   wants a different mark is a one-line change here. */
+const ASK_ICON = {
+  dark:"drag", light:"pull", laundry:"tap", kite:"hold", stars:"star",
+  horizon:"hold", drawing:"draw",
+  "p-room":"drag", "p-shut":"pull",
+  "r-laundry":"drag", "r-kite":"hold", "r-stars":"star", "r-horizon":"hold",
+  return:"drag", stopped:"pull",
+  "e-dust":"lift", "e-hills":"drag",
+  "f-curtain":"drag", "f-both":"hold", "f-open":"pull", "f-crayon":"draw"
+};
+const askIc = askEl.querySelector(".ic"), askTx = askEl.querySelector(".tx");
+let lastAskIcon = " ";
+function setAsk(text, iconKey){
+  if (text !== askTx.textContent) askTx.textContent = text;
+  const k = text ? (iconKey || "") : "";
+  if (k !== lastAskIcon){
+    lastAskIcon = k;
+    askIc.innerHTML = ASK_ICON_SVG[k] || "";
+  }
+}
+
 /* A LINE SAID IN ANSWER TO SOMETHING, rather than at a point in a beat.
    Every other line in the piece is a property of where the visitor is: the beat
    carries it and it comes up a fraction of the way in. The window needs the other
    kind — the room only says "Leave it closed." because somebody just tried the
    handle, and it has to arrive on the action, not on a scroll position. */
-let evLine = "", evLineT = 0;
-function sayLine(text, secs){ evLine = text; evLineT = secs===undefined ? 5.5 : secs; }
+let evLine = "", evLineT = 0, evRed = 0;
+function sayLine(text, secs, o){
+  evLine = text; evLineT = secs===undefined ? 5.5 : secs;
+  /* `red` marks a line that is allowed to lose its colour while it sits there. It is
+     not a state and not a warning — see the transition on #cap.redshift. */
+  evRed = (o && o.red) ? 1 : 0;
+}
 
 /* EVERY LINE IN THE PIECE IS WHITE.
    This used to flip the narration to near-black over the bright scenes — the washing
@@ -767,6 +838,8 @@ function updText(now, dt){
   let want = show ? line : "";
   /* and an answer outranks whatever the beat had to say, for as long as it lasts */
   if (evLineT > 0){ evLineT -= dt; want = evLine; }
+  else evRed = 0;
+  capEl.classList.toggle("redshift", !!evRed && want === evLine);
   if (want!==lastCap){
     lastCap=want;
     if (want){ capEl.textContent=want; capEl.classList.add("on"); }
@@ -788,10 +861,38 @@ function updText(now, dt){
      they remember them, not because a pill told them to. So the prompt is withheld
      through the reveal and for a good few seconds after it, and the hands on the
      leading edges arrive first. If somebody really is stuck, the words follow. */
-  if (bid === "p-room" && (PRET.reveal < 0.999 || PROOM.idle < 5.5)) askTxt = "";
-  askEl.textContent = askTxt;
+  /* AS SOON AS THE ROOM IS LEGIBLE, NOT LONG AFTER IT.
+     This used to wait for the four-second reveal to finish AND then for five and a half
+     idle seconds on top — so the visitor sat in a room that had arrived, with nothing to
+     go on, for the better part of ten seconds. Recognition does not need that long. It
+     comes up once the room is far enough out of the black to be understood, which is a
+     little over half way through the reveal, while the rise is still finishing. */
+  let askIcon = ASK_ICON[bid];
+  if (bid === "p-room"){
+    /* TWO INSTRUCTIONS IN ONE BEAT, IN ORDER.
+       The chapter's whole point is that nothing here is behind a scroll, so both of its
+       interactions live in this one beat and the caption has to move on by itself: the
+       curtains while they are still shut, then the cord, then nothing at all. The
+       wording is reused verbatim from the first chapter, where the same cord opened the
+       same window — the echo is deliberate. */
+    if (PRET.reveal < 0.55) askTxt = "";
+    else if (!gateMet("pcurtain")){ askTxt = B.ask; askIcon = "drag"; }
+    else if (!PRET.tried){ askTxt = "Pull the cord down"; askIcon = "pull"; }
+    else askTxt = "";
+  }
+  setAsk(askTxt, askIcon);
+  /* AND IT LEAVES THE MOMENT THE INTERACTION IS UNDER WAY.
+     Not when it is finished — when it has visibly started. A caption that hangs around
+     while the curtains are already moving is reading instructions over somebody's
+     shoulder. `started` is only consulted where the beat is actually waiting on its own
+     gate; the optional prompts have gates that were met the instant the scene drew, and
+     measuring those would hide their instruction before it was ever seen. */
+  let started = needed && gateProgress(g) > 0.05;
+  /* the cord is not a gate, so its own "under way" has to be read off the pull */
+  if (bid === "p-room" && gateMet("pcurtain")) started = PRET.give > 0.06;
   const busy = P.down || tSinceAct < 1.4;
-  askEl.classList.toggle("on", !!askTxt && (T.push>0.05 || !busy || (now-beatEnter)<3600));
+  askEl.classList.toggle("on",
+    !!askTxt && !started && (T.push>0.05 || !busy || (now-beatEnter)<3600));
 
   /* Is this one of the three places the scroll waits? That is not the same question
      as "does this beat have a gate". The washing line's own gate is met the instant
@@ -809,7 +910,7 @@ function updText(now, dt){
   sdownEl.classList.toggle("on", cue);
   sdownEl.classList.toggle("dark", light);
   sdownEl.setAttribute("aria-hidden", String(!cue));
-  askEl.classList.toggle("urge", T.push>0.3);
+
 
   /* the mark that says the scroll is waiting, and roughly how far in you are */
   gateEl.classList.toggle("on", T.blocked && holding);
@@ -1202,6 +1303,8 @@ window.__bluer = {
   get floor(){ return T.floor; },
   get blocked(){ return T.blocked; },
   get wait(){ return T.wait; },
+  icon(k){ return ASK_ICON_SVG[k] || ""; },
+  cord(){ return cordBall(); },
   say: sayLine,
   get line(){ return { text: evLine, left: +evLineT.toFixed(2),
                        on: capEl.classList.contains("on"), shown: capEl.textContent }; },

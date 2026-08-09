@@ -443,10 +443,17 @@ const HOLD_AT = {
      gate could never be met, so the scroll waited on a black screen for ever. Asking
      somebody to interact with a scene that failed to load is not a wait, it is a dead
      end, and it must be impossible by construction rather than by the asset list
-     happening to be right. */
-  "p-room":{ done: () => gateMet("pcurtain") || !getPlate("roomAfter"),
-             prog: () => gateProgress("pcurtain"),
-             pass: () => { done.pcurtain = true; } }
+     happening to be right.
+
+     AND IT WAITS FOR BOTH OF THEM. The chapter is two interactions in one beat — the
+     curtains, then the cord — precisely so that nothing in the sequence sits behind a
+     scroll. The visitor is put in the room by the piece, and the room then waits until
+     it has been opened and the cord has been asked. */
+  "p-room":{ done: () => (gateMet("pcurtain") && !!PRET.tried) || !getPlate("roomAfter"),
+             prog: () => gateMet("pcurtain")
+                       ? 0.5 + 0.5*cl01(PRET.give/RCORD_FIRE)
+                       : 0.5*gateProgress("pcurtain"),
+             pass: () => { done.pcurtain = true; PRET.tried = 1; } }
 };
 
 /* AND NO HOLD MAY EVER BECOME A WALL, whatever goes wrong behind it.

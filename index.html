@@ -7,10 +7,35 @@
 <meta name="description" content="Remember When — an interactive artwork by Aanya Sharma for the Earth Partner Prize, about the ordinary childhood moments air pollution quietly changed." />
 <meta name="theme-color" content="#0b1a2b" />
 <style>
+  /* IBM Plex Mono, SIL Open Font License 1.1, © 2017 IBM Corp with Reserved Font Name
+     "Plex". Full licence text ships alongside as LICENSE-IBMPlexMono.txt. Only the
+     Regular is embedded: one weight is all the interface needs, and at the sizes it is
+     used, with the tracking it carries, Regular over a dark plaque is the right weight
+     anyway — a Medium would thicken the caption without making it any clearer. */
+  @font-face{
+    font-family:"IBM Plex Mono"; font-style:normal; font-weight:400; font-display:swap;
+    src:url("assets/IBMPlexMono-Regular.ttf") format("truetype");
+  }
   :root{
     --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
-    --mono:ui-monospace,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+    /* TWO VOICES, AND THEY MUST NEVER BE MISTAKEN FOR EACH OTHER.
+       Serif is the story: narration, memory, the things the piece says. Mono is the
+       interface: what you can do, where you are, what the machine is telling you. That
+       split is the whole typographic system and every element picks one. */
+    --mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
     --ink:#fbfaf5;
+    /* the interface ivory — warm, and never pure white, so it sits in the same light as
+       the paintings instead of on top of them */
+    --ui-ink:#f4efe4;
+
+    /* THE BOTTOM OF THE SCREEN, AS ONE SYSTEM.
+       Three things stack down here and they were measured colliding: at 375px the
+       narration's last line ended five pixels above the instruction. They are now
+       driven from these three values, so the rhythm can be reasoned about in one place
+       and tightened per breakpoint without hunting through rules. */
+    --narr-bottom:22vh;
+    --instr-bottom:11.4vh;
+    --cue-bottom:2.2vh;
     /* Heavy, because every line in the piece is white now and some of them sit over a
        noon sky or a sunlit sheet. Three layers: a tight dark edge so the letterforms
        keep their shape, a mid halo, and a wide soft one that darkens the ground the
@@ -48,60 +73,93 @@
   #spine{ position:relative; z-index:1; pointer-events:none; }
 
   /* ---------- narration ---------- */
-  #cap{ position:fixed; left:50%; bottom:22vh; transform:translate(-50%,12px); z-index:6; margin:0;
+  #cap{ position:fixed; left:50%; bottom:var(--narr-bottom); transform:translate(-50%,12px); z-index:6; margin:0;
     width:min(90vw,34ch); text-align:center; font-size:clamp(1.1rem,3.5vw,1.75rem); line-height:1.4;
     letter-spacing:.004em; color:var(--ink); text-shadow:var(--sh); opacity:0; pointer-events:none;
-    transition:opacity 1.5s cubic-bezier(.4,0,.2,1), transform 1.5s cubic-bezier(.4,0,.2,1); }
+    /* colour is in the transition list on the base rule, not on .redshift, so the drift
+       has somewhere to start from the instant the class arrives */
+    transition:opacity 1.5s cubic-bezier(.4,0,.2,1), transform 1.5s cubic-bezier(.4,0,.2,1),
+               color 19s linear; }
   #cap.on{ opacity:1; transform:translate(-50%,0); }
+  /* A LINE THAT LOSES ITS COLOUR WHILE YOU LOOK AT IT.
+     Nineteen seconds, linear, ending at a dusty brick that is nowhere near an alarm red
+     and is not far off the browns already in the room. Nothing flashes and nothing
+     escalates: the sentence is simply not as white as it was when it arrived, and most
+     visitors will not catch the moment it changed. That is the intent — emotional
+     weight, arriving at the speed weight actually arrives at. */
+  #cap.redshift{ color:#b07068; }
   #cap.dark{ color:#241a12;
     text-shadow:0 1px 3px rgba(255,250,238,.95), 0 2px 18px rgba(255,248,232,.9),
                 0 0 42px rgba(255,246,226,.75); }
 
   /* ---------- interaction prompt ---------- */
-  /* THE BOTTOM OF THE SCREEN, IN ORDER.
-     Three things live down here and they were all in each other's way: the
-     narration, the instruction, and the scroll cue. They are stacked now, with
-     room between them, and the instruction is one line so it cannot grow up into
-     the sentence above it:
-         narration    22vh
-         instruction  11.5vh
-         scroll cue    2.2vh
-     The gate marker sat on top of the scroll cue as well, which is worse than
-     untidy: the two say opposite things, one meaning "you have to do something
-     here" and the other "carry on down". Only one of them shows at a time now. */
-  #ask{ position:fixed; left:50%; bottom:11.5vh; transform:translate(-50%,10px); z-index:6;
-    display:flex; align-items:center; gap:.9em; white-space:nowrap;
-    font-family:var(--mono); font-size:clamp(.7rem,1.95vw,.79rem); letter-spacing:.15em;
-    text-transform:uppercase; color:#fdfcf8; opacity:0; pointer-events:none;
-    max-width:92vw; line-height:1.4; transition:opacity 1s, transform 1s;
-    background:linear-gradient(rgba(14,18,28,.6), rgba(8,11,19,.72));
-    border:1px solid rgba(251,250,245,.24); border-radius:999px;
-    /* SYMMETRIC. It was 1.85em right against 1.5em left, which put the contents of
-       the pill two pixels left of the pill itself for no reason at all. */
-    padding:.85em 1.7em;
-    -webkit-backdrop-filter:blur(11px) saturate(1.15); backdrop-filter:blur(11px) saturate(1.15);
-    box-shadow:0 16px 48px rgba(0,0,0,.44), 0 1px 0 rgba(255,255,255,.07) inset; }
-  /* a lit dot: this is available now */
-  #ask::before{ content:""; width:6px; height:6px; border-radius:50%; flex:none;
-    background:#ffd9a6; box-shadow:0 0 13px rgba(255,190,110,.9);
-    animation:askdot 2.8s ease-in-out infinite; }
-  /* AND ITS COUNTERWEIGHT ON THE RIGHT.
-     The dot sits in the flex row, so it takes six pixels plus a gap out of the left
-     side and shoves the WORDS that far right of the pill's centre — measured at 6.5px.
-     The pill looked centred because it was; the sentence inside it was not. An
-     invisible twin on the other side balances the row, so the text is centred and the
-     dot still sits to the left of it. Nothing else in the piece is allowed to be
-     lopsided either: `letter-spacing` puts a space after the LAST letter too, which
-     drags centred text left by half of it, so both spaced labels pull that back. */
-  #ask::after{ content:""; width:6px; flex:none; }
-  @keyframes askdot{ 0%,100%{ opacity:.42; transform:scale(1) } 50%{ opacity:1; transform:scale(1.35) } }
+  /* A MUSEUM CAPTION, NOT A GAME OBJECTIVE.
+     What was here read as a call to action: a 999px pill 41 pixels tall carrying 12.6px
+     of type — mostly box — lit by a pulsing amber dot, over a heavy 48px drop shadow.
+     Every one of those is a button's vocabulary. The measurements below were taken from
+     this page rather than assumed, and they move in opposite directions on purpose: the
+     PLAQUE gets smaller and quieter while the TYPE gets slightly larger and easier to
+     read, because the problem was never that the words were too big.
+
+     Type lands at 14-15px across desktop widths against the narration's 28px — a ratio
+     near 1.9, which keeps the caption plainly subordinate while being easier to read
+     than the 12.6px it replaces. The two can never be confused anyway: that one is
+     serif and this is mono is the whole system. It floors at .8rem so it survives a
+     phone, and it is capped rather than left to grow, because past about 15px a mono
+     caption starts to read as a label on the artwork instead of beside it.
+
+     Box: measured 41px tall before, and 33 now, so it is meaningfully smaller while the
+     type inside it got bigger — the bulk was never the words. Vertical padding is under
+     a third of the horizontal, which is what makes a plaque read as a plaque rather than
+     as a lozenge, and the radius sits where the corner is clearly softened but the shape
+     is still unmistakably a rectangle. */
+  #ask{ position:fixed; left:50%; bottom:var(--instr-bottom); transform:translate(-50%,5px);
+    z-index:6; display:inline-flex; align-items:center; gap:.78em; white-space:nowrap;
+    font-family:var(--mono); font-weight:400;
+    font-size:clamp(.8rem,.64rem + .3vw,.94rem);
+    letter-spacing:.12em; text-transform:uppercase;
+    color:var(--ui-ink); opacity:0; pointer-events:none;
+    max-width:92vw; line-height:1.25;
+    /* 560ms, ease-out, no overshoot anywhere: it resolves, it does not arrive. */
+    transition:opacity .56s cubic-bezier(.22,.61,.36,1),
+               transform .56s cubic-bezier(.22,.61,.36,1);
+    background:rgba(13,15,20,.5);
+    border:1px solid rgba(244,239,228,.17); border-radius:9px;
+    /* Generous across, tight down. `letter-spacing` also puts a space after the LAST
+       letter, which drags the ink left of centre by half of it, so the two sides are
+       offset by that half to put the ink back where the eye expects it. */
+    padding:.42em calc(1.5em - .06em) .42em calc(1.5em + .06em);
+    -webkit-backdrop-filter:blur(10px) saturate(1.05); backdrop-filter:blur(10px) saturate(1.05);
+    box-shadow:0 4px 18px rgba(0,0,0,.26); }
   #ask.on{ opacity:1; transform:translate(-50%,0); }
-  /* narrow screens cannot hold a long line on one row, so let it wrap there */
-  /* On a narrow screen the line has to wrap, but it was also being LEFT-aligned
-     inside a pill up to 88vw wide, which put the instruction hard against the left of
-     the screen while everything else stayed centred. Centred, wrapped. */
+  /* the words themselves resolve out of a slight softness — the one thing here that
+     moves, and it is a focus pull rather than an animation */
+  #ask .tx{ display:block; filter:blur(2.2px); opacity:.5;
+    transition:filter .62s cubic-bezier(.22,.61,.36,1), opacity .62s cubic-bezier(.22,.61,.36,1); }
+  #ask.on .tx{ filter:blur(0); opacity:1; }
+  /* the gesture mark: same ivory, quieter, and sized off the type so it tracks it */
+  #ask .ic{ flex:none; width:1.16em; height:1.16em; opacity:.55; display:block;
+    transition:opacity .62s; }
+  #ask .ic:empty{ display:none; }
+  #ask .ic svg{ width:100%; height:100%; display:block; overflow:visible; }
+  #ask .ic svg *{ vector-effect:non-scaling-stroke; }
+  @media (prefers-reduced-motion:reduce){
+    #ask .tx{ filter:none; } #ask{ transform:translate(-50%,0); }
+  }
+  /* Narrow screens have to wrap, and a wrapped plaque must stay centred — it used to
+     go left-aligned inside a box up to 88vw wide, which put the instruction hard
+     against the edge of the screen while everything else stayed centred. It also gets
+     more room from the narration here, because that is where they were measured
+     colliding. */
   @media (max-width:600px){
-    #ask{ white-space:normal; text-align:center; max-width:88vw; bottom:13vh; }
+    :root{ --narr-bottom:27vh; --instr-bottom:12.4vh; }
+    #ask{ white-space:normal; text-align:center; max-width:84vw; line-height:1.45;
+      padding:.6em 1.15em; letter-spacing:.1em; }
+  }
+  /* and in a short landscape window there is no room for the middle layer at all, so
+     the instruction tucks closer to the bottom and the narration lifts away from it */
+  @media (max-height:560px){
+    :root{ --narr-bottom:30vh; --instr-bottom:9vh; --cue-bottom:1.6vh; }
   }
   /* a star card is a thing to read; the narration and the prompt get out of its
      way rather than being read over the top of it */
@@ -130,29 +188,36 @@
   body.onslaught #cap, body.onslaught #ask, body.onslaught #gate,
   body.onslaught #sdown, body.onslaught #chapter, body.onslaught #look,
   body.onslaught #cc, body.onslaught .ctl, body.onslaught #whisper,
-  body.onslaught #sdown svg, body.onslaught #ask::before, body.onslaught #gate .chev{
+  body.onslaught #sdown svg, body.onslaught #ask .ic, body.onslaught #ask .tx{
     opacity:0 !important; visibility:hidden !important; animation:none !important;
     pointer-events:none; }
   body.onslaught{ background:#000; }
-  #ask.dark{ color:#17222c; border-color:rgba(20,30,40,.22);
-    background:linear-gradient(rgba(255,253,246,.78), rgba(255,250,238,.68));
-    box-shadow:0 14px 44px rgba(90,60,20,.2), 0 1px 0 rgba(255,255,255,.5) inset; }
-  #ask.dark::before{ background:#b4671e; box-shadow:0 0 12px rgba(180,103,30,.55); }
-  #ask.urge{ animation:urge 2.6s ease-in-out infinite; }
-  @keyframes urge{ 0%,100%{ opacity:.88; } 50%{ opacity:.45; } }
+  /* the light-ground variant of the same plaque, kept in step with it */
+  #ask.dark{ color:#22282e; border-color:rgba(24,30,38,.16);
+    background:rgba(252,250,244,.62);
+    box-shadow:0 4px 18px rgba(80,58,26,.14); }
+  /* NO URGE. There was a pulsing opacity animation on the instruction whenever the
+     visitor pushed against a hold — a nag, and the single most game-like thing on the
+     screen. If somebody is pushing at a wait, the answer is the hairline below filling
+     up, not the caption breathing at them. */
 
   /* ---------- gate: held at a beat until you act ---------- */
-  #gate{ position:fixed; left:50%; bottom:3.1vh; transform:translateX(-50%); z-index:6;
+  /* The mark that says the scroll is waiting: now only a hairline that fills, sitting
+     where the scroll cue would be, in the same ivory as the instruction above it.
+     The bobbing chevron is gone. It pointed down, with a bouncing animation, at the
+     exact moment the piece will not let you go down — so it contradicted itself while
+     being the loudest thing on screen, and it undid the calm of the plaque it sits
+     under. A line that fills says the same thing without saying anything. */
+  #gate{ position:fixed; left:50%; bottom:var(--cue-bottom); transform:translateX(-50%); z-index:6;
     display:flex; flex-direction:column; align-items:center; gap:.5em;
     font-family:var(--mono); font-size:.6rem; letter-spacing:.18em; text-transform:uppercase;
-    color:var(--ink); text-shadow:var(--sh); opacity:0; transition:opacity .8s; pointer-events:none; }
-  #gate.on{ opacity:.7; }
-  #gate.dark{ color:#1d2a36; text-shadow:0 1px 14px rgba(255,255,255,.85); }
-  #gate .bar{ width:74px; height:1px; background:currentColor; opacity:.35; position:relative; overflow:hidden; }
-  #gate .bar i{ position:absolute; inset:0 auto 0 0; width:0%; background:currentColor; transition:width .35s ease; }
-  #gate .chev{ width:8px; height:8px; border-right:1.5px solid currentColor; border-bottom:1.5px solid currentColor;
-    transform:rotate(45deg); animation:bob 2.1s ease-in-out infinite; }
-  @keyframes bob{ 0%,100%{ transform:rotate(45deg) translateY(0); opacity:.5 } 50%{ transform:rotate(45deg) translateY(4px); opacity:1 } }
+    color:var(--ui-ink); opacity:0; transition:opacity .8s; pointer-events:none; }
+  #gate.on{ opacity:.52; }
+  #gate.dark{ color:#1d2a36; }
+  #gate .bar{ width:58px; height:1px; background:currentColor; opacity:.26; position:relative; overflow:hidden; }
+  #gate .bar i{ position:absolute; inset:0 auto 0 0; width:0%; background:currentColor;
+    transition:width .5s cubic-bezier(.22,.61,.36,1); }
+  #gate .chev{ display:none; }
 
   /* ---------- captions for sound ---------- */
   #cc{ position:fixed; left:50%; bottom:.9vh; transform:translateX(-50%); z-index:6; font-family:var(--mono);
@@ -227,22 +292,55 @@
      system sans, near-black on white, tight radius. That difference is deliberate.
      Everything else the visitor has read has been the artwork talking. This is not
      the artwork talking. */
-  #note{ position:fixed; right:max(18px,env(safe-area-inset-right)); bottom:5.5vh; z-index:14;
-    width:min(400px,86vw); padding:15px 18px 16px;
-    background:#fdfdfd; border-radius:17px;
-    box-shadow:0 18px 44px rgba(0,0,0,.42), 0 2px 6px rgba(0,0,0,.20);
+  /* ---------- the phone ----------
+     A REAL NOTIFICATION, NOT A DIALOGUE BOX.
+     What was here was a plain white card with an emoji in it, which reads as a website
+     telling you something. A phone banner has a specific and very familiar anatomy, and
+     getting it right is most of what makes it believable: a rounded app tile on the
+     left, the app's name in small grey caps beside it with a timestamp pushed to the far
+     edge, then the headline, then the body. The material is translucent and blurred
+     rather than flat white, the corner radius is large, and the shadow is soft and low.
+     Emoji are gone from it — they arrive in a different drawing style on every platform,
+     which is exactly what a believable system banner cannot afford — and the tile is
+     drawn instead.
+
+     The wording is untouched: this is the artist's own air-quality concept, rebuilt. */
+  #note{ position:fixed; right:max(14px,env(safe-area-inset-right)); bottom:5.5vh; z-index:14;
+    width:min(392px,calc(100vw - 28px));
+    padding:12px 14px 13px;
+    background:rgba(250,250,252,.9);
+    border:.5px solid rgba(255,255,255,.6);
+    border-radius:20px;
+    -webkit-backdrop-filter:blur(22px) saturate(1.7); backdrop-filter:blur(22px) saturate(1.7);
+    box-shadow:0 12px 30px rgba(0,0,0,.24), 0 2px 6px rgba(0,0,0,.10);
     font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-    color:#15171a; opacity:0; transform:translateX(28px);
-    transition:opacity .7s cubic-bezier(.2,.7,.3,1), transform .7s cubic-bezier(.2,.7,.3,1);
+    color:#0d0f12;
+    opacity:0; transform:translateX(30px) scale(.97); transform-origin:100% 50%;
+    transition:opacity .58s cubic-bezier(.2,.7,.3,1), transform .58s cubic-bezier(.2,.7,.3,1);
     pointer-events:none; }
   #note.on{ opacity:1; transform:none; }
-  #note .nrow{ display:flex; align-items:center; gap:.6em;
-    padding-bottom:11px; border-bottom:1px solid rgba(20,24,28,.13); }
-  #note .ni{ font-size:1.06rem; line-height:1; letter-spacing:-.06em; flex:none; }
-  #note .ni.off{ display:none; }
-  #note .nt{ font-size:1.02rem; font-weight:650; letter-spacing:-.008em; line-height:1.25; }
-  #note .nb{ margin:11px 0 0; font-size:.92rem; line-height:1.42; color:#1b1f24; }
-  @media (prefers-reduced-motion:reduce){ #note{ transition:opacity .7s; transform:none; } }
+  #note .nhead{ display:flex; align-items:center; gap:7px; margin-bottom:5px; }
+  /* the app tile: a squircle with the haze mark in it, drawn rather than lettered */
+  #note .napp{ flex:none; width:19px; height:19px; border-radius:5.5px;
+    background:linear-gradient(160deg,#8d9aa6,#5d6b78 62%,#4a5765);
+    box-shadow:0 .5px 1.5px rgba(0,0,0,.28), inset 0 .5px 0 rgba(255,255,255,.34);
+    display:flex; align-items:center; justify-content:center; }
+  #note .napp svg{ width:13px; height:13px; display:block; }
+  #note .nname{ font-size:.72rem; font-weight:600; letter-spacing:.045em;
+    text-transform:uppercase; color:#61666d; }
+  #note .ntime{ margin-left:auto; font-size:.72rem; color:#8b9097; letter-spacing:.01em; }
+  #note .nt{ font-size:.95rem; font-weight:600; letter-spacing:-.008em; line-height:1.3; }
+  #note .nb{ margin:2px 0 0; font-size:.88rem; line-height:1.4; color:#3a4048; }
+  @media (max-width:600px){
+    #note{ right:8px; left:8px; width:auto; bottom:auto;
+      top:max(10px,env(safe-area-inset-top));
+      transform:translateY(-26px) scale(.97); }
+    #note.on{ transform:none; }
+  }
+  @media (prefers-reduced-motion:reduce){
+    #note{ transition:opacity .58s; transform:none; }
+    #note.on{ transform:none; }
+  }
 
   /* ---------- air-quality warning (chapter 5) ---------- */
   #aq{ position:fixed; left:50%; top:50%; transform:translate(-50%,-50%) scale(.96); z-index:9;
@@ -426,7 +524,7 @@
   .sr{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
 
   @media (prefers-reduced-motion: reduce){
-    #gate .chev{ animation:none; } #ask.urge{ animation:none; } #aq .dot{ animation:none; }
+    #aq .dot{ animation:none; }
     #cap,#title,#ev,#ledger{ transition-duration:.4s; }
   }
 </style>
@@ -450,7 +548,8 @@
 
 <!-- the phone, in the return. Content is swapped in from build/10b-return.js. -->
 <div id="note" aria-hidden="true" aria-live="polite">
-  <div class="nrow"><span class="ni">⚠️🌫️</span><span class="nt"></span></div>
+  <div class="nhead"><span class="napp" aria-hidden="true"><svg viewBox="0 0 16 16" fill="none" stroke="#eef2f6" stroke-width="1.5" stroke-linecap="round"><path d="M2.6 6.2h7.2M2.6 9.4h10.8M5.4 12.4h7.6"/></svg></span><span class="nname">Air Quality</span><span class="ntime">now</span></div>
+  <div class="nt"></div>
   <p class="nb"></p>
 </div>
 
@@ -463,7 +562,7 @@
 </div>
 
 <p id="cap" aria-live="polite"></p>
-<div id="ask" aria-live="polite"></div>
+<div id="ask" aria-live="polite"><span class="ic" aria-hidden="true"></span><span class="tx"></span></div>
 <div id="gate" aria-hidden="true"><span id="gateTxt"></span><span class="bar"><i id="gateBar"></i></span><span class="chev"></span></div>
 <div id="cc" aria-hidden="true"></div>
 <div id="sdown" aria-hidden="true"><span>scroll</span>
@@ -1030,10 +1129,17 @@ const HOLD_AT = {
      gate could never be met, so the scroll waited on a black screen for ever. Asking
      somebody to interact with a scene that failed to load is not a wait, it is a dead
      end, and it must be impossible by construction rather than by the asset list
-     happening to be right. */
-  "p-room":{ done: () => gateMet("pcurtain") || !getPlate("roomAfter"),
-             prog: () => gateProgress("pcurtain"),
-             pass: () => { done.pcurtain = true; } }
+     happening to be right.
+
+     AND IT WAITS FOR BOTH OF THEM. The chapter is two interactions in one beat — the
+     curtains, then the cord — precisely so that nothing in the sequence sits behind a
+     scroll. The visitor is put in the room by the piece, and the room then waits until
+     it has been opened and the cord has been asked. */
+  "p-room":{ done: () => (gateMet("pcurtain") && !!PRET.tried) || !getPlate("roomAfter"),
+             prog: () => gateMet("pcurtain")
+                       ? 0.5 + 0.5*cl01(PRET.give/RCORD_FIRE)
+                       : 0.5*gateProgress("pcurtain"),
+             pass: () => { done.pcurtain = true; PRET.tried = 1; } }
 };
 
 /* AND NO HOLD MAY EVER BECOME A WALL, whatever goes wrong behind it.
@@ -12955,11 +13061,13 @@ function glassTo(x,y){
 
 const PRET = {
   reveal: 0,        // 0 black, 1 the room is fully up
+  pulling: 0,       // the cord is in hand this frame
   seen: 0,          // seconds with the curtains open, for pacing the window
   hover: 0,         // the handle, under the pointer
   tried: 0,         // how many times the window has been asked
   give: 0,          // the millimetre it moves and comes back
   noteT: -1,        // countdown to the notification
+  lineT: -1,        // and then to the answer that follows it
   note: 0,          // 0 nothing, 1 the reading
   begun: 0,         // the scene has been set up; do not set it up again
   wasDown: 0,       // the pointer last frame, to catch the instant of a press
@@ -12987,7 +13095,7 @@ function resetReturn(){
   PRET.begun = 1;
   PRET.reveal = 0; PRET.seen = 0; PRET.hover = 0;
   PRET.tried = 0; PRET.give = 0;
-  PRET.noteT = -1; PRET.note = 0;
+  PRET.noteT = -1; PRET.lineT = -1; PRET.note = 0;
   PRET.wasDown = 0; PRET.arm = 0; PRET.hold = 0;
   /* The curtains start shut, exactly as they did at the beginning. The opening
      room's own state is reused rather than duplicated, so the drag is not a
@@ -13000,122 +13108,104 @@ function resetReturn(){
   hideNote();
 }
 
-/* where the casement handles are in this painting, as screen fractions after the
-   plate's crop: the pair on the mullion, a little under half way down */
-const PRET_HANDLE = { x:0.5175, y:0.428, w:0.020, h:0.052 };
+/* ============================================================================
+   THE SECOND INTERACTION IS THE CORD.
+   It used to be the casement handle: you pressed the middle of the window and the
+   window declined. That was wrong twice over. The handle is painted on the mullion,
+   dead centre, exactly where both curtains are grabbed, so the two targets fought each
+   other and needed a stack of arming rules to tell a window pull from a curtain drag.
+   And more importantly it is the wrong object. The room already has a thing that hangs
+   in front of the glass and exists to be pulled — the bulb's cord, which is what opened
+   this window in the first chapter. Reaching for the same cord in the same room and
+   having nothing happen is the whole point of the scene. Clicking a pane of glass is
+   not.
 
-function returnHandleAt(){
-  const c = roomCam(CAM_WALL);
-  return { x: W*PRET_HANDLE.x + c.x, y: H*PRET_HANDLE.y + c.y,
-           rx: W*PRET_HANDLE.w, ry: H*PRET_HANDLE.h };
-}
-function onReturnHandle(x, y){
-  /* Close to the drawn handle rather than generously around it. It was 1.9 by 1.5,
-     which at a wide window is a target four fingers across sitting exactly where the
-     curtains are grabbed. It can afford to be tight now that the handle says where it
-     is instead of hiding until the pointer stumbles onto it. */
-  const h = returnHandleAt();
-  return Math.abs(x-h.x) < h.rx*1.25 && Math.abs(y-h.y) < h.ry*1.15;
-}
+   So the handle interaction is gone, along with its hit test and its arming flags, and
+   the cord does the work. The target is the painted ball itself, using the opening
+   room's own geometry, so it is the same object in the same place.
 
-/* --------------------------------------------------------------- the window
-   It does not open, and it is important that it does not open for the right
-   reason. Nothing is broken here: no rattle, no judder, no stuck-sash puzzle to
-   solve. The handle takes the pull, gives about a millimetre, and comes back,
-   which is what a window does when somebody on the other side of the house has
-   decided it stays shut. The reading arrives afterwards, on a phone. */
-function returnWindow(t, dt, live){
-  const h = returnHandleAt();
-  const near = live && P.active && onReturnHandle(P.x, P.y);
+   IT DOES NOT JAM. The cord takes the pull and lengthens under it, up to about a third
+   of its travel, and comes back when let go. Nothing rattles, nothing sticks, nothing
+   has to be tried twice. The sash is never allowed near the value that would open
+   anything — it is capped well below it and always decays — so the window does not
+   fight the visitor, it simply is not going to be opened today.
+   ========================================================================== */
+const RCORD_CAP = 0.30;        // how far the cord may ever come down here
+const RCORD_FIRE = 0.52;       // how much of a pull counts as having asked
+
+function returnCord(t, dt, live){
+  const b = cordBall();
+  const near = live && P.active && Math.hypot(P.x-b.x, P.y-b.y) < MIN*0.075;
   PRET.hover = lerp(PRET.hover, near ? 1 : 0, Math.min(1, dt*6));
-  if (near) cv.className = P.down ? "grabbing" : "grabbable";
 
-  /* ONLY A PRESS THAT BEGINS ON THE HANDLE COUNTS.
-     The painted casement handles are on the mullion, which is dead centre, which is
-     exactly where both curtains are grabbed — so dragging the right curtain open
-     started inside the handle's hit area and tried the window on the way past. The
-     visitor spent their second interaction without knowing there was one, and the
-     line and the notification both went off during a curtain pull. So the press has
-     to start here, and letting go disarms it.
-     The window takes the press rather than testing whether the cloth already has it:
-     the curtain grab is set synchronously in the pointerdown handler, so by the time
-     any of this runs the cloth has always claimed it. Because a press only arms while
-     the curtains are more than four-fifths open — and open cloth is gathered at the
-     sides, nowhere near the mullion — a centre press at that point is unambiguously
-     the window, and the curtain's claim on it is simply released.
-
-     And it has to be a press that STAYS. Arming on the press alone was not enough:
-     one drag opens both panels, because the far one follows, so any later press near
-     the mullion was live — and a curtain drag that happens to begin on the handle
-     armed and fired on its first frame. A pull on a window handle is a hand that puts
-     itself there and leans; a curtain drag is gone across the room within a frame or
-     two. So it must be held briefly, and wandering off the handle gives up the claim. */
+  /* the press has to begin on the ball, and wandering off gives up the claim — the
+     curtains are open by now and their cloth is gathered at the sides, but the cord
+     hangs in the middle of the window where a stray drag could still cross it */
   const fresh = P.down && !PRET.wasDown;
-  if (fresh) PRET.arm = (live && near) ? 1 : 0;
-  if (!P.down) { PRET.arm = 0; PRET.hold = 0; }
-  if (PRET.arm && !near){ PRET.arm = 0; PRET.hold = 0; }
+  if (fresh) PRET.arm = near ? 1 : 0;
+  if (!P.down || (PRET.arm && !near && !PRET.pulling)) { PRET.arm = 0; }
   if (PRET.arm) PROOM.grab = 0;
   PRET.wasDown = P.down;
 
-  if (PRET.arm && near && P.down){
-    PRET.hold += dt;
-    PRET.give = Math.min(1, PRET.give + dt*5.5);
-    if (PRET.hold > 0.16 && !PRET.tried){
+  PRET.pulling = 0;
+  if (PRET.arm && P.down){
+    PRET.pulling = 1;
+    cv.className = "grabbing";
+    /* downward drag lengthens it; sideways drag swings it, as it always did */
+    if (P.dy > 0) PRET.give = Math.min(1, PRET.give + P.dy/(H*0.115));
+    CORD.swingV += (P.dx/W)*5.0;
+    if (PRET.give > RCORD_FIRE && !PRET.tried){
       PRET.tried = 1;
-      /* HER ANSWER FIRST, THEN THE PHONE.
-         Both belong here and they are two different things. The line is the room
-         answering the visitor — somebody elsewhere in the house has already decided
-         this — and the notification is the reason, arriving impersonally a moment
-         later on a screen. Said at the same instant they would read as one event and
-         the phone would look like it was speaking for her. */
-      if (typeof sayLine === "function") sayLine("Leave it closed.", 6.0);
-      PRET.noteT = 1.7;
+      sfx.cloth(0.22);
+      /* THE PHONE FIRST, THEN THE ANSWER.
+         The order matters and it was the other way round. A phone tells you the number
+         and only then does anybody say anything, so the reading arrives on its own,
+         impersonally, and the line follows it as the response to it. Said first, the
+         line made the notification look like it was explaining her. */
+      PRET.noteT = 1.6;
     }
   } else {
-    PRET.give = Math.max(0, PRET.give - dt*2.6);
+    if (near && !P.down) cv.className = "grabbable";
+    /* it comes back. Slowly enough to read as weight rather than as a spring. */
+    PRET.give = Math.max(0, PRET.give - dt*1.15);
+    if (!PRET.tried && !near) PRET.arm = 0;
   }
+  /* the cord's own length, which is all the sash does in this scene: no casement is
+     drawn here, so this only moves the ball down the cord */
+  PROOM.sash = cl01(PRET.give) * RCORD_CAP;
 
-  /* AND IT HAS TO BE FINDABLE.
-     This was a nearly invisible lozenge that only appeared once the pointer was
-     already on it, in a beat the visitor had to scroll into first — so the whole
-     second half of the chapter was unreachable in practice and the scene played as
-     "you can drag the curtains and nothing else". A handle nobody finds is a handle
-     that is not there. It rests faint, and if it has not been tried after a few
-     seconds of an open window it draws a ring and lifts a little, the same way the
-     curtains put up a pair of hands. */
-  const idle = cl01((PRET.seen - 4.0)/2.5) * (PRET.tried ? 0 : 1);
-  const a = 0.06 + PRET.hover*0.17 + idle*0.13;
-  const dy = PRET.give * MIN*0.0022;
-  ctx.save();
-  ctx.translate(h.x, h.y + dy);
-  const g = ctx.createRadialGradient(0, 0, 0, 0, 0, h.ry*1.5);
-  g.addColorStop(0, rgba([255,246,226], a));
-  g.addColorStop(0.55, rgba([255,240,214], a*0.42));
-  g.addColorStop(1, rgba([255,238,210], 0));
-  ctx.fillStyle = g;
-  ctx.beginPath(); ctx.ellipse(0, 0, h.rx*1.7, h.ry*1.5, 0, 0, TAU); ctx.fill();
-
+  /* ---- the affordance ----
+     Clear but quiet. The ball brightens under the pointer, and if it has not been
+     pulled after a few seconds with the curtains open it gathers a faint ring and one
+     short stroke below it in the direction it wants to go. No pulse, no bounce: the
+     same ivory as the instruction plaque, at the same low opacity. */
+  const idle = cl01((PRET.seen - 3.0)/2.2) * (PRET.tried ? 0 : 1);
+  const glow = 0.05 + PRET.hover*0.20 + idle*0.11;
+  if (glow > 0.012){
+    ctx.save();
+    const g = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, b.r*3.4);
+    g.addColorStop(0,    rgba([255,244,224], glow));
+    g.addColorStop(0.45, rgba([255,238,214], glow*0.40));
+    g.addColorStop(1,    rgba([255,236,210], 0));
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(b.x, b.y, b.r*3.4, 0, TAU); ctx.fill();
+    ctx.restore();
+  }
   if (idle > 0.01){
-    /* a slow breath around it, and one short arrow upward: the gesture is a lift,
-       not a slide. Nothing bounces and nothing pulses fast — the room is quiet. */
-    const br = 0.5 + 0.5*Math.sin(t*1.5);
-    ctx.strokeStyle = rgba([255,248,232], idle*(0.16 + 0.16*br));
-    ctx.lineWidth = Math.max(1, MIN*0.0016);
+    const br = 0.5 + 0.5*Math.sin(t*1.4);
+    ctx.save();
+    ctx.strokeStyle = rgba([244,239,228], idle*(0.15 + 0.13*br));
+    ctx.lineWidth = Math.max(1, MIN*0.0015);
+    ctx.beginPath(); ctx.arc(b.x, b.y, b.r*1.75 + MIN*0.002*br, 0, TAU); ctx.stroke();
+    const y0 = b.y + b.r*2.5, y1 = y0 + MIN*0.018 + MIN*0.004*br;
+    ctx.strokeStyle = rgba([244,239,228], idle*0.26);
     ctx.beginPath();
-    /* close around the drawn handle. At two and a half by two it was a hoop floating
-       in the middle of the glass with the handle somewhere inside it, and the arrow
-       sat four handle-widths off to the side pointing at nothing in particular. */
-    ctx.ellipse(0, 0, h.rx*1.35 + MIN*0.003*br, h.ry*1.15 + MIN*0.003*br, 0, 0, TAU);
+    ctx.moveTo(b.x, y0); ctx.lineTo(b.x, y1);
+    ctx.moveTo(b.x - MIN*0.0038, y1 - MIN*0.005); ctx.lineTo(b.x, y1);
+    ctx.lineTo(b.x + MIN*0.0038, y1 - MIN*0.005);
     ctx.stroke();
-    const ax = h.rx*1.95, ay0 = -h.ry*0.35, ay1 = -h.ry*1.15 - MIN*0.004*br;
-    ctx.strokeStyle = rgba([255,250,238], idle*0.30);
-    ctx.beginPath();
-    ctx.moveTo(ax, ay0); ctx.lineTo(ax, ay1);
-    ctx.moveTo(ax, ay1); ctx.lineTo(ax - MIN*0.0042, ay1 + MIN*0.005);
-    ctx.moveTo(ax, ay1); ctx.lineTo(ax + MIN*0.0042, ay1 + MIN*0.005);
-    ctx.stroke();
+    ctx.restore();
   }
-  ctx.restore();
 }
 
 /* ----------------------------------------------------------------- the scene */
@@ -13183,15 +13273,14 @@ function drawReturn(t, dt, o){
   drawRod(t, rev, 0.86);
   drawCurtains(t, dt, { rev, air:0.86 });
 
-  /* THE WINDOW IS LIVE THE MOMENT IT CAN BE REACHED, in either beat.
-     It used to require `phase === "window"`, which is only the second of the two
-     beats, so the second interaction did not exist until the visitor had scrolled
-     on — and since the handle was also nearly invisible, the honest description of
-     the scene was that you could drag the curtains and nothing else. The window is
-     part of the same room as the curtains and is available as soon as they are open. */
+  /* THE CORD IS LIVE THE MOMENT THE CURTAINS ARE OPEN, IN EITHER BEAT.
+     Both interactions belong to the same beat, so nothing in this sequence is behind a
+     scroll: the visitor is placed in the room, opens the curtains, and the cord is
+     already there. It used to require the second beat, which meant the second half of
+     the chapter did not exist until somebody scrolled into it. */
   const open = Math.min(PROOM.cL, PROOM.cR);
-  const live = open > 0.80 && PRET.reveal > 0.999;
-  if (open > 0.6) returnWindow(t, dt, live);
+  const live = open > 0.80 && PRET.reveal > 0.985;
+  if (open > 0.6) returnCord(t, dt, live);
   if (open > CTR.need) PRET.seen += dt;
 
   /* THE AIR, MADE VISIBLE ONCE AND QUIETLY.
@@ -13212,10 +13301,21 @@ function drawReturn(t, dt, o){
   /* the hands, only after a long wait and never during the reveal */
   if (phase === "room" && PRET.reveal > 0.999) curtainHelp(t, dt);
 
-  /* ---- the phone ---- */
+  /* ---- the phone, and then the answer ----
+     Two waits, not one. The cord is let go, and after a beat and a half the phone says
+     what the air is; a moment after that, somebody in the house answers. Each arrives
+     on its own so neither reads as the cause of the other. */
   if (PRET.noteT > 0){
     PRET.noteT -= dt;
-    if (PRET.noteT <= 0){ PRET.note = 1; showNote(); }
+    if (PRET.noteT <= 0){ PRET.note = 1; showNote(); PRET.lineT = 1.25; }
+  }
+  if (PRET.lineT > 0){
+    PRET.lineT -= dt;
+    if (PRET.lineT <= 0 && typeof sayLine === "function"){
+      /* it holds a long time and reddens while it holds, then goes out on its own and
+         leaves the room quiet — the last thing said in the chapter */
+      sayLine("Leave it closed.", 24.0, { red:true });
+    }
   }
 
   /* A closed room with bad air outside it. Quiet, muffled, and no gust: there is
@@ -13223,7 +13323,7 @@ function drawReturn(t, dt, o){
   OUTSIDE = 0;
   MUFFLE = 1;
   ambience(0.09 + 0.05*rev, 0.10);
-  if (!live && !onReturnHandle(P.x, P.y)) cv.className = open > CTR.need ? "" : "grabbable";
+  if (!PRET.pulling && PRET.hover < 0.2) cv.className = open > CTR.need ? "" : "grabbable";
 }
 
 /* ------------------------------------------------------------ the notification
@@ -13240,14 +13340,12 @@ function drawReturn(t, dt, o){
 const noteEl = document.getElementById("note");
 function showNote(){
   if (!noteEl) return;
-  /* IT IS THE AIR APP, NOT HER.
-     There was a second state here where the card became a message from his mother
-     reading "Leave it closed." It is gone. A message from a parent is a warmer thing
-     than this moment wants: it puts a person in the room, and the point of the window
-     not opening is that nobody had to be asked. What actually happens is that a phone
-     tells you the number and you leave the window shut, and no one says anything at
-     all. */
-  noteEl.querySelector(".ni").textContent = "\u26a0\ufe0f\ud83c\udf2b\ufe0f";
+  /* IT IS THE AIR APP, AND SHE ANSWERS SEPARATELY.
+     There was a version where this card itself became a message from his mother reading
+     "Leave it closed." That conflated two different things. The phone is impersonal and
+     tells you a number; the line is a person in the house responding to it a moment
+     later, and it belongs in the piece's own voice, not inside a notification. So the
+     card only ever says what the air is. */
   noteEl.querySelector(".nt").textContent = "Unhealthy: PM2.5 levels elevated";
   noteEl.querySelector(".nb").textContent =
     "Keep windows closed. Consider limiting outdoor activity until conditions improve.";
@@ -13984,13 +14082,84 @@ const FIN_LINES = [
 ];
 let shownFin = -1, lastCap="", lastCh=-1;
 
+/* ============================================================================
+   THE GESTURE MARK
+   One small stroked glyph at the head of the instruction, saying what KIND of thing
+   this is with a shape rather than with more words. It replaced a pulsing amber dot,
+   which said only "look at me".
+
+   They are drawn rather than lettered — no icon font, no emoji. Emoji would arrive in
+   somebody else's colours and somebody else's drawing style on every platform, which
+   is the one thing an interface this quiet cannot survive. All of them are stroke-only
+   in the inherited ivory at reduced opacity, on a 16-unit grid, sized off the type so
+   they track it at every breakpoint. */
+const ASK_ICON_SVG = (() => {
+  const w = (d) => '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" '+
+    'stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">'+d+'</svg>';
+  const dot = '<circle cx="8" cy="9.7" r="1.5" fill="currentColor" stroke="none"/>';
+  return {
+    /* two hands going opposite ways: the curtains, the air, anything pulled apart */
+    drag: w('<path d="M4.7 5.5 2.2 8l2.5 2.5"/><path d="M11.3 5.5 13.8 8l-2.5 2.5"/>'+
+            '<path d="M7.2 4.8v6.4M8.8 4.8v6.4"/>'),
+    /* a cord with a weight on the end, and the direction it wants to go. The arrow
+       used to start where the ball ended, so at caption size the two fused into one
+       blob that read as a map pin — it needs clear air between them. */
+    pull: w('<path d="M8 1.4v5.6"/><circle cx="8" cy="8.9" r="1.9"/>'+
+            '<path d="M8 12.2v2.4"/><path d="M6.5 13.1 8 14.6l1.5-1.5"/>'),
+    /* a press that is being kept there */
+    hold: w(dot+'<circle cx="8" cy="9.7" r="4"/>'+
+            '<path d="M13.6 5.6a7.2 7.2 0 0 1 0 8.2"/>'),
+    /* a press that is not. Two concentric arcs over a dot IS the wifi glyph — it was
+       unmistakably wifi and nothing else — so this is a spark instead: the mark a tap
+       leaves, three short strokes coming off the point of contact. */
+    tap:  w(dot+'<path d="M8 6.3V4.4"/><path d="M5.5 7.1 4.2 5.8"/>'+
+            '<path d="M10.5 7.1 11.8 5.8"/>'),
+    /* a spark rather than a cartoon five-pointer, which would read as a reward */
+    star: w('<path d="M8 2.1 9.25 6.75 13.9 8 9.25 9.25 8 13.9 6.75 9.25 2.1 8l4.65-1.25Z"/>'),
+    /* a mark being made */
+    draw: w('<path d="M2.5 13.7c1.9.2 3.3-.5 4.6-2.1"/>'+
+            '<path d="M7.7 10.9 12.5 6a1.75 1.75 0 0 0-2.5-2.5L5.2 8.4l.7 1.8z"/>'),
+    /* something taken up off a surface */
+    lift: w('<path d="M8 12.2V4.1"/><path d="M4.9 7.2 8 4.1l3.1 3.1"/>'+
+            '<path d="M3.3 14.3h9.4"/>')
+  };
+})();
+
+/* which gesture each scene asks for. Kept as one table rather than a field on twenty
+   beats so the whole vocabulary of the piece can be read at once — and so a scene that
+   wants a different mark is a one-line change here. */
+const ASK_ICON = {
+  dark:"drag", light:"pull", laundry:"tap", kite:"hold", stars:"star",
+  horizon:"hold", drawing:"draw",
+  "p-room":"drag", "p-shut":"pull",
+  "r-laundry":"drag", "r-kite":"hold", "r-stars":"star", "r-horizon":"hold",
+  return:"drag", stopped:"pull",
+  "e-dust":"lift", "e-hills":"drag",
+  "f-curtain":"drag", "f-both":"hold", "f-open":"pull", "f-crayon":"draw"
+};
+const askIc = askEl.querySelector(".ic"), askTx = askEl.querySelector(".tx");
+let lastAskIcon = " ";
+function setAsk(text, iconKey){
+  if (text !== askTx.textContent) askTx.textContent = text;
+  const k = text ? (iconKey || "") : "";
+  if (k !== lastAskIcon){
+    lastAskIcon = k;
+    askIc.innerHTML = ASK_ICON_SVG[k] || "";
+  }
+}
+
 /* A LINE SAID IN ANSWER TO SOMETHING, rather than at a point in a beat.
    Every other line in the piece is a property of where the visitor is: the beat
    carries it and it comes up a fraction of the way in. The window needs the other
    kind — the room only says "Leave it closed." because somebody just tried the
    handle, and it has to arrive on the action, not on a scroll position. */
-let evLine = "", evLineT = 0;
-function sayLine(text, secs){ evLine = text; evLineT = secs===undefined ? 5.5 : secs; }
+let evLine = "", evLineT = 0, evRed = 0;
+function sayLine(text, secs, o){
+  evLine = text; evLineT = secs===undefined ? 5.5 : secs;
+  /* `red` marks a line that is allowed to lose its colour while it sits there. It is
+     not a state and not a warning — see the transition on #cap.redshift. */
+  evRed = (o && o.red) ? 1 : 0;
+}
 
 /* EVERY LINE IN THE PIECE IS WHITE.
    This used to flip the narration to near-black over the bright scenes — the washing
@@ -14028,6 +14197,8 @@ function updText(now, dt){
   let want = show ? line : "";
   /* and an answer outranks whatever the beat had to say, for as long as it lasts */
   if (evLineT > 0){ evLineT -= dt; want = evLine; }
+  else evRed = 0;
+  capEl.classList.toggle("redshift", !!evRed && want === evLine);
   if (want!==lastCap){
     lastCap=want;
     if (want){ capEl.textContent=want; capEl.classList.add("on"); }
@@ -14049,10 +14220,38 @@ function updText(now, dt){
      they remember them, not because a pill told them to. So the prompt is withheld
      through the reveal and for a good few seconds after it, and the hands on the
      leading edges arrive first. If somebody really is stuck, the words follow. */
-  if (bid === "p-room" && (PRET.reveal < 0.999 || PROOM.idle < 5.5)) askTxt = "";
-  askEl.textContent = askTxt;
+  /* AS SOON AS THE ROOM IS LEGIBLE, NOT LONG AFTER IT.
+     This used to wait for the four-second reveal to finish AND then for five and a half
+     idle seconds on top — so the visitor sat in a room that had arrived, with nothing to
+     go on, for the better part of ten seconds. Recognition does not need that long. It
+     comes up once the room is far enough out of the black to be understood, which is a
+     little over half way through the reveal, while the rise is still finishing. */
+  let askIcon = ASK_ICON[bid];
+  if (bid === "p-room"){
+    /* TWO INSTRUCTIONS IN ONE BEAT, IN ORDER.
+       The chapter's whole point is that nothing here is behind a scroll, so both of its
+       interactions live in this one beat and the caption has to move on by itself: the
+       curtains while they are still shut, then the cord, then nothing at all. The
+       wording is reused verbatim from the first chapter, where the same cord opened the
+       same window — the echo is deliberate. */
+    if (PRET.reveal < 0.55) askTxt = "";
+    else if (!gateMet("pcurtain")){ askTxt = B.ask; askIcon = "drag"; }
+    else if (!PRET.tried){ askTxt = "Pull the cord down"; askIcon = "pull"; }
+    else askTxt = "";
+  }
+  setAsk(askTxt, askIcon);
+  /* AND IT LEAVES THE MOMENT THE INTERACTION IS UNDER WAY.
+     Not when it is finished — when it has visibly started. A caption that hangs around
+     while the curtains are already moving is reading instructions over somebody's
+     shoulder. `started` is only consulted where the beat is actually waiting on its own
+     gate; the optional prompts have gates that were met the instant the scene drew, and
+     measuring those would hide their instruction before it was ever seen. */
+  let started = needed && gateProgress(g) > 0.05;
+  /* the cord is not a gate, so its own "under way" has to be read off the pull */
+  if (bid === "p-room" && gateMet("pcurtain")) started = PRET.give > 0.06;
   const busy = P.down || tSinceAct < 1.4;
-  askEl.classList.toggle("on", !!askTxt && (T.push>0.05 || !busy || (now-beatEnter)<3600));
+  askEl.classList.toggle("on",
+    !!askTxt && !started && (T.push>0.05 || !busy || (now-beatEnter)<3600));
 
   /* Is this one of the three places the scroll waits? That is not the same question
      as "does this beat have a gate". The washing line's own gate is met the instant
@@ -14070,7 +14269,7 @@ function updText(now, dt){
   sdownEl.classList.toggle("on", cue);
   sdownEl.classList.toggle("dark", light);
   sdownEl.setAttribute("aria-hidden", String(!cue));
-  askEl.classList.toggle("urge", T.push>0.3);
+
 
   /* the mark that says the scroll is waiting, and roughly how far in you are */
   gateEl.classList.toggle("on", T.blocked && holding);
@@ -14463,6 +14662,8 @@ window.__bluer = {
   get floor(){ return T.floor; },
   get blocked(){ return T.blocked; },
   get wait(){ return T.wait; },
+  icon(k){ return ASK_ICON_SVG[k] || ""; },
+  cord(){ return cordBall(); },
   say: sayLine,
   get line(){ return { text: evLine, left: +evLineT.toFixed(2),
                        on: capEl.classList.contains("on"), shown: capEl.textContent }; },
