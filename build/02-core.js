@@ -397,7 +397,7 @@ const BEATS = [
      scene is about touching her — and the beat is longer than it was because the cough, the
      pause and the sentence all have to fit inside it. */
   { id:"r-laundry", ch:3, len:1.9, gate:"cough",  ask:"Tap your mother to hear her hum",
-    line:"Later. The same line, the same sheets." },
+    line:"Mum still hung them out." },
   { id:"r-kite",    ch:3, len:1.3,  gate:"rkite",   ask:"Put it up again",
     line:"" },
   { id:"r-stars",   ch:3, len:1.35, gate:"rstars",  ask:"Find the shape again",
@@ -487,6 +487,15 @@ for (const _b of BEATS){
 
 /* The washing line never waited for its own gate, which is met the instant the scene
    draws. What is actually worth waiting for there is touching her, and hearing her. */
+/* the polluted line holds until its whole disappearance has played out, not until she has
+   spoken: the sheets leaving one by one and the empty line at the end of it are the point of
+   the chapter, and they are behind this. */
+HOLD_AT["r-laundry"] = { done: () => !!SHEETS_AFTER.over,
+                         prog: () => gateProgress("cough"),
+                         running: () => !!SHEETS_AFTER.said,
+                         pass: () => { SHEETS_AFTER.said = 1; SHEETS_AFTER.over = 1;
+                                       done.cough = true; } };
+
 HOLD_AT.laundry = { done: () => !!SHEETS.tapped,
                     prog: () => SHEETS.tapped ? 1 : 0,
                     pass: () => { SHEETS.tapped = 1; } };
@@ -499,6 +508,7 @@ HOLD_AT["p-room"] = { done: () => returnDone(),
                       /* `begun` too, or the pass is undone a moment later: onEnter fires for this
                 beat on the way through and resetReturn zeroes the sequence unless the scene
                 has already been marked as set up. */
+                      running: () => !!PRET.tried,
              pass: () => { done.pcurtain = true; PRET.begun = 1;
                            PRET.tried = 1; PRET.settled = 1; } };
 /* AND NO HOLD MAY EVER BECOME A WALL, whatever goes wrong behind it.
@@ -577,7 +587,14 @@ function readTimeline(dt){
   for (let i=0;i<N;i++){
     const b = BEATS[i], h = HOLD_AT[b.id];
     if (!h || h.done() || holdFreed[b.id]) continue;
-    if (T.wait > HOLD_PATIENCE){ holdFreed[b.id] = 1; continue; }
+    /* THE BACKSTOP DOES NOT FIRE ON A SEQUENCE THAT IS ALREADY RUNNING.
+       Two beats hold for a timed chain rather than for an interaction: the polluted bedroom
+       after the cord is pulled, and the polluted washing line after she has spoken. Both
+       finish on their own clocks and cannot be stuck, so releasing them because somebody
+       leant on the wheel for twenty-five seconds would drop the visitor into the next
+       chapter with the sequence still playing behind them. Before the chain starts the
+       backstop is exactly as it was — that is the case where being stuck is possible. */
+    if (T.wait > HOLD_PATIENCE && !(h.running && h.running())){ holdFreed[b.id] = 1; continue; }
     T.ceil = ofs[i] + b.len*0.86; break;
   }
   /* And the onslaught, which is a different kind of wait: not a gate at all. It is a

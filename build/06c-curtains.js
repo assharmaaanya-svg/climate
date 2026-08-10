@@ -405,7 +405,14 @@ function drawCurtains(t, dt, o){
    along, progress is never taken back, and a tap on its own opens them a
    little. Every route through this beat works.
    ========================================================================== */
-const CTR = { travel: 0.115, follow: 0.62, need: 0.52 };
+/* THE PAIR OPENS TOGETHER. `follow` used to be 0.62, so dragging one panel moved the other
+   at under two thirds of the distance — which meant a visitor who pulled the left side all
+   the way ended up at 1.00 and 0.62, one panel drawn well back and the other still half
+   across the glass. That is what read as the mechanism being uneven, and it was: the gate
+   wants both past 0.72, so they then had to go and find the other side and even it up by
+   hand. At 1 they move as what they are, one pair of curtains on one rod, and whichever side
+   you take hold of the window opens straight. */
+const CTR = { travel: 0.115, follow: 1.0, need: 0.52 };
 
 function curtainReach(x){
   // which panel is nearer the pointer, preferring whichever is further behind

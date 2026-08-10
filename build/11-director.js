@@ -911,7 +911,14 @@ function gateProgress(g){
     case "rfind":   return PLOOK.recall/0.75;
     case "colour":  return DRAW.strokes/0.55;
     /* touching her is the whole of it; the rest is the scene answering */
-    case "cough":   return SHEETS_AFTER.said ? 1 : (SHEETS_AFTER.tapped ? 0.6 : 0);
+    /* touching her, hearing her, and then the whole line emptying itself. The bar carries the
+       disappearance too, because that is what the scroll is actually waiting for. */
+    case "cough": {
+      if (SHEETS_AFTER.over) return 1;
+      if (!SHEETS_AFTER.tapped) return 0;
+      if (!SHEETS_AFTER.said) return 0.30;
+      return 0.42 + 0.58*cl01(SHEETS_AFTER.goT/SA_T7);
+    }
     case "brush":   return WASH.brushed/0.85;
     case "lift":    return EV.lifted/0.72;
     case "pull":    return EV.pull/0.55;

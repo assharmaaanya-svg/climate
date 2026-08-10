@@ -33,8 +33,9 @@ const PRET = {
   give: 0,          // the millimetre it moves and comes back
   look: 0,          // seconds since the outside was revealed, before the cord is offered
   noteT: -1,        // countdown to the notification
-  lineT: -1,        // and then to the answer that follows it
-  redT: -1,         // and then the colour drifting, and the breath after it
+  dotsT: -1,        // and then to the silence that comes before the answer
+  lineT: -1,        // and then to the answer itself
+  redT: -1,         // and then the colour drifting, and the hold after it
   note: 0,          // 0 nothing, 1 the reading
   said: 0,          // the line has been spoken
   settled: 0,       // the whole moment is over, and the scroll may go on
@@ -61,8 +62,17 @@ const PRET_REVEAL = 4.0;
    with everything said and nothing to do. */
 const PRET_LOOK   = 3.4;
 const PRET_PAUSE  = 2.6;
+/* THE SILENCE IS WRITTEN DOWN. Between the phone telling him the number and somebody in the
+   house answering it there is an ellipsis, alone, in the narration's own place and type for
+   three seconds. It is not a placeholder and it does not animate: it is the pause before
+   someone decides what to say, and the piece says it out loud rather than leaving a gap the
+   visitor might read as nothing happening. */
+const PRET_DOTS   = 3.0;
 const PRET_RED    = 6.5;
-const PRET_BREATH = 3.2;
+/* and the sentence is HELD at the end of its drift, fully red, before the scroll opens. This
+   was 3.2 and it was a breath; at 4 it is a pause somebody is sitting in. Nothing else
+   happens during it — no scroll cue, no instruction. */
+const PRET_BREATH = 4.0;
 
 /* WHAT THE TIMELINE ASKS BEFORE IT WILL LET ANYONE LEAVE.
    The polluted bedroom is not one interaction, it is a sequence, and it holds the scroll
@@ -78,10 +88,11 @@ function returnProgress(){
   if (!gateMet("pcurtain")) return 0.34*cl01(gateProgress("pcurtain"));
   if (!PRET.tried)          return 0.34 + 0.26*cl01(PRET.give/RCORD_FIRE);
   /* and through the phone, the pause, the answer and the breath */
-  const total = 1.2 + PRET_PAUSE + PRET_RED + PRET_BREATH;
+  const total = 1.2 + PRET_PAUSE + PRET_DOTS + PRET_RED + PRET_BREATH;
   let left = PRET_RED + PRET_BREATH;
-  if (PRET.noteT > 0)      left = 1.2 + PRET_PAUSE + PRET_RED + PRET_BREATH;
-  else if (PRET.lineT > 0) left = PRET_PAUSE + PRET_RED + PRET_BREATH;
+  if (PRET.noteT > 0)      left = 1.2 + PRET_PAUSE + PRET_DOTS + PRET_RED + PRET_BREATH;
+  else if (PRET.dotsT > 0) left = PRET_PAUSE + PRET_DOTS + PRET_RED + PRET_BREATH;
+  else if (PRET.lineT > 0) left = PRET_DOTS + PRET_RED + PRET_BREATH;
   else if (PRET.redT > 0)  left = PRET.redT;
   return 0.60 + 0.40*cl01(1 - left/total);
 }
@@ -100,7 +111,7 @@ function resetReturn(){
   PRET.begun = 1;
   PRET.reveal = 0; PRET.seen = 0; PRET.hover = 0;
   PRET.tried = 0; PRET.give = 0;
-  PRET.noteT = -1; PRET.lineT = -1; PRET.redT = -1;
+  PRET.noteT = -1; PRET.dotsT = -1; PRET.lineT = -1; PRET.redT = -1;
   PRET.note = 0; PRET.said = 0; PRET.settled = 0; PRET.look = 0;
   PRET.wasDown = 0; PRET.arm = 0; PRET.hold = 0; PRET.snap = 0;
   /* The curtains start shut, exactly as they did at the beginning. The opening
@@ -352,7 +363,16 @@ function drawReturn(t, dt, o){
      Only after the breath does `settled` go up and the scroll open again. */
   if (PRET.noteT > 0){
     PRET.noteT -= dt;
-    if (PRET.noteT <= 0){ PRET.note = 1; showNote(); PRET.lineT = PRET_PAUSE; }
+    if (PRET.noteT <= 0){ PRET.note = 1; showNote(); PRET.dotsT = PRET_PAUSE; }
+  }
+  /* the notification lands, a moment goes by, and then the ellipsis — on its own, in the
+     narration's place, for three seconds and nothing else */
+  if (PRET.dotsT > 0){
+    PRET.dotsT -= dt;
+    if (PRET.dotsT <= 0){
+      if (typeof sayLine === "function") sayLine("…", PRET_DOTS);
+      PRET.lineT = PRET_DOTS;
+    }
   }
   if (PRET.lineT > 0){
     PRET.lineT -= dt;

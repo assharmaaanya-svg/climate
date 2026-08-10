@@ -1142,7 +1142,7 @@ const BEATS = [
      scene is about touching her — and the beat is longer than it was because the cough, the
      pause and the sentence all have to fit inside it. */
   { id:"r-laundry", ch:3, len:1.9, gate:"cough",  ask:"Tap your mother to hear her hum",
-    line:"Later. The same line, the same sheets." },
+    line:"Mum still hung them out." },
   { id:"r-kite",    ch:3, len:1.3,  gate:"rkite",   ask:"Put it up again",
     line:"" },
   { id:"r-stars",   ch:3, len:1.35, gate:"rstars",  ask:"Find the shape again",
@@ -1232,6 +1232,15 @@ for (const _b of BEATS){
 
 /* The washing line never waited for its own gate, which is met the instant the scene
    draws. What is actually worth waiting for there is touching her, and hearing her. */
+/* the polluted line holds until its whole disappearance has played out, not until she has
+   spoken: the sheets leaving one by one and the empty line at the end of it are the point of
+   the chapter, and they are behind this. */
+HOLD_AT["r-laundry"] = { done: () => !!SHEETS_AFTER.over,
+                         prog: () => gateProgress("cough"),
+                         running: () => !!SHEETS_AFTER.said,
+                         pass: () => { SHEETS_AFTER.said = 1; SHEETS_AFTER.over = 1;
+                                       done.cough = true; } };
+
 HOLD_AT.laundry = { done: () => !!SHEETS.tapped,
                     prog: () => SHEETS.tapped ? 1 : 0,
                     pass: () => { SHEETS.tapped = 1; } };
@@ -1244,6 +1253,7 @@ HOLD_AT["p-room"] = { done: () => returnDone(),
                       /* `begun` too, or the pass is undone a moment later: onEnter fires for this
                 beat on the way through and resetReturn zeroes the sequence unless the scene
                 has already been marked as set up. */
+                      running: () => !!PRET.tried,
              pass: () => { done.pcurtain = true; PRET.begun = 1;
                            PRET.tried = 1; PRET.settled = 1; } };
 /* AND NO HOLD MAY EVER BECOME A WALL, whatever goes wrong behind it.
@@ -1322,7 +1332,14 @@ function readTimeline(dt){
   for (let i=0;i<N;i++){
     const b = BEATS[i], h = HOLD_AT[b.id];
     if (!h || h.done() || holdFreed[b.id]) continue;
-    if (T.wait > HOLD_PATIENCE){ holdFreed[b.id] = 1; continue; }
+    /* THE BACKSTOP DOES NOT FIRE ON A SEQUENCE THAT IS ALREADY RUNNING.
+       Two beats hold for a timed chain rather than for an interaction: the polluted bedroom
+       after the cord is pulled, and the polluted washing line after she has spoken. Both
+       finish on their own clocks and cannot be stuck, so releasing them because somebody
+       leant on the wheel for twenty-five seconds would drop the visitor into the next
+       chapter with the sequence still playing behind them. Before the chain starts the
+       backstop is exactly as it was — that is the case where being stuck is possible. */
+    if (T.wait > HOLD_PATIENCE && !(h.running && h.running())){ holdFreed[b.id] = 1; continue; }
     T.ceil = ofs[i] + b.len*0.86; break;
   }
   /* And the onslaught, which is a different kind of wait: not a gate at all. It is a
@@ -6779,7 +6796,14 @@ function drawCurtains(t, dt, o){
    along, progress is never taken back, and a tap on its own opens them a
    little. Every route through this beat works.
    ========================================================================== */
-const CTR = { travel: 0.115, follow: 0.62, need: 0.52 };
+/* THE PAIR OPENS TOGETHER. `follow` used to be 0.62, so dragging one panel moved the other
+   at under two thirds of the distance — which meant a visitor who pulled the left side all
+   the way ended up at 1.00 and 0.62, one panel drawn well back and the other still half
+   across the glass. That is what read as the mechanism being uneven, and it was: the gate
+   wants both past 0.72, so they then had to go and find the other side and even it up by
+   hand. At 1 they move as what they are, one pair of curtains on one rod, and whichever side
+   you take hold of the window opens straight. */
+const CTR = { travel: 0.115, follow: 1.0, need: 0.52 };
 
 function curtainReach(x){
   // which panel is nearer the pointer, preferring whichever is further behind
@@ -8492,8 +8516,58 @@ const SHEETS_AFTER = {
   momAt: 2,
   /* how far through the scene she has been touched, and what follows it */
   tapped: 0, coughT: -1, lineT: -1, said: 0, glow: 0,
+  /* AND THEN THE SCENE EMPTIES ITSELF.
+     `goT` is seconds since the asthma line, and everything below is read off it: how much of
+     her is left, how much of each sheet is left, and whether the last sentence has been said.
+     Nothing here is an event queue — it is one clock and a schedule, so the sequence cannot
+     get out of order, cannot fire twice, and can be inspected at any instant. */
+  goT: -1, momA: 1, sheetA: [1,1,1,1,1], toldEnd: 0, over: 0,
   built: false, cloth: []
 };
+
+/* THE DISAPPEARANCE, AS A TIMETABLE.
+   Nothing dramatic is allowed to happen here, so what there is instead is duration. The
+   feeling wanted is that something ordinary quietly stopped happening, which means the
+   piece must not announce any part of it: no particles, no dissolve effects, no sound cue
+   per fade, no cut, no red, no music. Only opacity and time.
+
+   Read as seconds from the moment the asthma line is spoken:
+
+     hold      the whole scene still, so the visitor sits with her and the cough
+     mom       she fades — the shadow on the cloth and the skirt below it TOGETHER, because
+               they are one person and a skirt left hanging on its own after she has gone
+               would be the single worst frame in the piece
+     gap       and then the washing, without her. The empty place is the point
+     sheets    the sheets leave ONE AT A TIME, on deliberately uneven spacing. Five fading
+               together is a scene transition; five leaving separately is a line emptying
+     lastHold  the centre sheet on its own — the one she was standing behind
+     lastDur   and then that one too
+     empty     the line with nothing on it, and nothing said about it
+     lineHold  the last sentence, before the scroll is allowed to open */
+const SA_GO = {
+  hold: 2.6,
+  mom: 2.3,
+  gap: 1.8,
+  /* not left to right, and not evenly spaced. `at` is seconds from the end of the gap. */
+  sheets: [ { i:0, at:0.00, dur:1.30 },
+            { i:3, at:1.15, dur:1.10 },
+            { i:1, at:2.90, dur:1.40 },
+            { i:4, at:3.70, dur:1.20 } ],
+  lastHold: 2.0,
+  lastDur: 2.0,
+  empty: 4.0,
+  lineHold: 3.4
+};
+/* when each phase begins, in seconds from the line — worked out once from the above rather
+   than written down twice */
+const SA_T0 = SA_GO.hold;                                  // she begins to go
+const SA_T1 = SA_T0 + SA_GO.mom;                           // she is gone
+const SA_T2 = SA_T1 + SA_GO.gap;                           // the sheets begin to go
+const SA_T3 = SA_T2 + Math.max.apply(null, SA_GO.sheets.map(s=>s.at+s.dur));
+const SA_T4 = SA_T3 + SA_GO.lastHold;                      // the centre sheet begins to go
+const SA_T5 = SA_T4 + SA_GO.lastDur;                       // the line is empty
+const SA_T6 = SA_T5 + SA_GO.empty;                         // and the last sentence
+const SA_T7 = SA_T6 + SA_GO.lineHold;                      // and only then the scroll
 
 /* how long the cough takes to land before anything is said. Long enough that the sentence
    is a response to it rather than a caption on it, short enough that the visitor is still
@@ -8520,6 +8594,36 @@ function resetSheetsAfter(){
   SHEETS_AFTER.tapped = 0; SHEETS_AFTER.coughT = -1;
   SHEETS_AFTER.lineT = -1; SHEETS_AFTER.said = 0; SHEETS_AFTER.glow = 0;
   SHEETS_AFTER.shadow.ox = 0; SHEETS_AFTER.shadow.oy = 0;
+  SHEETS_AFTER.goT = -1; SHEETS_AFTER.momA = 1; SHEETS_AFTER.toldEnd = 0;
+  SHEETS_AFTER.over = 0;
+  for (let i=0;i<5;i++) SHEETS_AFTER.sheetA[i] = 1;
+}
+
+/* the schedule, evaluated. One function, called once a frame, so what is on screen is always
+   exactly what the timetable says and never a leftover from a fade that was interrupted. */
+function updSheetsAfterGoing(dt){
+  const S = SHEETS_AFTER;
+  if (!S.said){ S.goT = -1; return; }
+  S.goT = (S.goT < 0 ? 0 : S.goT) + dt;
+  const t = S.goT;
+  const ramp = (a, b) => cl01((t - a)/Math.max(0.001, b - a));
+
+  /* her, shadow and skirt as one person */
+  S.momA = 1 - ease.io(ramp(SA_T0, SA_T1));
+
+  /* the four that are not the centre one */
+  for (const q of SA_GO.sheets)
+    S.sheetA[q.i] = 1 - ease.io(ramp(SA_T2 + q.at, SA_T2 + q.at + q.dur));
+  /* and the centre one, alone, last */
+  S.sheetA[S.momAt] = 1 - ease.io(ramp(SA_T4, SA_T5));
+
+  /* the last thing said in the chapter, once the line has been empty a while */
+  if (!S.toldEnd && t >= SA_T6){
+    S.toldEnd = 1;
+    if (typeof sayLine === "function")
+      sayLine("I don’t remember the last time we did this.", 12);
+  }
+  if (t >= SA_T7) S.over = 1;
 }
 
 /* where she is on the frame, for the thing you touch and for the tests. Taken from her
@@ -8540,7 +8644,10 @@ function drawSheetsAfter(t, dt, o){
      Its own row of cloth is what the wind is reaching — passing this is what makes these
      sheets move at all. */
   updSheetWind(dt, t, SHEETS_AFTER.cloth);
+  updSheetsAfterGoing(dt);
 
+  /* the painting stays exactly as it is for the whole of the disappearance: the poles, the
+     line, the pins, the fence, the field and the town. Only the people and the laundry go. */
   drawPlate("lineAfter", { air:0 });
 
   const cam = roomCam(0.05);
@@ -8548,10 +8655,13 @@ function drawSheetsAfter(t, dt, o){
 
   for (let i=0;i<SHEETS_AFTER.src.length;i++){
     const s = SHEETS_AFTER.src[i], c = SHEETS_AFTER.cloth[i];
+    const sa = SHEETS_AFTER.sheetA[i];
     const opt = { t, c, x:rect.x, y:rect.y, w:rect.w, h:rect.h,
-                  give: 1, wave1: 5.2, wave2: 3.4, pin: 1, alpha: 1, src: s.src };
+                  give: 1, wave1: 5.2, wave2: 3.4, pin: 1, alpha: sa, src: s.src };
 
-    if (i !== SHEETS_AFTER.momAt){ drawCloth(IMG[s.img], s.box, opt); continue; }
+    if (i !== SHEETS_AFTER.momAt){ if (sa > 0.004) drawCloth(IMG[s.img], s.box, opt); continue; }
+    /* her sheet is the last to go, and once it has there is nothing here to draw at all */
+    if (sa <= 0.004) continue;
 
     /* HER SHEET, IN THE CLEAN CHAPTER'S ORDER. Skirt first, so the sheet's own hem covers
        her waist and there is no seam between the two sprites to hide. Then the sheet,
@@ -8560,10 +8670,14 @@ function drawSheetsAfter(t, dt, o){
        warped at all — a shadow does not flap — only clipped to the cloth's outline so it
        travels with the sheet instead of hanging in the air when a gust takes it. */
     updSheetsAfterMother(dt);
-    drawSkirtOf({ img: SHEETS_AFTER.skirt.img, box: SHEETS_AFTER.skirt.box,
-                  sk: SHEETS_AFTER.skirt.sk, hem: s.box,
-                  /* the cough, passed through, so she moves as one body */
-                  ox: SHEETS_AFTER.shadow.ox, oy: SHEETS_AFTER.shadow.oy }, t, rect, 1);
+    /* SHE LEAVES AS ONE PERSON. The same alpha on the skirt and on the shadow, from the same
+       clock, so there is never a frame with a skirt hanging under an empty sheet. */
+    const ma = SHEETS_AFTER.momA;
+    if (ma > 0.004)
+      drawSkirtOf({ img: SHEETS_AFTER.skirt.img, box: SHEETS_AFTER.skirt.box,
+                    sk: SHEETS_AFTER.skirt.sk, hem: s.box,
+                    /* the cough, passed through, so she moves as one body */
+                    ox: SHEETS_AFTER.shadow.ox, oy: SHEETS_AFTER.shadow.oy }, t, rect, ma);
     /* HER SHEET BARELY MOVES, AND THAT IS NOT A COMPROMISE.
        She is standing right behind it with both hands on it. At 0.46 it billowed nearly as
        much as its unheld neighbours, and the hem — the most active part of any cloth mesh —
@@ -8577,8 +8691,9 @@ function drawSheetsAfter(t, dt, o){
        binary to within a feathered edge — 97.6% of it sits at 224-254 — so masking her with
        it bounds her without printing the cloth's folds onto her: the folds are colour, not
        transparency, and a shadow must not brighten and dim as the cloth moves. */
-    drawShadowOf(SHEETS_AFTER.shadow, rect, 1, opt.deform, s.box,
-                 ()=>drawCloth(IMG[s.img], s.box, opt));
+    if (ma > 0.004)
+      drawShadowOf(SHEETS_AFTER.shadow, rect, ma, opt.deform, s.box,
+                   ()=>drawCloth(IMG[s.img], s.box, opt));
     /* exactly what this frame used, for __bluer.momProbe() */
     SHEETS_AFTER.last = { rect, deform: opt.deform, box: s.box, img: s.img, opt };
   }
@@ -8587,6 +8702,9 @@ function drawSheetsAfter(t, dt, o){
      the frame as the clean chapter's, because the visitor is meant to recognise this and
      reach for it without being told. */
   const mr = saMomRect(rect);
+  /* and only while she is there. Once she has begun to go there is nobody to reach for, and a
+     halo on an empty sheet would be the interface contradicting the scene. */
+  if (SHEETS_AFTER.momA > 0.4)
   spot("mother-after", mr.x + mr.w*0.5, mr.y + mr.h*0.62, MIN*0.15, ()=>{
     SHEETS_AFTER.tapped = 1;
     if (SHEETS_AFTER.coughT < 0 && !SHEETS_AFTER.said){
@@ -8618,9 +8736,16 @@ function drawSheetsAfter(t, dt, o){
      loudest thing in a scene should sit: the master trim is 0.85, so there is headroom and
      nothing is asking the buffer to clip. */
   ambienceAfter(0.72);
-  lineSound(0.52, SHEETS_AFTER.wind === undefined ? SHEETS.wind : SHEETS.wind, 0);
+  /* THE CLOTH SOUND GOES WITH THE CLOTH, and nothing is added to mark it going. Each sheet's
+     share of the fabric bed leaves as that sheet does, so by the time the line is empty the
+     polluted ambience is very nearly all that is left. Nobody is told this is happening. */
+  let hung = 0;
+  for (let i=0;i<5;i++) hung += SHEETS_AFTER.sheetA[i];
+  lineSound(0.52*(hung/5), SHEETS.wind, 0);
 
-  if (o.gate && SHEETS_AFTER.said) meet(o.gate);
+  /* AND THE SCROLL WAITS FOR ALL OF IT. Not for the line — for the empty line, and for the
+     sentence after it to have been read. */
+  if (o.gate && SHEETS_AFTER.over) meet(o.gate);
 }
 
 /* ------------------------------------------------------------------------ her
@@ -13922,8 +14047,9 @@ const PRET = {
   give: 0,          // the millimetre it moves and comes back
   look: 0,          // seconds since the outside was revealed, before the cord is offered
   noteT: -1,        // countdown to the notification
-  lineT: -1,        // and then to the answer that follows it
-  redT: -1,         // and then the colour drifting, and the breath after it
+  dotsT: -1,        // and then to the silence that comes before the answer
+  lineT: -1,        // and then to the answer itself
+  redT: -1,         // and then the colour drifting, and the hold after it
   note: 0,          // 0 nothing, 1 the reading
   said: 0,          // the line has been spoken
   settled: 0,       // the whole moment is over, and the scroll may go on
@@ -13950,8 +14076,17 @@ const PRET_REVEAL = 4.0;
    with everything said and nothing to do. */
 const PRET_LOOK   = 3.4;
 const PRET_PAUSE  = 2.6;
+/* THE SILENCE IS WRITTEN DOWN. Between the phone telling him the number and somebody in the
+   house answering it there is an ellipsis, alone, in the narration's own place and type for
+   three seconds. It is not a placeholder and it does not animate: it is the pause before
+   someone decides what to say, and the piece says it out loud rather than leaving a gap the
+   visitor might read as nothing happening. */
+const PRET_DOTS   = 3.0;
 const PRET_RED    = 6.5;
-const PRET_BREATH = 3.2;
+/* and the sentence is HELD at the end of its drift, fully red, before the scroll opens. This
+   was 3.2 and it was a breath; at 4 it is a pause somebody is sitting in. Nothing else
+   happens during it — no scroll cue, no instruction. */
+const PRET_BREATH = 4.0;
 
 /* WHAT THE TIMELINE ASKS BEFORE IT WILL LET ANYONE LEAVE.
    The polluted bedroom is not one interaction, it is a sequence, and it holds the scroll
@@ -13967,10 +14102,11 @@ function returnProgress(){
   if (!gateMet("pcurtain")) return 0.34*cl01(gateProgress("pcurtain"));
   if (!PRET.tried)          return 0.34 + 0.26*cl01(PRET.give/RCORD_FIRE);
   /* and through the phone, the pause, the answer and the breath */
-  const total = 1.2 + PRET_PAUSE + PRET_RED + PRET_BREATH;
+  const total = 1.2 + PRET_PAUSE + PRET_DOTS + PRET_RED + PRET_BREATH;
   let left = PRET_RED + PRET_BREATH;
-  if (PRET.noteT > 0)      left = 1.2 + PRET_PAUSE + PRET_RED + PRET_BREATH;
-  else if (PRET.lineT > 0) left = PRET_PAUSE + PRET_RED + PRET_BREATH;
+  if (PRET.noteT > 0)      left = 1.2 + PRET_PAUSE + PRET_DOTS + PRET_RED + PRET_BREATH;
+  else if (PRET.dotsT > 0) left = PRET_PAUSE + PRET_DOTS + PRET_RED + PRET_BREATH;
+  else if (PRET.lineT > 0) left = PRET_DOTS + PRET_RED + PRET_BREATH;
   else if (PRET.redT > 0)  left = PRET.redT;
   return 0.60 + 0.40*cl01(1 - left/total);
 }
@@ -13989,7 +14125,7 @@ function resetReturn(){
   PRET.begun = 1;
   PRET.reveal = 0; PRET.seen = 0; PRET.hover = 0;
   PRET.tried = 0; PRET.give = 0;
-  PRET.noteT = -1; PRET.lineT = -1; PRET.redT = -1;
+  PRET.noteT = -1; PRET.dotsT = -1; PRET.lineT = -1; PRET.redT = -1;
   PRET.note = 0; PRET.said = 0; PRET.settled = 0; PRET.look = 0;
   PRET.wasDown = 0; PRET.arm = 0; PRET.hold = 0; PRET.snap = 0;
   /* The curtains start shut, exactly as they did at the beginning. The opening
@@ -14241,7 +14377,16 @@ function drawReturn(t, dt, o){
      Only after the breath does `settled` go up and the scroll open again. */
   if (PRET.noteT > 0){
     PRET.noteT -= dt;
-    if (PRET.noteT <= 0){ PRET.note = 1; showNote(); PRET.lineT = PRET_PAUSE; }
+    if (PRET.noteT <= 0){ PRET.note = 1; showNote(); PRET.dotsT = PRET_PAUSE; }
+  }
+  /* the notification lands, a moment goes by, and then the ellipsis — on its own, in the
+     narration's place, for three seconds and nothing else */
+  if (PRET.dotsT > 0){
+    PRET.dotsT -= dt;
+    if (PRET.dotsT <= 0){
+      if (typeof sayLine === "function") sayLine("…", PRET_DOTS);
+      PRET.lineT = PRET_DOTS;
+    }
   }
   if (PRET.lineT > 0){
     PRET.lineT -= dt;
@@ -15214,7 +15359,14 @@ function gateProgress(g){
     case "rfind":   return PLOOK.recall/0.75;
     case "colour":  return DRAW.strokes/0.55;
     /* touching her is the whole of it; the rest is the scene answering */
-    case "cough":   return SHEETS_AFTER.said ? 1 : (SHEETS_AFTER.tapped ? 0.6 : 0);
+    /* touching her, hearing her, and then the whole line emptying itself. The bar carries the
+       disappearance too, because that is what the scroll is actually waiting for. */
+    case "cough": {
+      if (SHEETS_AFTER.over) return 1;
+      if (!SHEETS_AFTER.tapped) return 0;
+      if (!SHEETS_AFTER.said) return 0.30;
+      return 0.42 + 0.58*cl01(SHEETS_AFTER.goT/SA_T7);
+    }
     case "brush":   return WASH.brushed/0.85;
     case "lift":    return EV.lifted/0.72;
     case "pull":    return EV.pull/0.55;
