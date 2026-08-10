@@ -236,9 +236,34 @@ function drawCloth(img, box, o){
      low sun; they do not need a shading pass, and no shading pass is worth a
      black box round every sheet on the line. */
   const cols = LOW ? 8 : 13, rows = LOW ? 9 : 15;
+  const a = o.alpha===undefined ? 1 : o.alpha;
+  if (a <= 0.004) return;
+  const dfm = o.deform || clothDeform(box, o);
+
+  if (a > 0.996){
+    ctx.save();
+    warpImage(img, sx, sy, sw, sh, dfm, cols, rows);
+    ctx.restore();
+    return;
+  }
+
+  /* A FADING SHEET IS DRAWN ONCE, NOT AS TWO HUNDRED OVERLAPPING QUADS.
+     The mesh is a grid of quads and each one is drawn a hair larger than its cell —
+     `cw+1.1, ch+1.1` in warpImage — because without that bleed the seams between them show
+     as hairlines. At full opacity the overlap is invisible: opaque over opaque is the same
+     pixel twice. At any partial opacity it is not, because the strip where two quads meet
+     gets composited TWICE: at alpha 0.5 the overlaps land at 0.75 and the sheet fades out
+     with a grid drawn on it, thirteen by fifteen, exactly the seams the bleed was there to
+     hide. The fade made the construction visible.
+
+     So a fading sheet is warped at full opacity into a buffer and that buffer is composited
+     once. Every pixel then gets exactly one alpha, the overlaps go back to being invisible,
+     and what fades is a picture of a sheet rather than a mesh of one. Only the fading path
+     pays for the buffer; a sheet at full opacity still goes straight to the screen. */
+  offscreen(()=>{ warpImage(img, sx, sy, sw, sh, dfm, cols, rows); });
   ctx.save();
-  ctx.globalAlpha = o.alpha===undefined ? 1 : o.alpha;
-  warpImage(img, sx, sy, sw, sh, o.deform || clothDeform(box, o), cols, rows);
+  ctx.globalAlpha = a;
+  ctx.drawImage(TMP, 0, 0);
   ctx.restore();
 }
 

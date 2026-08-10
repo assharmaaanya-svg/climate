@@ -318,7 +318,10 @@ const STARY = {
      about a second and a quarter, and the sentence wants reading after that. */
   story:null, storyT:0
 };
-const STAR_WISH = 2.8;
+/* and the gate waits for the whole of it now, not for most of it: the streak takes a little
+   over three seconds to cross and fade, and releasing the scroll before it has finished would
+   put the thing the chapter waited for behind the visitor. */
+const STAR_WISH = 3.9;
 /* ---------------------------------------------------------------- the cards
    TWO SENTENCES. What the star is, and what people did with it. That is the whole
    card, and the length is the point rather than a limitation.
@@ -507,7 +510,14 @@ function drawStarsPlate(t, dt, o){
   /* a meteor, catchable */
   STARY.shootT -= dt;
   if (!STARY.shoot && STARY.shootT<=0 && air<0.55){
-    STARY.shoot = { x:rnd(W*0.2,W*0.85), y:rnd(H*0.10,H*0.40), vx:rnd(-8,-4), vy:rnd(2.2,4.2), life:1 };
+    /* SLOW ENOUGH TO WATCH. It used to cross at four to eight pixels a frame and be gone in a
+       second and a quarter, which is a real meteor and the wrong thing here: the chapter now
+       waits for this on purpose, so it is something to look at rather than something to
+       catch. Half the speed and two and a half times the life — a little over three seconds
+       from appearing to gone, and `life` starts above 1 so the head holds full brightness for
+       the first second instead of dimming from the moment it arrives. */
+    STARY.shoot = { x:rnd(W*0.2,W*0.85), y:rnd(H*0.10,H*0.40),
+                    vx:rnd(-4.0,-2.0), vy:rnd(1.1,2.1), life:1.4 };
     /* THE LINE COMES WITH THE STAR, NOT WITH CATCHING IT.
        It used to be the reward for tapping a streak that crosses the sky in about a second
        and a half, which made one of the best sentences in the piece a prize for reaction
@@ -524,12 +534,14 @@ function drawStarsPlate(t, dt, o){
   if (STARY.wishSaid) STARY.wishSeen += dt;
   if (STARY.shoot){
     const sh=STARY.shoot;
-    sh.x+=sh.vx*dt*60; sh.y+=sh.vy*dt*60; sh.life-=dt*0.8;
+    sh.x+=sh.vx*dt*60; sh.y+=sh.vy*dt*60; sh.life-=dt*0.42;
     ctx.save(); ctx.globalCompositeOperation="lighter"; ctx.lineCap="round";
-    const g3=ctx.createLinearGradient(sh.x,sh.y, sh.x-sh.vx*24, sh.y-sh.vy*24);
+    /* the trail is a multiple of the velocity, so halving the speed would halve the streak
+       as well; 46 keeps it the length it was */
+    const g3=ctx.createLinearGradient(sh.x,sh.y, sh.x-sh.vx*46, sh.y-sh.vy*46);
     g3.addColorStop(0,rgba([255,255,246],sh.life)); g3.addColorStop(1,rgba([255,255,246],0));
     ctx.strokeStyle=g3; ctx.lineWidth=Math.max(1.4,MIN*0.0028);
-    ctx.beginPath(); ctx.moveTo(sh.x,sh.y); ctx.lineTo(sh.x-sh.vx*24, sh.y-sh.vy*24); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(sh.x,sh.y); ctx.lineTo(sh.x-sh.vx*46, sh.y-sh.vy*46); ctx.stroke();
     ctx.restore();
     if (sh.life<=0){ STARY.shoot=null; STARY.shootT=rnd(10,22); }
   }
