@@ -698,8 +698,11 @@ function sayLine(text, secs, o){
   evLine = text; evLineT = secs===undefined ? 5.5 : secs;
   evLineBeat = id();
   /* `red` marks a line that is allowed to lose its colour while it sits there. It is
-     not a state and not a warning — see the transition on #cap.redshift. */
-  evRed = (o && o.red) ? 1 : 0;
+     not a state and not a warning — see the transition on #cap.redshift.
+     `redNow` is the same colour arriving with the sentence rather than drifting into it,
+     for a line too short to complete the drift and for a scene that is not deciding
+     anything. Both take the one shared value; neither is allowed a red of its own. */
+  evRed = (o && o.red) ? 1 : (o && o.redNow) ? 2 : 0;
 }
 
 /* EVERY LINE IN THE PIECE IS WHITE.
@@ -750,7 +753,8 @@ function updText(now, dt){
     }
   }
   if (evLineT <= 0) evRed = 0;
-  capEl.classList.toggle("redshift", !!evRed && want === evLine);
+  capEl.classList.toggle("redshift", evRed === 1 && want === evLine);
+  capEl.classList.toggle("redset",   evRed === 2 && want === evLine);
   if (want!==lastCap){
     lastCap=want;
     if (want){ capEl.textContent=want; capEl.classList.add("on"); }
@@ -1299,6 +1303,13 @@ window.__bluer = {
               for (const s of all) if (s.id === nm && s._p) return { x:s._p.x, y:s._p.y };
               return null; },
   progress(g){ return gateProgress(g); },
+  /* the beat table, and where the taped drawing actually lands on screen — both needed to
+     assert on pacing and on whether that sheet still has a straight edge anywhere */
+  beatList(){ return BEATS.map(b => ({ id:b.id, len:b.len, ch:b.ch })); },
+  taped(){ const c = roomCam(CAM_WALL);
+           const ix=(TAPED.x1-TAPED.x0)*0.055, iy=(TAPED.y1-TAPED.y0)*0.075;
+           return { x0:((TAPED.x0+ix)*W+c.x)/W - 0.02, x1:((TAPED.x1-ix)*W+c.x)/W + 0.02,
+                    y0:((TAPED.y0+iy)*H+c.y)/H - 0.02, y1:((TAPED.y1-iy)*H+c.y)/H + 0.02 }; },
   get skyAfter(){ return SKYA; },
   /* what is alive in the frame. The sky afterwards has to be able to prove that the answer
      is nothing — in particular that there are no fireflies, which is a thing this scene is

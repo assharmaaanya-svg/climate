@@ -369,7 +369,14 @@ const BEATS = [
     line:"The fireflies always come out before it gets properly dark" },
   { id:"stars",     ch:2, len:1.55, gate:"stars",   ask:"Tap a bright star to discover its story",
     line:"There were so many.\nIt was hard to look at one." },
-  { id:"wish",      ch:2, len:0.95,
+  /* ROOM BEFORE THE BINOCULARS.
+     This was 0.95, the shortest beat in the piece, and it sat between the star chapter and
+     the hill — so the end of one memory and the arrival of the next fitted inside a single
+     wheel gesture, and the transition happened TO the visitor rather than being made by
+     them. At 1.9 it is in the same range as the memories either side of it (the washing
+     line is 2.10, the hill 1.75, the stars 1.55): enough distance to feel the star chapter
+     finish, sit in its last state, and go on deliberately. */
+  { id:"wish",      ch:2, len:1.9,
     line:"" },
   { id:"horizon",   ch:2, len:1.75, gate:"find",    ask:"Press and hold to zoom in with the binoculars",
     line:"On a good day you could see all the way to the hills." },
@@ -692,10 +699,20 @@ function readTimeline(dt){
 
      It is deliberately a floor and not a lock. Forward scrolling is untouched, and inside
      the current beat the visitor still has the whole of it to move around in. */
+  /* AND THE BOUNDARY SITS ONE MEMORY BACK, NOT AT THE FEET OF THE CURRENT ONE.
+     Closing the door the instant a memory is entered punishes the visitor for something
+     they may not have meant to do: transitions can be crossed by accident, and a boundary
+     with no give turns a mis-scroll into a thing that cannot be undone. So it is set to the
+     START OF THE PREVIOUS memory — one step of recovery, and no more. From where they are
+     they can go back into the memory before it and change their mind; from the beginning of
+     THAT one they can go no further, because the floor is a high-water mark and never falls.
+     What it buys is exactly one undo, which is what an accident needs, and it still cannot
+     become a rewind through the whole story. */
   if (T.p >= MEM_IN){
     let k = 0;
     for (let i=0;i<N;i++){ if (T.p >= ofs[i] + MEM_IN) k = i; else break; }
-    if (ofs[k] > memFloor) memFloor = ofs[k];
+    const back = ofs[Math.max(0, k-1)];
+    if (back > memFloor) memFloor = back;
   }
   T.floor = memFloor;
   if (T.floor > 0 && want < T.floor) want = T.floor;

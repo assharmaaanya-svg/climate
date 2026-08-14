@@ -99,7 +99,20 @@
      done and the effect never actually landed. Ten seconds is inside the window the
      sequence now holds the scroll for, so it always completes, and the timing is kept in
      step with PRET_RED on the other side. */
-  #cap.redshift{ color:#a85347; }
+  /* ONE RED, IN ONE PLACE, FOR THE TWO MOMENTS THAT GET ONE.
+     It was #a85347, which has enough blue in it to read as dusty pink on a warm ground —
+     and both the scenes that use it ARE warm grounds, a brown bedroom and a brown sky, so
+     the one colour in the piece that is supposed to land was the one being neutralised by
+     what it sat on. #a63232 is the same darkness with the blue taken out of it: brick,
+     not rose, and nowhere near a warning light. Two sentences in the whole work are allowed
+     to use it — "Leave it closed." and "None came." — and that is what makes it mean
+     anything. Anything else that ever wants red takes this token rather than a new value. */
+  :root{ --memory-loss-red:#a63232; }
+  #cap.redshift{ color:var(--memory-loss-red); }
+  /* and the same red arriving with the sentence instead of drifting into it. The bedroom
+     drifts because the room is deciding what to say; the empty sky has already decided. */
+  #cap.redset{ color:var(--memory-loss-red); transition:opacity 1.5s cubic-bezier(.4,0,.2,1),
+               transform 1.5s cubic-bezier(.4,0,.2,1), color 0s; }
   #cap.dark{ color:#241a12;
     text-shadow:0 1px 3px rgba(255,250,238,.95), 0 2px 18px rgba(255,248,232,.9),
                 0 0 42px rgba(255,246,226,.75); }

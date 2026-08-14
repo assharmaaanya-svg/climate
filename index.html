@@ -99,7 +99,20 @@
      done and the effect never actually landed. Ten seconds is inside the window the
      sequence now holds the scroll for, so it always completes, and the timing is kept in
      step with PRET_RED on the other side. */
-  #cap.redshift{ color:#a85347; }
+  /* ONE RED, IN ONE PLACE, FOR THE TWO MOMENTS THAT GET ONE.
+     It was #a85347, which has enough blue in it to read as dusty pink on a warm ground —
+     and both the scenes that use it ARE warm grounds, a brown bedroom and a brown sky, so
+     the one colour in the piece that is supposed to land was the one being neutralised by
+     what it sat on. #a63232 is the same darkness with the blue taken out of it: brick,
+     not rose, and nowhere near a warning light. Two sentences in the whole work are allowed
+     to use it — "Leave it closed." and "None came." — and that is what makes it mean
+     anything. Anything else that ever wants red takes this token rather than a new value. */
+  :root{ --memory-loss-red:#a63232; }
+  #cap.redshift{ color:var(--memory-loss-red); }
+  /* and the same red arriving with the sentence instead of drifting into it. The bedroom
+     drifts because the room is deciding what to say; the empty sky has already decided. */
+  #cap.redset{ color:var(--memory-loss-red); transition:opacity 1.5s cubic-bezier(.4,0,.2,1),
+               transform 1.5s cubic-bezier(.4,0,.2,1), color 0s; }
   #cap.dark{ color:#241a12;
     text-shadow:0 1px 3px rgba(255,250,238,.95), 0 2px 18px rgba(255,248,232,.9),
                 0 0 42px rgba(255,246,226,.75); }
@@ -1114,7 +1127,14 @@ const BEATS = [
     line:"The fireflies always come out before it gets properly dark" },
   { id:"stars",     ch:2, len:1.55, gate:"stars",   ask:"Tap a bright star to discover its story",
     line:"There were so many.\nIt was hard to look at one." },
-  { id:"wish",      ch:2, len:0.95,
+  /* ROOM BEFORE THE BINOCULARS.
+     This was 0.95, the shortest beat in the piece, and it sat between the star chapter and
+     the hill — so the end of one memory and the arrival of the next fitted inside a single
+     wheel gesture, and the transition happened TO the visitor rather than being made by
+     them. At 1.9 it is in the same range as the memories either side of it (the washing
+     line is 2.10, the hill 1.75, the stars 1.55): enough distance to feel the star chapter
+     finish, sit in its last state, and go on deliberately. */
+  { id:"wish",      ch:2, len:1.9,
     line:"" },
   { id:"horizon",   ch:2, len:1.75, gate:"find",    ask:"Press and hold to zoom in with the binoculars",
     line:"On a good day you could see all the way to the hills." },
@@ -1437,10 +1457,20 @@ function readTimeline(dt){
 
      It is deliberately a floor and not a lock. Forward scrolling is untouched, and inside
      the current beat the visitor still has the whole of it to move around in. */
+  /* AND THE BOUNDARY SITS ONE MEMORY BACK, NOT AT THE FEET OF THE CURRENT ONE.
+     Closing the door the instant a memory is entered punishes the visitor for something
+     they may not have meant to do: transitions can be crossed by accident, and a boundary
+     with no give turns a mis-scroll into a thing that cannot be undone. So it is set to the
+     START OF THE PREVIOUS memory — one step of recovery, and no more. From where they are
+     they can go back into the memory before it and change their mind; from the beginning of
+     THAT one they can go no further, because the floor is a high-water mark and never falls.
+     What it buys is exactly one undo, which is what an accident needs, and it still cannot
+     become a rewind through the whole story. */
   if (T.p >= MEM_IN){
     let k = 0;
     for (let i=0;i<N;i++){ if (T.p >= ofs[i] + MEM_IN) k = i; else break; }
-    if (ofs[k] > memFloor) memFloor = ofs[k];
+    const back = ofs[Math.max(0, k-1)];
+    if (back > memFloor) memFloor = back;
   }
   T.floor = memFloor;
   if (T.floor > 0 && want < T.floor) want = T.floor;
@@ -7814,6 +7844,75 @@ function roomSound(dt, t, rev){
    It is on this wall from the very first frame, before anyone has been told it
    matters, so that when it is put into their hands they have already seen it. */
 const TAPED = { x0:0.786, y0:0.161, x1:0.894, y1:0.313 };
+/* ---------------------------------------------------------------------------
+   THE EDGE OF THE PAPER.
+
+   THERE IS NO TORN OPENING IN THIS WALL and there never was — the brief for this asked
+   for the drawing to be masked to an existing irregular hole in the plaster, and no such
+   hole exists anywhere in the piece. What the complaint was actually describing is real
+   though, and it is this function: a sheet of paper drawn as `drawImage(PAPER, x, y, w, h)`,
+   which is a rectangle with four hard corners sitting on a painted wall, and that is
+   exactly what "a rectangular digital image placed over the wall" looks like.
+
+   So the boundary the brief wanted to mask against is BUILT rather than borrowed: the
+   sheet gets its own torn edge. A closed path is walked around the rectangle with the
+   deviation coming from `hash`, so it is the same edge every frame and the same edge in
+   both bedrooms; it is deliberately quiet on the two long sides, where a sheet is cut, and
+   loosest at the corners and the bottom, where one comes away from a wall. The artwork is
+   drawn oversize behind it and the mask crops it, which is the layer order asked for —
+   edge in front, drawing beneath, wall behind — and it means no rectangular boundary can
+   ever be visible, because the rectangle now ends outside the shape that is shown.
+
+   Cached per size, and derived only from the size, so the clean bedroom and the polluted
+   one cannot get different masks and a crossfade between them cannot mismatch.
+   ------------------------------------------------------------------------- */
+const TORN = { key:"", cv:null, bkey:"", buf:null };
+/* its own scratch canvas rather than the washing line's two, which are cached by size for a
+   different scene and would only thrash against this one */
+function tornBuf(w, h){
+  const key = w+"x"+h;
+  if (TORN.bkey === key && TORN.buf) return TORN.buf;
+  const c = document.createElement("canvas");
+  c.width = w; c.height = h;
+  TORN.bkey = key; TORN.buf = c;
+  return c;
+}
+function tornPaper(w, h){
+  w = Math.max(8, Math.round(w)); h = Math.max(8, Math.round(h));
+  const key = w+"x"+h;
+  if (TORN.key === key && TORN.cv) return TORN.cv;
+  const c = document.createElement("canvas");
+  c.width = w; c.height = h;
+  const g = c.getContext("2d");
+  /* how far the edge wanders, as a fraction of the short side. Small: this is a torn
+     sheet, not a burnt one. */
+  const A = Math.min(w, h) * 0.030;
+  const pt = (u, side) => {
+    /* `side` 0 top, 1 right, 2 bottom, 3 left. The sides a child would have cut are
+       steadier than the bottom, which is the corner that lifts off a wall. */
+    const amp = A * (side === 2 ? 1.35 : side === 0 ? 0.85 : 0.55);
+    const n = (hash(u*7.3 + side*31.7)-0.5) * 1.5
+            + (hash(u*19.1 + side*11.3)-0.5) * 0.8;
+    const d = n * amp;
+    if (side === 0) return [u*w, Math.max(0, A*1.2 + d)];
+    if (side === 1) return [w - Math.max(0, A*1.2 + d), u*h];
+    if (side === 2) return [(1-u)*w, h - Math.max(0, A*1.2 + d)];
+    return [Math.max(0, A*1.2 + d), (1-u)*h];
+  };
+  g.beginPath();
+  const STEP = 22;
+  for (let side=0; side<4; side++){
+    for (let i=0; i<=STEP; i++){
+      const p = pt(i/STEP + side, side);
+      if (side===0 && i===0) g.moveTo(p[0], p[1]); else g.lineTo(p[0], p[1]);
+    }
+  }
+  g.closePath();
+  g.fillStyle = "#fff"; g.fill();
+  TORN.key = key; TORN.cv = c;
+  return c;
+}
+
 function drawTapedDrawing(t, rev, air){
   if (!paperBuilt) return;
   const c = roomCam(CAM_WALL);
@@ -7826,9 +7925,42 @@ function drawTapedDrawing(t, rev, air){
   ctx.save();
   ctx.translate(cx, cy);
   ctx.rotate(Math.sin(t*0.5)*0.004*(0.3+PROOM.breeze*2.2));
-  // the room's own light, on it — the same warm lamp everything else is under,
-  // otherwise it reads as a sticker rather than a piece of paper on a wall
-  ctx.drawImage(litSprite(PAPER, "paper", w, h, 1-lit, 0.52), -w/2, -h/2, w, h);
+  /* the room's own light, on it — the same warm lamp everything else is under,
+     otherwise it reads as a sticker rather than a piece of paper on a wall.
+
+     It goes down OVERSIZE and is then cropped by the torn edge. The overscale is what
+     makes the crop safe: the drawing's own rectangle now ends well outside the shape the
+     wall shows, so no straight boundary of it can appear at any size, and the illustrated
+     part still fills the opening rather than leaving a gap inside it. */
+  const OVER = 1.075;
+  const pw = w*OVER, ph = h*OVER;
+  const mask = tornPaper(w, h);
+  const buf = tornBuf(Math.max(8,Math.round(w)), Math.max(8,Math.round(h)));
+  const bg = buf.getContext("2d");
+  bg.setTransform(1,0,0,1,0,0);
+  bg.clearRect(0,0,buf.width,buf.height);
+  bg.drawImage(litSprite(PAPER, "paper", pw, ph, 1-lit, 0.52),
+               (w-pw)/2, (h-ph)/2, pw, ph);
+  bg.globalCompositeOperation = "destination-in";
+  bg.drawImage(mask, 0, 0);
+  /* and the wall sits very slightly over the paper at the edge, so the sheet reads as
+     being under the surface rather than stuck on top of it. A hair of darkness inside the
+     torn line and nothing else: no drop shadow, no blur, no glow. */
+  bg.globalCompositeOperation = "source-atop";
+  const eg = bg.createLinearGradient(0, 0, 0, h);
+  eg.addColorStop(0.00, "rgba(24,16,10,0.20)");
+  eg.addColorStop(0.055, "rgba(24,16,10,0)");
+  eg.addColorStop(0.945, "rgba(24,16,10,0)");
+  eg.addColorStop(1.00, "rgba(24,16,10,0.26)");
+  bg.fillStyle = eg; bg.fillRect(0,0,w,h);
+  const eh = bg.createLinearGradient(0, 0, w, 0);
+  eh.addColorStop(0.00, "rgba(24,16,10,0.16)");
+  eh.addColorStop(0.045, "rgba(24,16,10,0)");
+  eh.addColorStop(0.955, "rgba(24,16,10,0)");
+  eh.addColorStop(1.00, "rgba(24,16,10,0.16)");
+  bg.fillStyle = eh; bg.fillRect(0,0,w,h);
+  bg.globalCompositeOperation = "source-over";
+  ctx.drawImage(buf, 0, 0, w, h, -w/2, -h/2, w, h);
   ctx.restore();
 }
 
@@ -9829,7 +9961,7 @@ const SKYA_SAY = [
   { at: 12.8, hold: 4.8, text:"Even those seemed to fade if you looked too long." },
   { at: 19.0, hold: 4.4, text:"You kept waiting for a shooting star." },
   /* 4.8 seconds of nothing at all across an empty sky */
-  { at: 29.4, hold: 6.0, text:"None came." }
+  { at: 29.4, hold: 6.0, text:"None came.", red:true }
 ];
 const SKYA_END = 36.5;          // and then the scroll opens
 
@@ -9844,7 +9976,12 @@ function updStarsAfter(dt){
     const L = SKYA_SAY[i];
     if (s >= L.at && SKYA.line < i){
       SKYA.line = i;
-      if (typeof sayLine === "function") sayLine(L.text, L.hold);
+      /* the last one arrives already in the red the bedroom uses. Not drifting into it:
+         the drift takes six and a half seconds and this sentence is on screen for six, so
+         it would never land — and a room working out what to say and an empty sky that has
+         finished waiting are not the same gesture anyway. Same colour, arrived at
+         differently. */
+      if (typeof sayLine === "function") sayLine(L.text, L.hold, L.red ? {redNow:true} : undefined);
     }
   }
   if (s >= SKYA_END) SKYA.over = 1;
@@ -16092,8 +16229,11 @@ function sayLine(text, secs, o){
   evLine = text; evLineT = secs===undefined ? 5.5 : secs;
   evLineBeat = id();
   /* `red` marks a line that is allowed to lose its colour while it sits there. It is
-     not a state and not a warning — see the transition on #cap.redshift. */
-  evRed = (o && o.red) ? 1 : 0;
+     not a state and not a warning — see the transition on #cap.redshift.
+     `redNow` is the same colour arriving with the sentence rather than drifting into it,
+     for a line too short to complete the drift and for a scene that is not deciding
+     anything. Both take the one shared value; neither is allowed a red of its own. */
+  evRed = (o && o.red) ? 1 : (o && o.redNow) ? 2 : 0;
 }
 
 /* EVERY LINE IN THE PIECE IS WHITE.
@@ -16144,7 +16284,8 @@ function updText(now, dt){
     }
   }
   if (evLineT <= 0) evRed = 0;
-  capEl.classList.toggle("redshift", !!evRed && want === evLine);
+  capEl.classList.toggle("redshift", evRed === 1 && want === evLine);
+  capEl.classList.toggle("redset",   evRed === 2 && want === evLine);
   if (want!==lastCap){
     lastCap=want;
     if (want){ capEl.textContent=want; capEl.classList.add("on"); }
@@ -16693,6 +16834,13 @@ window.__bluer = {
               for (const s of all) if (s.id === nm && s._p) return { x:s._p.x, y:s._p.y };
               return null; },
   progress(g){ return gateProgress(g); },
+  /* the beat table, and where the taped drawing actually lands on screen — both needed to
+     assert on pacing and on whether that sheet still has a straight edge anywhere */
+  beatList(){ return BEATS.map(b => ({ id:b.id, len:b.len, ch:b.ch })); },
+  taped(){ const c = roomCam(CAM_WALL);
+           const ix=(TAPED.x1-TAPED.x0)*0.055, iy=(TAPED.y1-TAPED.y0)*0.075;
+           return { x0:((TAPED.x0+ix)*W+c.x)/W - 0.02, x1:((TAPED.x1-ix)*W+c.x)/W + 0.02,
+                    y0:((TAPED.y0+iy)*H+c.y)/H - 0.02, y1:((TAPED.y1-iy)*H+c.y)/H + 0.02 }; },
   get skyAfter(){ return SKYA; },
   /* what is alive in the frame. The sky afterwards has to be able to prove that the answer
      is nothing — in particular that there are no fireflies, which is a thing this scene is

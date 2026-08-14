@@ -90,7 +90,7 @@ const SKYA_SAY = [
   { at: 12.8, hold: 4.8, text:"Even those seemed to fade if you looked too long." },
   { at: 19.0, hold: 4.4, text:"You kept waiting for a shooting star." },
   /* 4.8 seconds of nothing at all across an empty sky */
-  { at: 29.4, hold: 6.0, text:"None came." }
+  { at: 29.4, hold: 6.0, text:"None came.", red:true }
 ];
 const SKYA_END = 36.5;          // and then the scroll opens
 
@@ -105,7 +105,12 @@ function updStarsAfter(dt){
     const L = SKYA_SAY[i];
     if (s >= L.at && SKYA.line < i){
       SKYA.line = i;
-      if (typeof sayLine === "function") sayLine(L.text, L.hold);
+      /* the last one arrives already in the red the bedroom uses. Not drifting into it:
+         the drift takes six and a half seconds and this sentence is on screen for six, so
+         it would never land — and a room working out what to say and an empty sky that has
+         finished waiting are not the same gesture anyway. Same colour, arrived at
+         differently. */
+      if (typeof sayLine === "function") sayLine(L.text, L.hold, L.red ? {redNow:true} : undefined);
     }
   }
   if (s >= SKYA_END) SKYA.over = 1;
