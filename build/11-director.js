@@ -544,16 +544,11 @@ function render(t, dt){
       break;
     }
     case "r-kite": {
-      setPop({ birds:0.05, butterflies:0, dragonflies:0.05, fireflies:0, seeds:0.2 });
-      drawKitePlate(t, dt, { plate:"kiteHazed", air:0.55, lose:true });
-      if (PKITE.best>0.36) meet("rkite");
-      if (false){ const r = drawKite(t, dt, { lose:true }); }
-      // the moment the line is all that is left
-      if (KITE.lost>0.86 && !FOUND["lostkite"]){
-        FOUND["lostkite"]=true; foundN++;
-        whisper("It's still up there. You can feel it pulling.");
-        sfx.line();
-      }
+      /* Nothing is alive out here. No birds, no dragonflies, no seeds blowing about —
+         the population is the difference between the two versions of this field as much
+         as the paintings are. */
+      setPop({ birds:0, butterflies:0, dragonflies:0, fireflies:0, seeds:0 });
+      drawKiteSkyAfter(t, dt, { gate:"rkite" });
       break;
     }
     case "r-stars": {
@@ -711,7 +706,6 @@ let shownFin = -1, lastCap="", lastCh=-1;
    already say "hold to bring the kite closer". The plaque stays; the mark is gone, and it
    is not replaced with a cursor, a hand, a circle or a dot. */
 const askTx = askEl.querySelector(".tx");
-let lastAskIcon = " ";
 function setAsk(text){ if (text !== askTx.textContent) askTx.textContent = text; }
 
 /* A LINE SAID IN ANSWER TO SOMETHING, rather than at a point in a beat.
@@ -905,11 +899,14 @@ function gateProgress(g){
       for (const id of ["mizar","alkaid","megrez","alrischa","polaris"]) if (STARY.lit[id]){ one = 1; break; }
       return one*0.62 + cl01(STARY.wishSeen/STAR_WISH)*0.38;
     }
-    case "rkite": return PKITE.best/0.40;
+    /* his turn with the string, and then the light and the leaving: the scene owns this
+       because most of what the scroll is waiting for there is a clock, not a gesture */
+    case "rkite": return kiteAfterProgress();
     case "rstars":  { let v=0,n=0; for(const s2 of DIPPER){ if(starSeen(s2,0.78,0.55)){v++; if(STARY.lit[s2.id])n++;} } return v? n/v : 1; }
     case "find":    return PLOOK.n/3;
     case "rfind":   return PLOOK.recall/0.75;
-    case "colour":  return DRAW.strokes/0.55;
+    /* binary on purpose: they have put the crayon on the paper or they have not */
+    case "colour":  return DRAW.marks ? 1 : 0;
     /* touching her is the whole of it; the rest is the scene answering */
     /* touching her, hearing her, and then the whole line emptying itself. The bar carries the
        disappearance too, because that is what the scroll is actually waiting for. */
@@ -1040,8 +1037,12 @@ function onEnter(bid){
   // per-beat setup
   if (bid==="laundry"){ if (!WASH.sheets.length) buildWash(); }
   if (bid==="kite"){ resetKiteSky(); }
-  if (bid==="r-kite"){ if (!PKITE.line) resetPKite(); }
-  if (bid==="r-kite"){ PKITE.best=0; }
+  /* The polluted field starts over each time it is entered — the evening it begins in and
+     the whole ending after it are one continuous thing, and arriving halfway through the
+     night with him already gone would be the chapter playing its last card first. Guarded
+     on `over`, because onEnter fires again on the way out and re-arming a finished
+     sequence would reopen a hold the visitor has already been let through. */
+  if (bid==="r-kite" && !KSKY_A.over) resetKiteAfter();
 
   if (bid==="indoors"){ if (!IN.sheets.length) buildIndoors(); }
   if (bid==="e-stars"){ if (!GRID.length) buildGrid(); }
@@ -1297,6 +1298,79 @@ window.__bluer = {
               for (const s of all) if (s.id === nm && s._p) return { x:s._p.x, y:s._p.y };
               return null; },
   progress(g){ return gateProgress(g); },
+  /* the polluted field: its flight state, its clocks, and — the thing worth being able to
+     assert on — where the layout arithmetic actually puts him and the kite this frame */
+  kiteAfter: KSKY_A,
+  kiteAfterAt(){
+    const camG = roomCam(0.085), camS = roomCam(0.012);
+    const L = kiteLayout(KSKY_A, { plate:"kiteSkyAfter",
+                rect:{x:camG.x,y:camG.y,w:W,h:H}, rectS:{x:camS.x,y:camS.y,w:W,h:H} });
+    return { ok:L.ok, kiteOk:L.kiteOk,
+             boy:  L.ok ? { x:+L.bx.toFixed(2), y:+L.by.toFixed(2),
+                            w:+L.sw.toFixed(2), h:+L.sh.toFixed(2),
+                            /* his ink, which is what you actually see, rather than his canvas */
+                            inkX:+(L.bx + KSKY_A.child.box[0]*L.sw).toFixed(2),
+                            inkY:+(L.by + KSKY_A.child.box[1]*L.sh).toFixed(2),
+                            inkW:+(KSKY_A.child.box[2]*L.sw).toFixed(2),
+                            inkH:+(KSKY_A.child.box[3]*L.sh).toFixed(2) } : null,
+             hand: { x:+L.handX.toFixed(2), y:+L.handY.toFixed(2) },
+             kite: L.kiteOk ? { cx:+L.cx.toFixed(2), cy:+L.cy.toFixed(2),
+                                x:+L.kx.toFixed(2), y:+L.ky.toFixed(2),
+                                w:+L.kw.toFixed(2), h:+L.kh.toFixed(2),
+                                ax:+L.ax.toFixed(2), ay:+L.ay.toFixed(2) } : null,
+             times: { T1:KA_T1, T2:KA_T2, T3:KA_T3, T4:KA_T4, T5:KA_T5, night:KA_NIGHT } };
+  },
+  /* the same numbers for the evening chapter, so the two can be compared directly: the
+     whole claim of that scene is that the boy is in the same place in both */
+  kiteBeforeAt(){
+    const camG = roomCam(0.085), camS = roomCam(0.012);
+    const L = kiteLayout(KSKY, { plate:"kiteSky",
+                rect:{x:camG.x,y:camG.y,w:W,h:H}, rectS:{x:camS.x,y:camS.y,w:W,h:H} });
+    return { ok:L.ok,
+             boy: L.ok ? { inkX:+(L.bx + KSKY.child.box[0]*L.sw).toFixed(2),
+                           inkY:+(L.by + KSKY.child.box[1]*L.sh).toFixed(2),
+                           inkW:+(KSKY.child.box[2]*L.sw).toFixed(2),
+                           inkH:+(KSKY.child.box[3]*L.sh).toFixed(2) } : null,
+             hand: { x:+L.handX.toFixed(2), y:+L.handY.toFixed(2) } };
+  },
+  /* IS ANY PIXEL OF HAZE ON THE BOY.
+     The layer is drawn over the kite and then he is erased back out of it, so the test is
+     the buffer itself: re-render the haze exactly as the frame did, then count how much
+     alpha is left anywhere his sprite is opaque. Anything above a rounding error means
+     the cut missed. */
+  hazeOnBoy(){
+    const S = KSKY_A;
+    const camG = roomCam(0.085), camS = roomCam(0.012);
+    const L = kiteLayout(S, { plate:"kiteSkyAfter",
+                rect:{x:camG.x,y:camG.y,w:W,h:H}, rectS:{x:camS.x,y:camS.y,w:W,h:H} });
+    if (!L.ok) return null;
+    const img = IMG["cloudhazetohidekite.png"];
+    if (!imgReady(img)) return "haze not loaded";
+    /* the haze, cut, into TMP — the same call the scene makes */
+    drawKiteHaze(performance.now()*0.001, { alpha:1, cut: () => {
+      ctx.save(); ctx.globalAlpha = S.childA;
+      ctx.globalCompositeOperation = "destination-out";
+      ctx.drawImage(IMG[S.child.img], L.bx, L.by, L.sw, L.sh); ctx.restore(); } });
+    const hz = tc.getImageData(0,0,W,H).data;
+    /* him alone into TMP2, for his alpha */
+    offscreen2(()=>{ ctx.drawImage(IMG[S.child.img], L.bx, L.by, L.sw, L.sh); });
+    const boy = tc2.getImageData(0,0,W,H).data;
+    /* SOLID HIM versus HIS OUTLINE, counted separately.
+       destination-out removes the destination in proportion to the source's alpha, so a
+       pixel that is 80% him keeps 20% of its haze — correct, because that pixel is 20%
+       sky. Those are his antialiased edge and they are supposed to hold a trace. The test
+       that matters is the interior: anywhere he is fully opaque, the haze must be gone. */
+    let solid=0, solidOn=0, worstSolid=0, edge=0, edgeOn=0, worstEdge=0;
+    for (let i=3;i<boy.length;i+=4){
+      if (boy[i] >= 252){ solid++; if (hz[i] > 4){ solidOn++; if (hz[i]>worstSolid) worstSolid=hz[i]; } }
+      else if (boy[i] > 24){ edge++; if (hz[i] > 4){ edgeOn++; if (hz[i]>worstEdge) worstEdge=hz[i]; } }
+    }
+    return { solidPixels:solid, hazeOnSolid:solidOn, worstOnSolid:worstSolid,
+             edgePixels:edge, hazeOnEdge:edgeOn, worstOnEdge:worstEdge,
+             verdict: solidOn === 0
+               ? "not one pixel of haze anywhere he is solid"
+               : "haze is landing on him" };
+  },
   /* IS ANY PIXEL OF HER OUTSIDE THE CENTRE SHEET'S OWN ALPHA.
      Not against the mesh outline — against the cloth as it is actually drawn, which is inset
      inside that outline by the width of the transparent margin its sprite carries. Both are

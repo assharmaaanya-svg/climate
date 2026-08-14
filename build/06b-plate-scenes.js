@@ -516,8 +516,21 @@ function drawStarsPlate(t, dt, o){
        catch. Half the speed and two and a half times the life — a little over three seconds
        from appearing to gone, and `life` starts above 1 so the head holds full brightness for
        the first second instead of dimming from the moment it arrives. */
-    STARY.shoot = { x:rnd(W*0.2,W*0.85), y:rnd(H*0.10,H*0.40),
-                    vx:rnd(-4.0,-2.0), vy:rnd(1.1,2.1), life:1.4 };
+    /* AND HIGH ENOUGH THAT AN OPEN CARD CANNOT COVER IT.
+       #starcard sits at bottom:3vh and may grow to 41vh, so a card the visitor has pulled
+       up reaches as far as 56% of the height. The streak used to begin anywhere down to
+       0.40H and then descend up to another 420px from there, which put the end of its run —
+       often its whole second half — behind whichever star's card was open, and this chapter
+       now waits for the meteor, so it cannot be the one thing the reading covers up.
+
+       So the track is bounded rather than rolled twice. It starts in the top fifth, and the
+       descent is DERIVED from a landing band that stops at 0.44H: `vy` is whatever gets it
+       from one to the other in the time it has. The bands do not overlap, so it always
+       visibly falls, and the horizontal speed — the part that reads as speed — is untouched. */
+    const _life = 1.4, _span = _life/0.42;          // seconds it is on screen
+    const _y0 = rnd(H*0.100, H*0.200), _y1 = rnd(H*0.300, H*0.440);
+    STARY.shoot = { x:rnd(W*0.2,W*0.85), y:_y0,
+                    vx:rnd(-4.0,-2.0), vy:(_y1-_y0)/(60*_span), life:_life };
     /* THE LINE COMES WITH THE STAR, NOT WITH CATCHING IT.
        It used to be the reward for tapping a streak that crosses the sky in about a second
        and a half, which made one of the best sentences in the piece a prize for reaction

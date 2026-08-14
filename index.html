@@ -1143,7 +1143,9 @@ const BEATS = [
      pause and the sentence all have to fit inside it. */
   { id:"r-laundry", ch:3, len:1.9, gate:"cough",  ask:"Tap your mother to hear her hum",
     line:"Mum still hung them out." },
-  { id:"r-kite",    ch:3, len:1.3,  gate:"rkite",   ask:"Put it up again",
+  /* the same instruction as the evening chapter, word for word, because it is the same
+     gesture and the same kite, and a chapter that renames the verb implies a new one */
+  { id:"r-kite",    ch:3, len:1.6,  gate:"rkite",   ask:"Hold to bring the kite closer",
     line:"" },
   { id:"r-stars",   ch:3, len:1.35, gate:"rstars",  ask:"Find the shape again",
     line:"" },
@@ -1240,6 +1242,18 @@ HOLD_AT["r-laundry"] = { done: () => !!SHEETS_AFTER.over,
                          running: () => !!SHEETS_AFTER.said,
                          pass: () => { SHEETS_AFTER.said = 1; SHEETS_AFTER.over = 1;
                                        done.cough = true; } };
+
+/* The polluted field is the washing line's shape again: an interaction, and then a
+   sequence that plays itself out. It holds until the whole of it has — the light going,
+   the kite lost, him gone, the empty field and the sentence over it are the chapter, and
+   they all sit behind this. `running` exempts it from the patience backstop once the
+   ending has started, so nobody is dropped into the next chapter mid-disappearance. */
+HOLD_AT["r-kite"] = { done: () => !!KSKY_A.over,
+                      prog: () => kiteAfterProgress(),
+                      running: () => KSKY_A.goT >= 0,
+                      pass: () => { KSKY_A.flew = 1; KSKY_A.over = 1;
+                                    KSKY_A.kiteA = 0; KSKY_A.childA = 0;
+                                    done.rkite = true; } };
 
 HOLD_AT.laundry = { done: () => !!SHEETS.tapped,
                     prog: () => SHEETS.tapped ? 1 : 0,
@@ -1719,6 +1733,34 @@ const PLATES = {
        he loses his legs to a field he is supposed to be standing in. */
     bands:[{to:0.46,p:0.012},{to:0.64,p:0.035},{to:0.87,p:0.085},{to:1.0,p:0.24}]
   },
+  /* The same field after the air changed, at the same two times of day. Measured, these
+     two paintings are the same 1448x1086 as the clean pair and the same composition —
+     same chimney, same treeline, same river, same near meadow — so the crop, the band
+     cuts and the parallax factors are the clean plate's, deliberately, and the boy's
+     position in the painting needs no adjustment at all. The two of them are also framed
+     identically to EACH OTHER, which is what lets the evening dissolve into the night
+     without one pixel of the landscape moving. */
+  kiteSkyAfter: {
+    clean:"eveningnskyforthekite.png",
+    hazed:"pollutedairnightskyforkire.png",
+    dissolve:"full",
+    crop:{x:0, y:0.02, w:1, h:0.90},
+    /* AND THE NIGHT ONE IS PAINTED A LITTLE LOWER THAN THE EVENING ONE.
+       The pair is the same size and the same composition, but not quite the same framing:
+       located independently in each painting, the meadow's front edge sits at source row
+       788 in the evening and 806 at night, and rendered through this plate that showed up
+       as the edge sliding 14 screen pixels down during the dissolve — with two edges
+       visible at the halfway point instead of one, which is exactly what a misregistered
+       crossfade looks like. (Correlating whole edge profiles was tried first and could not
+       resolve it: one painting is at dusk and the other has its lights on, so the profiles
+       differ for reasons that have nothing to do with framing. Locating one hard feature
+       in each image separately did.) So the night image is sampled 15 rows lower, which is
+       that difference, and nothing in the landscape moves any more. Horizontal was left
+       alone deliberately: no measurement of it was strong enough to act on, and nudging on
+       a weak signal would only be a different error. */
+    align:{ x:0, y:0.0140 },
+    bands:[{to:0.46,p:0.012},{to:0.64,p:0.035},{to:0.87,p:0.085},{to:1.0,p:0.24}]
+  },
   /* the kite, in four lights */
   kiteDay:     { clean:"childflykite.png",         hazed:"pollutedkitefly.png", dissolve:"sky",
                  crop:{x:0,y:0,w:1,h:0.88},
@@ -1767,7 +1809,12 @@ function preloadPlates(){
        sheet, cropped at the hem because that is where the cloth stops, and her skirt below
        it. The uncropped full-body version she used to be drawn from is not loaded any more. */
     "momshadowcoughingcropped.png","skirtafterpollution.png",
-    "postpollutionbedroomupdate.png"];
+    "postpollutionbedroomupdate.png",
+    /* the field after the air changed: the two skies, the boy repainted for that light,
+       and the haze the kite is lost into. The haze is a plain sprite and not a plate —
+       it is one layer at one depth, drawn over the kite and under the near grass. */
+    "eveningnskyforthekite.png","pollutedairnightskyforkire.png",
+    "childkiteafterpollution.png","cloudhazetohidekite.png"];
   /* the binocular overlay is not here any more: the lookout draws its field of
      view rather than loading it. See build/06g-lookout.js. */
   for (const n of order) loadImg(n);
@@ -1790,8 +1837,16 @@ function sliceBands(def, which){
   const cw = Math.max(2, (W*(1+OVERSCAN))|0);
   const out = [];
   const crop = def.crop || {x:0,y:0,w:1,h:1};
-  const sx0 = crop.x*im.naturalWidth, sw = crop.w*im.naturalWidth;
-  const sy0 = crop.y*im.naturalHeight, sh = crop.h*im.naturalHeight;
+  /* AND ONE OF A PAIR MAY NEED NUDGING ONTO THE OTHER.
+     A pair can only be dissolved if the two paintings are framed identically, and almost
+     every pair here is. `align` is for the one that is not: it shifts where the HAZED image
+     is sampled from, in fractions of its own size, so its landscape lands on the clean
+     one's. It never applies to `clean`, which is the reference. Measured rather than
+     guessed — see kiteSkyAfter, and the note there on how. */
+  const al = (which === "hazed" && def.align) || null;
+  const ax = al ? al.x||0 : 0, ay = al ? al.y||0 : 0;
+  const sx0 = (crop.x+ax)*im.naturalWidth, sw = crop.w*im.naturalWidth;
+  const sy0 = (crop.y+ay)*im.naturalHeight, sh = crop.h*im.naturalHeight;
 
   let prev = 0;
   for (let i=0;i<def.bands.length;i++){
@@ -4846,6 +4901,18 @@ function initAudio(){
       COUGH.gain.connect(COUGH.pan); COUGH.pan.connect(master); }
     else COUGH.gain.connect(master);
 
+    /* the field after the air changed. Its own bed and its own child, built the same way
+       as the two above so this chapter can set its level without touching anything else. */
+    KAMB.gain = AC.createGain(); KAMB.gain.gain.value = 0;
+    KAMB.filt = AC.createBiquadFilter(); KAMB.filt.type = "lowpass";
+    KAMB.filt.frequency.value = 5000; KAMB.filt.Q.value = 0.4;
+    KAMB.filt.connect(KAMB.gain); KAMB.gain.connect(master);
+    KCOUGH.gain = AC.createGain(); KCOUGH.gain.gain.value = 1;
+    if (AC.createStereoPanner){ KCOUGH.pan = AC.createStereoPanner();
+      KCOUGH.pan.pan.value = -0.30;              // he is standing left of centre
+      KCOUGH.gain.connect(KCOUGH.pan); KCOUGH.pan.connect(master); }
+    else KCOUGH.gain.connect(master);
+
     /* The lookout. One layer per place, each of them silent until the visitor is
        looking at that place through the binoculars. */
     for (const k in LOOKA){
@@ -4895,6 +4962,16 @@ const LAUGH = { buf:null, gain:null, state:"idle", next: 4 };
    never loops. It goes through a stereo panner set from where she is standing in the frame,
    so it arrives from her rather than from the middle of the listener's head. */
 const COUGH = { buf:null, gain:null, pan:null, state:"idle" };
+/* THE FIELD AFTER THE AIR CHANGED.
+   Its bed is a loop like any other. Its cough is a one-shot like the laugh and hers, with
+   one difference that matters: the recording is not one cough, it is three separate fits
+   of coughing with silence between them, so `KCOUGH_CUTS` holds where each of them is and
+   the scene plays ONE at a time. That is what keeps it from being the same event on a
+   timer — three different coughs, in a random order, at intervals that do not repeat. */
+const KAMB = { buf:null, src:null, gain:null, filt:null, state:"idle" };
+const KCOUGH = { buf:null, gain:null, pan:null, state:"idle", until:0, last:-1 };
+/* (start, length) in seconds, measured off the supplied recording's envelope */
+const KCOUGH_CUTS = [[0.15,1.32],[2.24,0.82],[4.24,0.84]];
 /* the flat lift on the outdoor bed, shared by both halves so their relationship holds */
 const AMB_LIFT = 1.34;
 /* the polluted bed: a distant tunnel field recording, which is what the outside sounds like
@@ -4992,6 +5069,15 @@ function loadAmbience(){
      badly through a pipeline that turns every filename into a URL, and the original
      filename is recorded with its attribution in CREDITS.md where it belongs. */
   loadOne(AMB3, "amb-tunnel-distant.wav");
+  /* The polluted field's bed and its child, both rebuilt from the supplied files into the
+     format every other sound in this piece is in — mono 16-bit at 22.05 kHz. The bed is 26
+     seconds taken from 383 s into the artist's ten-minute recording, which is the steadiest
+     sustained stretch in it, closed into a loop by crossfading its head against the material
+     that follows its tail. It is normalised to -26 dBFS, which is where every other outdoor
+     bed here sits: the recording itself averages -39.5, and this chapter's whole problem
+     last time was a bed nobody could hear. See CREDITS.md. */
+  loadOne(KAMB, "kite-after-air.wav");
+  loadOne(KCOUGH, "kite-child-cough.wav");
   loadOne(CRICK, "night-crickets.wav");
   loadOne(NBIRD, "night-birds.wav");
   for (const k in LOOKA) loadOne(LOOKA[k], LOOKA[k].file);
@@ -5058,7 +5144,9 @@ function ambienceAfterOff(){
 }
 
 function startOne(layer){
-  if (layer === LAUGH || layer === COUGH) return;   // a one-shot has nothing to start
+  /* a one-shot has nothing to start. KCOUGH belongs here too: it is played in pieces from
+     an offset, and setting it looping would put a child coughing under the whole chapter. */
+  if (layer === LAUGH || layer === COUGH || layer === KCOUGH) return;
   if (!AC || !layer.buf || layer.src) return;
   const s = AC.createBufferSource();
   s.buffer = layer.buf; s.loop = true;
@@ -5152,6 +5240,78 @@ function kiteSound(dt, v, night, joy){
     LAUGH.next = 9 + Math.random()*11;
     fireLaugh(v * (0.20 + Math.random()*0.10) * (1 - night*0.45));
   }
+}
+
+/* ONE COUGH, WHOLE, AND NEVER TWO AT ONCE.
+   A fit of coughing arrives across a field the way anything does — you are hearing it
+   before you notice it started — so it comes up over a quarter of a second and goes back
+   down over rather longer, which is also what keeps a cut-out region of a recording from
+   clicking at either end. It is loud enough to be unmistakable over the bed and no
+   louder: the bed sits at -26 dBFS and this is played at about 0.5, which puts it clearly
+   above the air without being an event the interface has staged.
+
+   `until` is when the last one will have finished. Nothing can start before then, so two
+   can never overlap however the scene's clock lands. */
+function fireChildCough(vol){
+  if (!AC || !soundOn || KCOUGH.state !== "ready" || !KCOUGH.gain) return 0;
+  const now = AC.currentTime;
+  if (now < KCOUGH.until) return 0;              // one is still going
+  /* a different one from last time, so it is never the same cough twice running */
+  let k = Math.floor(Math.random()*KCOUGH_CUTS.length);
+  if (k === KCOUGH.last) k = (k + 1 + Math.floor(Math.random()*(KCOUGH_CUTS.length-1)))
+                             % KCOUGH_CUTS.length;
+  KCOUGH.last = k;
+  const cut = KCOUGH_CUTS[k], off = cut[0], dur = cut[1];
+  const s = AC.createBufferSource();
+  s.buffer = KCOUGH.buf;
+  const g = AC.createGain();
+  const up = 0.26, down = 0.42;
+  g.gain.setValueAtTime(0.0001, now);
+  g.gain.exponentialRampToValueAtTime(Math.max(0.0002, vol), now + up);
+  g.gain.setValueAtTime(Math.max(0.0002, vol), now + Math.max(up + 0.05, dur - down));
+  g.gain.exponentialRampToValueAtTime(0.0001, now + dur + 0.10);
+  s.connect(g); g.connect(KCOUGH.gain);
+  s.start(now, off, dur + 0.12);
+  s.stop(now + dur + 0.20);
+  KCOUGH.until = now + dur + 0.25;
+  return dur;
+}
+
+/* THE FIELD AFTER THE AIR CHANGED.
+   The bed is continuous and clearly present — it is the whole environment of the chapter
+   and the one thing that is still there at the end of it. It fades in on arrival and out
+   on leaving, and it is set well above where the other polluted bed was mixed, because a
+   scene whose ambience nobody can hear reads as broken rather than as bad air.
+
+   `going` is the ending: once he has started to disappear, no further coughs are
+   SCHEDULED. One already sounding is left alone and finishes on its own, which is why
+   this only stops the clock and never touches a playing source. */
+const KAFTQ = { t: 0 };
+function kiteAfterSound(dt, v, going){
+  KAFTQ.t = 0.3;
+  v = v * (1 - SILENCE);
+  if (!AC || !soundOn || !KAMB.gain) return;
+  if (KAMB.state === "ready" && !KAMB.src) startOne(KAMB);
+  envGain(KAMB.gain, Math.max(0, v*0.92*AMB_LIFT), 0.9);
+  /* every other bed gets out of the way: this chapter is only this air */
+  if (AMB.gain)  envGain(AMB.gain, 0, 1.1);
+  if (AMB2.gain) envGain(AMB2.gain, 0, 1.1);
+  if (AMB3.gain) envGain(AMB3.gain, 0, 1.2);
+  if (KWIND.gain) envGain(KWIND.gain, 0, 1.4);
+
+  if (going){ KSKY_A.coughT = 1e9; return; }
+  KSKY_A.coughT -= dt;
+  if (KSKY_A.coughT <= 0){
+    const dur = fireChildCough(v * 0.50);
+    /* the gap is long and it is never the same gap: seven to eighteen seconds of nothing
+       after each one, so it returns while the visitor is still here without ever becoming
+       something they could count on. If the sound was not ready, try again shortly. */
+    KSKY_A.coughT = dur > 0 ? 7 + Math.random()*11 : 1.5;
+  }
+}
+/* ...and the reverse, for every scene that is not this one */
+function kiteAfterSoundOff(){
+  if (KAMB.gain) envGain(KAMB.gain, 0, 1.3);
 }
 
 /* After dark: insects, which are everywhere and even, and one bird that only
@@ -5273,6 +5433,10 @@ function updSound(dt, t){
   else if (RUS.gain){ for (const L of [RUS, RUS2, HUM]) envGain(L.gain, 0, 0.9); HUMDUCK = 0; }
   if (KITEQ.t > 0){ KITEQ.t -= dt; }
   else if (KWIND.gain){ envGain(KWIND.gain, 0, 1.1); }
+  /* the polluted field's air fades out on the way out of the chapter rather than stopping
+     with it, which is the same courtesy every other bed here gets */
+  if (KAFTQ.t > 0){ KAFTQ.t -= dt; }
+  else kiteAfterSoundOff();
   if (NIGHTQ.t > 0){ NIGHTQ.t -= dt; }
   else if (CRICK.gain){ for (const L of [CRICK, NBIRD]) envGain(L.gain, 0, 2.0); }
   /* a place's memory does not follow the visitor out of the chapter it belongs to */
@@ -8889,38 +9053,44 @@ function darkSprite(img, key, w, h, dark, col){
    gives it back to the wind and it climbs away — slower than it came down,
    because that is the part you are meant to watch.
    ------------------------------------------------------------------------- */
-function updKiteFlight(t, dt){
+/* `S` is the flight state. It defaults to KSKY, which is the evening chapter's, because
+   this scene had only one of them for a long time. The polluted chapter passes its own: the
+   same model, the same constants and the same verb, with a separate reel position, so
+   neither chapter inherits where the other left the kite. */
+function updKiteFlight(t, dt, S){
+  S = S || KSKY;
   const holding = P.down && P.active;
-  KSKY.held = holding ? KSKY.held + dt : 0;
+  S.held = holding ? S.held + dt : 0;
   /* in over about two seconds, back out over nearer four */
   const to = holding ? 1 : 0;
-  KSKY.reel += (to - KSKY.reel) * Math.min(1, dt * (holding ? 1.15 : 0.62));
-  KSKY.best = Math.max(KSKY.best, KSKY.reel);
+  S.reel += (to - S.reel) * Math.min(1, dt * (holding ? 1.15 : 0.62));
+  S.best = Math.max(S.best, S.reel);
   /* a release after a real pull is worth something — the kite goes back up and
      that is the moment he laughs */
-  if (!holding && KSKY.reel > 0.35) KSKY.joy = Math.min(1, KSKY.joy + dt*0.5);
-  else KSKY.joy = Math.max(0, KSKY.joy - dt*0.35);
+  if (!holding && S.reel > 0.35) S.joy = Math.min(1, S.joy + dt*0.5);
+  else S.joy = Math.max(0, S.joy - dt*0.35);
 
   /* the air it is sitting in. Higher line, more weather. */
-  const air = 1 - KSKY.reel*0.55;
-  KSKY.wobX += ((Math.sin(t*0.63)*0.55 + Math.sin(t*1.07+1.9)*0.30
-               + Math.sin(t*1.91+0.4)*0.15) * air - KSKY.wobX) * Math.min(1, dt*2.2);
-  KSKY.wobY += ((Math.sin(t*0.81+2.2)*0.6 + Math.sin(t*1.43+0.7)*0.4) * air
-               - KSKY.wobY) * Math.min(1, dt*2.0);
+  const air = 1 - S.reel*0.55;
+  S.wobX += ((Math.sin(t*0.63)*0.55 + Math.sin(t*1.07+1.9)*0.30
+               + Math.sin(t*1.91+0.4)*0.15) * air - S.wobX) * Math.min(1, dt*2.2);
+  S.wobY += ((Math.sin(t*0.81+2.2)*0.6 + Math.sin(t*1.43+0.7)*0.4) * air
+               - S.wobY) * Math.min(1, dt*2.0);
   /* which way it is leaning: it heels over when the line is being hauled in */
-  const want = KSKY.wobX*0.22 - KSKY.reel*0.30;
-  KSKY.sway += (want - KSKY.sway) * Math.min(1, dt*2.6);
+  const want = S.wobX*0.22 - S.reel*0.30;
+  S.sway += (want - S.sway) * Math.min(1, dt*2.6);
 
-  if (KSKY.hint > 0 && (KSKY.best > 0.06 || KSKY.held > 0.3))
-    KSKY.hint = Math.max(0, KSKY.hint - dt*1.6);
+  if (S.hint > 0 && (S.best > 0.06 || S.held > 0.3))
+    S.hint = Math.max(0, S.hint - dt*1.6);
 }
 
 /* where the kite is, in fractions of the frame */
-function kiteAt(){
-  const K = KSKY.kite, e = ease.io(cl01(KSKY.reel));
+function kiteAt(S){
+  S = S || KSKY;
+  const K = S.kite, e = ease.io(cl01(S.reel));
   return {
-    x: lerp(K.home[0], K.near[0], e) + KSKY.wobX*0.014,
-    y: lerp(K.home[1], K.near[1], e) + KSKY.wobY*0.012,
+    x: lerp(K.home[0], K.near[0], e) + S.wobX*0.014,
+    y: lerp(K.home[1], K.near[1], e) + S.wobY*0.012,
     h: lerp(K.hFar, K.hNear, e)
   };
 }
@@ -8933,9 +9103,143 @@ function kiteAt(){
    ------------------------------------------------------------------------- */
 /* The plate stretches a crop of the painting across the whole frame, so a point
    measured in the painting is not the same point on screen. This is that map. */
-function skyPt(x, y){
-  const d = PLATES.kiteSky.crop || {x:0,y:0,w:1,h:1};
+function skyPt(x, y, plate){
+  const p = PLATES[plate || "kiteSky"];
+  const d = (p && p.crop) || {x:0,y:0,w:1,h:1};
   return { x: (x - d.x)/d.w, y: (y - d.y)/d.h, ky: 1/d.h };
+}
+
+/* ---------------------------------------------------------------------------
+   WHERE THE THREE THINGS ARE, WITHOUT DRAWING ANY OF THEM.
+
+   Both kite chapters need exactly these numbers, and the polluted one needs to put
+   weather in between two of the things they describe — so the arithmetic lives here
+   once and each chapter composes its own order on top of it. Nothing in this function
+   knows what light it is or what is in the air.
+
+   Returns, all in device pixels: the boy's whole scaled canvas (bx,by,sw,sh) and the
+   fingertip the line leaves from (handX,handY); and for the kite, its diamond's centre
+   (cx,cy), the top-left of its canvas (kx,ky) at size (kw,kh), and the bridle (ax,ay)
+   where the line actually attaches — a little below the left corner, as it is painted.
+   ------------------------------------------------------------------------- */
+function kiteLayout(S, o){
+  const child = IMG[S.child.img], kite = IMG[S.kite.img];
+  const rect = o.rect, rectS = o.rectS;
+  const C = S.child, K = S.kite, at = kiteAt(S);
+  const P0 = skyPt(C.cx, C.bottom, o.plate);
+
+  const L = { at, ok:false, kiteOk:false,
+              /* a fallback that keeps the line somewhere sane if his sprite is still
+                 loading, rather than dropping it at the origin */
+              handX: rect.x + 0.349*rect.w, handY: rect.y + 0.60*rect.h };
+  if (imgReady(child)){
+    const bh = C.h * P0.ky * rect.h;
+    const bw = bh * (C.box[2]*child.naturalWidth) / (C.box[3]*child.naturalHeight);
+    L.sw = bw / C.box[2]; L.sh = bh / C.box[3];      // his whole canvas, scaled
+    L.bw = bw; L.bh = bh;
+    L.bx = rect.x + P0.x*rect.w - bw*0.5 - C.box[0]*L.sw;
+    L.by = rect.y + P0.y*rect.h - bh - C.box[1]*L.sh;
+    L.handX = L.bx + C.hand[0]*L.sw;
+    L.handY = L.by + C.hand[1]*L.sh;
+    L.ok = true;
+  }
+  L.cx = rectS.x + at.x*rectS.w;
+  L.cy = rectS.y + at.y*rectS.h;
+  L.ax = L.cx; L.ay = L.cy;
+  if (imgReady(kite)){
+    const dh = at.h * rect.h;
+    L.kh = dh / (K.dia[3] - K.dia[1]) * K.fatten;
+    L.kw = L.kh * (kite.naturalWidth / kite.naturalHeight);
+    /* the line pulls on its left corner, a little below the widest point */
+    L.ax = L.cx - L.kw*((K.dia[2]-K.dia[0])*0.5) + L.kw*0.004;
+    L.ay = L.cy + L.kh*0.020;
+    L.kx = L.cx - L.kw*((K.dia[0]+K.dia[2])*0.5);
+    L.ky = L.cy - L.kh*((K.dia[1]+K.dia[3])*0.5);
+    L.kiteOk = true;
+  }
+  return L;
+}
+
+/* him. `a` is how much of him is left, which is 1 everywhere except the end of the
+   polluted chapter, where he goes. */
+function drawKiteChild(S, L, o){
+  if (!L.ok) return;
+  const img = IMG[S.child.img];
+  const a = o.alpha === undefined ? 1 : o.alpha;
+  if (a <= 0.004) return;
+  ctx.save();
+  if (a < 0.999) ctx.globalAlpha = a;
+  ctx.drawImage(darkSprite(img, S.bufKey || "kid", L.sw, L.sh, o.dark, o.tint), L.bx, L.by);
+  ctx.restore();
+}
+
+/* the line. It is nearly straight in the painting and it should be: a flying kite has its
+   line under tension. What little sag there is belongs to the length of line that is out,
+   so hauling it in straightens it. It starts at his fingertips and ends at the bridle, and
+   because the kite is always above and outboard of his raised hand it never crosses him —
+   which is why there is no mask here and never needed to be. */
+function drawKiteLine(t, S, L, o){
+  const a = o.alpha === undefined ? 1 : o.alpha;
+  if (a <= 0.004) return;
+  const night = o.night || 0, rect = o.rect;
+  const sag = (1 - S.reel) * rect.h * 0.030 + rect.h * 0.004;
+  ctx.save();
+  const col = mixL([46,34,30], [96,92,120], night);
+  const base = (0.42 + night*0.14) * a;
+  /* `fade` thins the line along its own length, strongest at the far end. The evening
+     chapter never asks for it and gets a plain stroke; the polluted one does, because a
+     line that runs into haze has to lose itself the same way the kite on the end of it
+     does — and a solid line ending at an invisible kite is the one thing that would give
+     the whole effect away. */
+  const fade = cl01(o.fade || 0);
+  if (fade > 0.004){
+    const g = ctx.createLinearGradient(L.handX, L.handY, L.ax, L.ay);
+    g.addColorStop(0, rgba(col, base));
+    g.addColorStop(0.45, rgba(col, base*(1 - fade*0.55)));
+    g.addColorStop(1, rgba(col, base*(1 - fade)));
+    ctx.strokeStyle = g;
+  } else ctx.strokeStyle = rgba(col, base);
+  ctx.lineWidth = Math.max(1, MIN*0.0011);
+  ctx.beginPath();
+  ctx.moveTo(L.handX, L.handY);
+  const vib = S.reel > 0.55 ? Math.sin(t*34)*MIN*0.0014 : 0;
+  ctx.quadraticCurveTo((L.handX+L.ax)*0.5 + vib, (L.handY+L.ay)*0.5 + sag, L.ax, L.ay);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawKiteBody(t, S, L, o){
+  if (!L.kiteOk) return;
+  const a = o.alpha === undefined ? 1 : o.alpha;
+  if (a <= 0.004) return;
+  ctx.save();
+  if (a < 0.999) ctx.globalAlpha = a;
+  ctx.translate(L.cx, L.cy);
+  ctx.rotate(S.sway*0.30);
+  ctx.translate(-L.cx, -L.cy);
+  ctx.drawImage(darkSprite(IMG[S.kite.img], S.kiteKey || "kite", L.kw, L.kh, o.dark, o.tint), L.kx, L.ky);
+  ctx.restore();
+}
+
+/* ---- the signal ----
+   Holding is not a thing a page teaches you, so it is shown rather than written: a ring
+   that closes in on the kite, once every couple of seconds, the shape of the gesture it is
+   asking for. It goes the moment you hold. */
+function drawKiteRing(t, S, L, strength){
+  if (S.hint <= 0.02) return;
+  const p = (t*0.5) % 1;
+  const r = MIN*(0.115 - 0.055*ease.io(p));
+  /* `strength` lets the polluted chapter ask for less of it. By then the visitor has
+     already learnt this gesture in the evening, and at full weight the ring was the
+     loudest thing in a frame whose whole subject is something becoming hard to see. */
+  const a = S.hint * 0.42 * (strength === undefined ? 1 : strength) * Math.sin(p*PI);
+  ctx.save();
+  ctx.strokeStyle = rgba([255,244,222], a);
+  ctx.lineWidth = Math.max(1.2, MIN*0.0022);
+  ctx.beginPath();
+  ctx.arc(L.cx, L.cy, r, 0, TAU);
+  ctx.stroke();
+  ctx.restore();
 }
 
 function drawKiteSky(t, dt, o){
@@ -8955,7 +9259,7 @@ function drawKiteSky(t, dt, o){
   if (LITPOP.birds > 0.05) drawBirds();
   if (LITPOP.fireflies > 0.02) drawFireflies(t, LITPOP.fireflies);
 
-  updKiteFlight(t, dt);
+  updKiteFlight(t, dt, KSKY);
 
   /* He rides the band he is standing on. The plate moves each band by its own
      parallax factor, and the ground he is in is the 0.085 band — at 0.05 he
@@ -8965,7 +9269,6 @@ function drawKiteSky(t, dt, o){
   const camG = roomCam(0.085), camS = roomCam(0.012);
   const rect  = { x: camG.x, y: camG.y, w: W, h: H };
   const rectS = { x: camS.x, y: camS.y, w: W, h: H };
-  const child = IMG[KSKY.child.img], kite = IMG[KSKY.kite.img];
 
   /* how much dark goes on them. In the evening they are already lit for the
      evening; at night they are not, and the boy takes more of it than the kite. */
@@ -8973,77 +9276,11 @@ function drawKiteSky(t, dt, o){
   const dChild = 0.05 + night*0.62;
   const dKite  = 0.04 + night*0.46;
 
-  /* ---- the boy ---- */
-  const P0 = skyPt(KSKY.child.cx, KSKY.child.bottom);
-  let handX = rect.x + 0.349*rect.w, handY = rect.y + 0.60*rect.h;
-  if (imgReady(child)){
-    const C = KSKY.child;
-    const bh = C.h * P0.ky * rect.h;
-    const bw = bh * (C.box[2]*child.naturalWidth) / (C.box[3]*child.naturalHeight);
-    const sw = bw / C.box[2], sh = bh / C.box[3];       // his whole canvas, scaled
-    const bx = rect.x + P0.x*rect.w - bw*0.5 - C.box[0]*sw;
-    const by = rect.y + P0.y*rect.h - bh - C.box[1]*sh;
-    handX = bx + C.hand[0]*sw;
-    handY = by + C.hand[1]*sh;
-    ctx.drawImage(darkSprite(child, "kid", sw, sh, dChild, tint), bx, by);
-  }
-
-  /* ---- the kite ---- */
-  const K = KSKY.kite, at = kiteAt();
-  let ax = rectS.x + at.x*rectS.w, ay = rectS.y + at.y*rectS.h;   // the bridle
-  let kx = 0, ky = 0, kw = 0, kh = 0;
-  if (imgReady(kite)){
-    const dh = at.h * rect.h;
-    kh = dh / (K.dia[3] - K.dia[1]) * K.fatten;
-    kw = kh * (kite.naturalWidth / kite.naturalHeight);
-    const cxk = rectS.x + at.x*rectS.w, cyk = rectS.y + at.y*rectS.h;
-    /* the line pulls on its left corner, a little below the widest point */
-    ax = cxk - kw*((K.dia[2]-K.dia[0])*0.5) + kw*0.004;
-    ay = cyk + kh*0.020;
-    kx = cxk - kw*((K.dia[0]+K.dia[2])*0.5);
-    ky = cyk - kh*((K.dia[1]+K.dia[3])*0.5);
-  }
-
-  /* ---- the line ---- */
-  /* It is nearly straight in the painting and it should be: a flying kite has
-     its line under tension. What little sag there is belongs to the length of
-     line that is out, so hauling it in straightens it. */
-  const sag = (1 - KSKY.reel) * rect.h * 0.030 + rect.h * 0.004;
-  ctx.save();
-  ctx.strokeStyle = rgba(mixL([46,34,30], [96,92,120], night), 0.42 + night*0.14);
-  ctx.lineWidth = Math.max(1, MIN*0.0011);
-  ctx.beginPath();
-  ctx.moveTo(handX, handY);
-  const vib = KSKY.reel > 0.55 ? Math.sin(t*34)*MIN*0.0014 : 0;
-  ctx.quadraticCurveTo((handX+ax)*0.5 + vib, (handY+ay)*0.5 + sag, ax, ay);
-  ctx.stroke();
-  ctx.restore();
-
-  if (imgReady(kite)){
-    ctx.save();
-    ctx.translate(rectS.x + at.x*rectS.w, rectS.y + at.y*rectS.h);
-    ctx.rotate(KSKY.sway*0.30);
-    ctx.translate(-(rectS.x + at.x*rectS.w), -(rectS.y + at.y*rectS.h));
-    ctx.drawImage(darkSprite(kite, "kite", kw, kh, dKite, tint), kx, ky);
-    ctx.restore();
-  }
-
-  /* ---- the signal ---- */
-  /* Holding is not a thing a page teaches you, so it is shown rather than
-     written: a ring that closes in on the kite, once every couple of seconds,
-     the shape of the gesture it is asking for. It goes the moment you hold. */
-  if (KSKY.hint > 0.02){
-    const p = (t*0.5) % 1;
-    const r = MIN*(0.115 - 0.055*ease.io(p));
-    const a = KSKY.hint * 0.42 * Math.sin(p*PI);
-    ctx.save();
-    ctx.strokeStyle = rgba([255,244,222], a);
-    ctx.lineWidth = Math.max(1.2, MIN*0.0022);
-    ctx.beginPath();
-    ctx.arc(rectS.x + at.x*rectS.w, rectS.y + at.y*rectS.h, r, 0, TAU);
-    ctx.stroke();
-    ctx.restore();
-  }
+  const L = kiteLayout(KSKY, { plate:"kiteSky", rect, rectS });
+  drawKiteChild(KSKY, L, { dark:dChild, tint });
+  drawKiteLine(t, KSKY, L, { night, rect });
+  drawKiteBody(t, KSKY, L, { dark:dKite, tint });
+  drawKiteRing(t, KSKY, L);
 
   /* the meadow he is standing in, back over the top of him */
   drawPlate("kiteSky", { air: night, onlyBand: FRONT });
@@ -9058,6 +9295,278 @@ function drawKiteSky(t, dt, o){
   nightSound(dt, vol, night*0.85, 1);
   cv.className = P.down ? "grabbing" : "grabbable";
   if (o.gate && KSKY.best > 0.52) meet(o.gate);
+}
+/* ============================================================================
+   THE KITE, AFTER
+   ============================================================================
+   The same field, the same boy, the same kite on the same string, and the same one
+   verb: hold, and it comes closer. Nothing about the interaction is new, and that is
+   the entire point of the chapter — what has changed is the air it happens in.
+
+   NOTHING HERE IS A SECOND IMPLEMENTATION.
+   The flight model, the layout arithmetic, the sprite darkening, the line and the hold
+   signal all come from build/06f-kite.js, unchanged, called with a second flight state.
+   `KSKY_A` differs from `KSKY` in exactly two ways: which painting of the boy it draws,
+   and that it carries this chapter's own clocks. His position, his scale, his fingertip,
+   the kite's two places, its sizes and the string between them are shared values, not
+   copied numbers — so they cannot drift apart from the evening chapter later.
+
+   WHY HIS PLACEMENT IS THE SAME PLACEMENT
+   childkiteafterpollution.png is the same 1536x1024 canvas as the sprite it replaces and
+   he is painted in the same spot on it: measured, his ink runs x 728..1054, y 149..838
+   against the old one's x 731..1051, y 151..838, and the single topmost pixel — his
+   fingertips, which is where the string leaves — is 0.8px from where it was. So the box
+   below is the new sprite measured rather than the old sprite's numbers reused, and it
+   lands him within a pixel and a half of where he has always stood. The two polluted
+   skies are also the same 1448x1086 as the two clean ones and the same composition,
+   which is why `cx`, `bottom` and `h` — where he stands in the PAINTING, not in his own
+   canvas — carry across untouched, and why the plate can keep the same crop and bands.
+
+   THE AIR
+   Two things happen to the kite as it gets further away, and they are different things.
+   It goes BEHIND cloudhazetohidekite.png, which is a real layer drawn over it — and the
+   boy is cut back out of that layer, so not one pixel of haze lands on him. And it goes
+   INTO the air, losing contrast toward the haze's own colour the further out it is,
+   which is what distance does to anything. Neither has a threshold in it. Holding the
+   line brings it back through both.
+   ========================================================================== */
+
+/* the flight state, and the chapter's clocks */
+const KSKY_A = {
+  child: {
+    img: "childkiteafterpollution.png",
+    box: [0.4740, 0.1455, 0.2129, 0.6738],   // measured off the supplied sprite
+    hand:[0.6074, 0.1455],                   // his fingertips, the topmost pixel of him
+    /* where he stands in the PAINTING's frame — shared with the evening chapter */
+    cx: 0.3291, bottom: 0.7324, h: 0.1847
+  },
+  /* the same kite. Not a copy of its numbers: the same object, so it is impossible for
+     the two chapters' kites to become different kites by accident. */
+  kite: KSKY.kite,
+  /* its own darkSprite cache slots. Sharing "kid" with the evening chapter would be a
+     real bug and not a slow one: that cache is keyed on size and strength but NOT on
+     which image went into it, so at any moment the two sprites happened to want the
+     same size and the same darkness, this chapter would draw the wrong boy. */
+  bufKey: "kidAfter", kiteKey: "kiteAfter",
+
+  reel: 0, held: 0, best: 0, joy: 0, wobX: 0, wobY: 0, sway: 0, hint: 1,
+
+  night: 0,        // polluted evening -> polluted night, on a clock of its own
+  flew: 0,         // he has had his turn with it
+  goT: -1,         // the ending's clock, -1 until it starts
+  kiteA: 1, childA: 1,
+  told: 0, over: 0,
+  coughT: 0        // when the next cough may happen
+};
+
+/* HOW LONG THE LIGHT TAKES.
+   Slow enough that nobody watches it happen — the brief for this asks for a transition
+   that is almost unnoticed while you are busy with the string, and half a minute is
+   about the shortest that reads as time passing rather than as a dissolve. It runs on
+   its own clock and not on the scroll, because the scroll is held here anyway and a
+   crossfade that only advances when somebody pushes the wheel is a slider, not an
+   evening. */
+const KA_NIGHT = 28.0;
+/* and how much of a pull counts as having flown it. Lower than the evening chapter's
+   0.52, because by now the visitor has already learnt this gesture and being made to
+   prove it twice is worse than letting them get on. */
+const KA_FLEW = 0.40;
+
+/* THE ENDING, AS A TIMETABLE.
+   Same shape and same restraint as the washing line's, in build/06h-sheets-after.js: a
+   held stillness, then things leaving one at a time with the gaps doing the work, then an
+   empty frame held long enough to be felt, then one sentence and nothing after it.
+
+   The kite goes first and the string goes with it, so there is never a line hanging off
+   nothing. He starts a second later and takes longer, so the two are not one event. */
+const KA_GO = { settle:2.6, kiteDur:2.2, childAt:1.0, childDur:3.4, empty:2.0, lineHold:7.0 };
+const KA_T1 = KA_GO.settle;                       // the kite starts to go
+const KA_T2 = KA_T1 + KA_GO.childAt;              // and then he does
+const KA_T3 = Math.max(KA_T1 + KA_GO.kiteDur, KA_T2 + KA_GO.childDur);   // nothing left
+const KA_T4 = KA_T3 + KA_GO.empty;                // the line arrives over the empty field
+const KA_T5 = KA_T4 + KA_GO.lineHold;             // and only then does the scroll open
+const KA_LINE = "Some things disappeared so slowly, you only noticed when they were gone.";
+
+/* how far into the haze the kite is allowed to get. Not 1: the layer over the top of it
+   finishes the job, and a sprite driven to zero alpha by arithmetic is a switch, not
+   weather. */
+const KA_LOSE = 0.88;
+
+function resetKiteAfter(){
+  const S = KSKY_A;
+  S.reel = 0; S.held = 0; S.best = 0; S.joy = 0;
+  S.wobX = 0; S.wobY = 0; S.sway = 0; S.hint = 1;
+  S.night = 0; S.flew = 0; S.goT = -1;
+  S.kiteA = 1; S.childA = 1; S.told = 0; S.over = 0;
+  S.coughT = 3.5 + Math.random()*3.0;
+}
+
+/* ---------------------------------------------------------------------------
+   The clocks. One function, so the order things happen in is readable in one place.
+   ------------------------------------------------------------------------- */
+function updKiteAfterGoing(dt){
+  const S = KSKY_A;
+  S.night = cl01(S.night + dt/KA_NIGHT);
+  if (S.best >= KA_FLEW) S.flew = 1;
+
+  /* THE CHILD AND THE KITE STAY THROUGH THE WHOLE TRANSITION.
+     The ending is not allowed to begin until the night is fully arrived AND he has had
+     his turn with the string. Both conditions, because a visitor who dawdled through the
+     evening without touching it would otherwise watch the memory leave before they had
+     been given it, and a visitor who flew it in the first ten seconds would otherwise
+     lose him in daylight. */
+  if (S.night >= 1 && S.flew) S.goT = S.goT < 0 ? 0 : S.goT + dt;
+  const g = S.goT;
+  if (g < 0) return;
+
+  /* smoothstep rather than a ramp: it leaves and arrives at nothing gently at both ends,
+     which is the difference between fading and being turned off */
+  S.kiteA  = 1 - sm(g, KA_T1, KA_T1 + KA_GO.kiteDur);
+  S.childA = 1 - sm(g, KA_T2, KA_T2 + KA_GO.childDur);
+
+  if (g >= KA_T4 && !S.told){ S.told = 1; sayLine(KA_LINE, KA_GO.lineHold); }
+  if (g >= KA_T5) S.over = 1;
+}
+
+/* ---------------------------------------------------------------------------
+   THE HAZE.
+   A real layer at a real depth, not an opacity on the whole scene. It goes over the
+   sky and over the kite, and the boy is erased back out of it — which is not a trick
+   to satisfy a rule but what is actually true: the haze is the couple of miles of air
+   between here and the city, and he is standing four feet away, so there is none of it
+   in front of him. The near grass is drawn after this for the same reason.
+
+   The layer's own alpha is blobby and its edges feather to nothing, so the kite moving
+   through it is obscured unevenly and never at an edge you could point to. It drifts,
+   slowly enough to be air rather than motion — the two backgrounds underneath it never
+   move, only dissolve.
+   ------------------------------------------------------------------------- */
+function drawKiteHaze(t, o){
+  const img = IMG["cloudhazetohidekite.png"];
+  if (!imgReady(img)) return;
+  const a = cl01(o.alpha);
+  if (a <= 0.004) return;
+  /* about ten pixels of travel in a minute, on two periods that do not divide */
+  const dx = Math.sin(t*0.041)*W*0.009 + Math.sin(t*0.017 + 1.3)*W*0.005;
+  const dy = Math.sin(t*0.033 + 2.1)*H*0.004;
+  offscreen(()=>{
+    /* it is hung a little above the frame and a little wide, so its feathered edges are
+       always outside the picture and it never reads as a rectangle with a soft border */
+    ctx.drawImage(img, -W*0.06 + dx, -H*0.10 + dy, W*1.12, H*1.16);
+    if (o.cut) o.cut();
+  });
+  ctx.save();
+  ctx.globalAlpha = a;
+  ctx.drawImage(TMP, 0, 0);
+  ctx.restore();
+}
+
+/* ---------------------------------------------------------------------------
+   The scene.
+   ------------------------------------------------------------------------- */
+function drawKiteSkyAfter(t, dt, o){
+  o = o || {};
+  const S = KSKY_A;
+  if (!getPlate("kiteSkyAfter")){ ctx.fillStyle = "#3a3028"; ctx.fillRect(0,0,W,H); return; }
+
+  updKiteAfterGoing(dt);
+  const night = S.night;
+
+  /* everything but the near grass, exactly as the evening chapter does it: he goes down
+     in front of that band and it comes back over him, which is how he is standing in the
+     meadow rather than on it. `air` here is the plate's own clean-to-hazed dissolve, and
+     what those two paintings are is polluted evening and polluted night — so this single
+     number is the whole crossfade, and both images are the same size and the same
+     composition, so nothing in the landscape moves while it happens. */
+  const FRONT = PLATES.kiteSkyAfter.bands.length - 1;
+  drawPlate("kiteSkyAfter", { air: night, skipBand: FRONT });
+
+  /* the air itself, as particles: this chapter has plenty of it, and unlike the evening
+     it does not get less */
+  partRole = 2;
+  drawParticles(t, 0.62, { x:W*0.26, y:H*0.30, r:H*1.1 });
+
+  updKiteFlight(t, dt, S);
+
+  const camG = roomCam(0.085), camS = roomCam(0.012);
+  const rect  = { x: camG.x, y: camG.y, w: W, h: H };
+  const rectS = { x: camS.x, y: camS.y, w: W, h: H };
+  const L = kiteLayout(S, { plate:"kiteSkyAfter", rect, rectS });
+
+  /* HOW FAR AWAY IT IS, WHICH IS THE ONLY THING THE VISITOR CHANGES.
+     `reel` is 0 with the line all the way out and 1 with the kite hauled in close, so
+     `far` is the distance, eased so there is no point along it where anything steps. */
+  const far = 1 - ease.io(cl01(S.reel));
+  const extinct = KA_LOSE * far;
+
+  /* the colour everything dissolves toward out here. It is the haze's own colour, warm
+     and dirty at dusk and much darker once the light has gone, rather than the blue the
+     evening chapter fades into. */
+  const hazeCol = mixL([132,104,84], [40,36,38], night);
+  const tint = hazeCol;
+  const dChild = 0.06 + night*0.52;
+  /* the kite takes the night like the boy does, and the distance on top of it: at the far
+     end of its line it is most of the way to being just a patch of the air it is in.
+
+     HOW FAR THIS IS ALLOWED TO GO, AND WHY IT IS NOT ALL THE WAY.
+     It was further. Driven harder, the kite at the far end of its line at full night was
+     already invisible before the ending began — which quietly cost the ending its first
+     beat, because a kite that has nothing left to lose cannot be seen to lose it. So the
+     far end is faint and findable rather than gone, and what finishes it is the ending. */
+  const dKite  = 0.05 + night*0.40 + extinct*0.34;
+
+  drawKiteChild(S, L, { dark:dChild, tint, alpha:S.childA });
+  /* the string goes with the kite, and thins along its own length into the murk */
+  drawKiteLine(t, S, L, { night, rect, alpha:S.kiteA, fade:extinct*0.78 });
+  drawKiteBody(t, S, L, { dark:dKite, tint, alpha:S.kiteA * (1 - extinct*0.52) });
+
+  /* and then the air, over the top of the kite, with him cut back out of it.
+
+     THE VEIL IS LIGHTER THAN IT WAS.
+     At half again this strength it did hide the kite, but it also flattened the painting
+     underneath it — the sun went out of the polluted evening and the city lights went out
+     of the polluted night, and both of those are in the supplied paintings on purpose. The
+     kite is hidden by DISTANCE, above; this layer's job is only to be the thing the
+     distance is measured through, and to be blobby and uneven while it does it. */
+  drawKiteHaze(t, {
+    alpha: 0.30 + night*0.12,
+    cut: () => {
+      if (!L.ok || S.childA <= 0.004) return;
+      /* his own alpha, not a box: destination-out takes exactly the shape of him. It is
+         the sprite as painted rather than the darkened copy, because all that matters
+         here is where he is, and it is scaled by how much of him is left so the haze
+         closes over the space as he goes. */
+      ctx.save();
+      ctx.globalAlpha = S.childA;
+      ctx.globalCompositeOperation = "destination-out";
+      ctx.drawImage(IMG[S.child.img], L.bx, L.by, L.sw, L.sh);
+      ctx.restore();
+    }
+  });
+
+  /* the hold signal last, so it is legible even when the kite it is pointing at is not.
+     It goes the instant they hold, and it never comes back. */
+  if (!S.told) drawKiteRing(t, S, L, 0.55);
+
+  /* the meadow he is standing in, back over the top of everything */
+  drawPlate("kiteSkyAfter", { air: night, onlyBand: FRONT });
+
+  /* ---- sound ---- */
+  /* no coughs are scheduled once he has started to go; one already sounding is left to
+     finish on its own, which is what `going` does */
+  kiteAfterSound(dt, 1, S.goT >= KA_T1);
+
+  cv.className = P.down ? "grabbing" : "grabbable";
+  if (o.gate && S.flew) meet(o.gate);
+}
+
+/* what the scroll bar shows while all of this is held: his turn with the kite first, and
+   then the light and the leaving, which is most of the wait */
+function kiteAfterProgress(){
+  const S = KSKY_A;
+  if (S.over) return 1;
+  if (!S.flew) return 0.34 * cl01(S.best/KA_FLEW);
+  return 0.34 + 0.30*S.night + 0.36*cl01(S.goT < 0 ? 0 : S.goT/KA_T5);
 }
 /* ============================================================================
    PLATE SCENES
@@ -9577,8 +10086,21 @@ function drawStarsPlate(t, dt, o){
        catch. Half the speed and two and a half times the life — a little over three seconds
        from appearing to gone, and `life` starts above 1 so the head holds full brightness for
        the first second instead of dimming from the moment it arrives. */
-    STARY.shoot = { x:rnd(W*0.2,W*0.85), y:rnd(H*0.10,H*0.40),
-                    vx:rnd(-4.0,-2.0), vy:rnd(1.1,2.1), life:1.4 };
+    /* AND HIGH ENOUGH THAT AN OPEN CARD CANNOT COVER IT.
+       #starcard sits at bottom:3vh and may grow to 41vh, so a card the visitor has pulled
+       up reaches as far as 56% of the height. The streak used to begin anywhere down to
+       0.40H and then descend up to another 420px from there, which put the end of its run —
+       often its whole second half — behind whichever star's card was open, and this chapter
+       now waits for the meteor, so it cannot be the one thing the reading covers up.
+
+       So the track is bounded rather than rolled twice. It starts in the top fifth, and the
+       descent is DERIVED from a landing band that stops at 0.44H: `vy` is whatever gets it
+       from one to the other in the time it has. The bands do not overlap, so it always
+       visibly falls, and the horizontal speed — the part that reads as speed — is untouched. */
+    const _life = 1.4, _span = _life/0.42;          // seconds it is on screen
+    const _y0 = rnd(H*0.100, H*0.200), _y1 = rnd(H*0.300, H*0.440);
+    STARY.shoot = { x:rnd(W*0.2,W*0.85), y:_y0,
+                    vx:rnd(-4.0,-2.0), vy:(_y1-_y0)/(60*_span), life:_life };
     /* THE LINE COMES WITH THE STAR, NOT WITH CATCHING IT.
        It used to be the reward for tapping a streak that crosses the sky in about a second
        and a half, which made one of the best sentences in the piece a prize for reaction
@@ -12074,7 +12596,11 @@ function buildPaper(){
 }
 
 /* the drawing on screen: fills the frame like a thing on a table under a lamp */
-const DRAW = { bleach:0, strokes:0, sunTouched:0, lastX:0, lastY:0, on:false, greyCrayon:0 };
+/* `marks` is how many times wax has actually gone down on the paper, as opposed to
+   `strokes`, which is how FAR it has travelled. The scroll waits on the first of those
+   and not the second: what this beat asks for is that the visitor picked the crayon up,
+   not that they filled anything in. See the gate. */
+const DRAW = { bleach:0, strokes:0, marks:0, sunTouched:0, lastX:0, lastY:0, on:false, greyCrayon:0 };
 function paperRect(){
   const m = MIN*0.055;
   let w = W-m*2, h = w*(PH/PW);
@@ -12203,10 +12729,23 @@ function crayonTo(x,y){
   pc.save(); pc.globalCompositeOperation="destination-out"; pc.restore();
   DRAW.lastX=x; DRAW.lastY=y;
   DRAW.strokes += Math.hypot(px2-qx,py2-qy)/PW;
+  /* Counted here and not at the top of the function, because the two early returns above
+     are the cases where nothing was drawn: a pointer outside the paper deposits no wax and
+     must not count as having coloured it in. Past this line the crayon has definitely put
+     something down — even a tap, where the segment has no length, still lays a jittered
+     dab of it under a round cap. */
+  DRAW.marks++;
   if (Math.random()<0.35) sfx.crayon();
 }
+/* ONE MARK IS THE WHOLE REQUIREMENT.
+   It used to want 0.55 of the paper's width in accumulated stroke length, which is a good
+   scribble, and a visitor who touched the crayon to the sky once and stopped was held
+   there being asked again for something they had already done. The point of the wait is
+   that nobody scrolls past this beat without having coloured, not that they colour a
+   quota of it. So: any wax on the paper at all, including a single tap, and the scroll
+   opens. `strokes` still exists and is still what the bleach and the dust read from. */
 function drawingInteract(g){
-  if (g==="colour" && DRAW.strokes>0.55) meet("colour");
+  if (g==="colour" && DRAW.marks>0) meet("colour");
 }
 /* ============================================================================
    CHAPTER THREE — THE CHANGE IS ALMOST INVISIBLE
@@ -15029,16 +15568,11 @@ function render(t, dt){
       break;
     }
     case "r-kite": {
-      setPop({ birds:0.05, butterflies:0, dragonflies:0.05, fireflies:0, seeds:0.2 });
-      drawKitePlate(t, dt, { plate:"kiteHazed", air:0.55, lose:true });
-      if (PKITE.best>0.36) meet("rkite");
-      if (false){ const r = drawKite(t, dt, { lose:true }); }
-      // the moment the line is all that is left
-      if (KITE.lost>0.86 && !FOUND["lostkite"]){
-        FOUND["lostkite"]=true; foundN++;
-        whisper("It's still up there. You can feel it pulling.");
-        sfx.line();
-      }
+      /* Nothing is alive out here. No birds, no dragonflies, no seeds blowing about —
+         the population is the difference between the two versions of this field as much
+         as the paintings are. */
+      setPop({ birds:0, butterflies:0, dragonflies:0, fireflies:0, seeds:0 });
+      drawKiteSkyAfter(t, dt, { gate:"rkite" });
       break;
     }
     case "r-stars": {
@@ -15196,7 +15730,6 @@ let shownFin = -1, lastCap="", lastCh=-1;
    already say "hold to bring the kite closer". The plaque stays; the mark is gone, and it
    is not replaced with a cursor, a hand, a circle or a dot. */
 const askTx = askEl.querySelector(".tx");
-let lastAskIcon = " ";
 function setAsk(text){ if (text !== askTx.textContent) askTx.textContent = text; }
 
 /* A LINE SAID IN ANSWER TO SOMETHING, rather than at a point in a beat.
@@ -15390,11 +15923,14 @@ function gateProgress(g){
       for (const id of ["mizar","alkaid","megrez","alrischa","polaris"]) if (STARY.lit[id]){ one = 1; break; }
       return one*0.62 + cl01(STARY.wishSeen/STAR_WISH)*0.38;
     }
-    case "rkite": return PKITE.best/0.40;
+    /* his turn with the string, and then the light and the leaving: the scene owns this
+       because most of what the scroll is waiting for there is a clock, not a gesture */
+    case "rkite": return kiteAfterProgress();
     case "rstars":  { let v=0,n=0; for(const s2 of DIPPER){ if(starSeen(s2,0.78,0.55)){v++; if(STARY.lit[s2.id])n++;} } return v? n/v : 1; }
     case "find":    return PLOOK.n/3;
     case "rfind":   return PLOOK.recall/0.75;
-    case "colour":  return DRAW.strokes/0.55;
+    /* binary on purpose: they have put the crayon on the paper or they have not */
+    case "colour":  return DRAW.marks ? 1 : 0;
     /* touching her is the whole of it; the rest is the scene answering */
     /* touching her, hearing her, and then the whole line emptying itself. The bar carries the
        disappearance too, because that is what the scroll is actually waiting for. */
@@ -15525,8 +16061,12 @@ function onEnter(bid){
   // per-beat setup
   if (bid==="laundry"){ if (!WASH.sheets.length) buildWash(); }
   if (bid==="kite"){ resetKiteSky(); }
-  if (bid==="r-kite"){ if (!PKITE.line) resetPKite(); }
-  if (bid==="r-kite"){ PKITE.best=0; }
+  /* The polluted field starts over each time it is entered — the evening it begins in and
+     the whole ending after it are one continuous thing, and arriving halfway through the
+     night with him already gone would be the chapter playing its last card first. Guarded
+     on `over`, because onEnter fires again on the way out and re-arming a finished
+     sequence would reopen a hold the visitor has already been let through. */
+  if (bid==="r-kite" && !KSKY_A.over) resetKiteAfter();
 
   if (bid==="indoors"){ if (!IN.sheets.length) buildIndoors(); }
   if (bid==="e-stars"){ if (!GRID.length) buildGrid(); }
@@ -15782,6 +16322,79 @@ window.__bluer = {
               for (const s of all) if (s.id === nm && s._p) return { x:s._p.x, y:s._p.y };
               return null; },
   progress(g){ return gateProgress(g); },
+  /* the polluted field: its flight state, its clocks, and — the thing worth being able to
+     assert on — where the layout arithmetic actually puts him and the kite this frame */
+  kiteAfter: KSKY_A,
+  kiteAfterAt(){
+    const camG = roomCam(0.085), camS = roomCam(0.012);
+    const L = kiteLayout(KSKY_A, { plate:"kiteSkyAfter",
+                rect:{x:camG.x,y:camG.y,w:W,h:H}, rectS:{x:camS.x,y:camS.y,w:W,h:H} });
+    return { ok:L.ok, kiteOk:L.kiteOk,
+             boy:  L.ok ? { x:+L.bx.toFixed(2), y:+L.by.toFixed(2),
+                            w:+L.sw.toFixed(2), h:+L.sh.toFixed(2),
+                            /* his ink, which is what you actually see, rather than his canvas */
+                            inkX:+(L.bx + KSKY_A.child.box[0]*L.sw).toFixed(2),
+                            inkY:+(L.by + KSKY_A.child.box[1]*L.sh).toFixed(2),
+                            inkW:+(KSKY_A.child.box[2]*L.sw).toFixed(2),
+                            inkH:+(KSKY_A.child.box[3]*L.sh).toFixed(2) } : null,
+             hand: { x:+L.handX.toFixed(2), y:+L.handY.toFixed(2) },
+             kite: L.kiteOk ? { cx:+L.cx.toFixed(2), cy:+L.cy.toFixed(2),
+                                x:+L.kx.toFixed(2), y:+L.ky.toFixed(2),
+                                w:+L.kw.toFixed(2), h:+L.kh.toFixed(2),
+                                ax:+L.ax.toFixed(2), ay:+L.ay.toFixed(2) } : null,
+             times: { T1:KA_T1, T2:KA_T2, T3:KA_T3, T4:KA_T4, T5:KA_T5, night:KA_NIGHT } };
+  },
+  /* the same numbers for the evening chapter, so the two can be compared directly: the
+     whole claim of that scene is that the boy is in the same place in both */
+  kiteBeforeAt(){
+    const camG = roomCam(0.085), camS = roomCam(0.012);
+    const L = kiteLayout(KSKY, { plate:"kiteSky",
+                rect:{x:camG.x,y:camG.y,w:W,h:H}, rectS:{x:camS.x,y:camS.y,w:W,h:H} });
+    return { ok:L.ok,
+             boy: L.ok ? { inkX:+(L.bx + KSKY.child.box[0]*L.sw).toFixed(2),
+                           inkY:+(L.by + KSKY.child.box[1]*L.sh).toFixed(2),
+                           inkW:+(KSKY.child.box[2]*L.sw).toFixed(2),
+                           inkH:+(KSKY.child.box[3]*L.sh).toFixed(2) } : null,
+             hand: { x:+L.handX.toFixed(2), y:+L.handY.toFixed(2) } };
+  },
+  /* IS ANY PIXEL OF HAZE ON THE BOY.
+     The layer is drawn over the kite and then he is erased back out of it, so the test is
+     the buffer itself: re-render the haze exactly as the frame did, then count how much
+     alpha is left anywhere his sprite is opaque. Anything above a rounding error means
+     the cut missed. */
+  hazeOnBoy(){
+    const S = KSKY_A;
+    const camG = roomCam(0.085), camS = roomCam(0.012);
+    const L = kiteLayout(S, { plate:"kiteSkyAfter",
+                rect:{x:camG.x,y:camG.y,w:W,h:H}, rectS:{x:camS.x,y:camS.y,w:W,h:H} });
+    if (!L.ok) return null;
+    const img = IMG["cloudhazetohidekite.png"];
+    if (!imgReady(img)) return "haze not loaded";
+    /* the haze, cut, into TMP — the same call the scene makes */
+    drawKiteHaze(performance.now()*0.001, { alpha:1, cut: () => {
+      ctx.save(); ctx.globalAlpha = S.childA;
+      ctx.globalCompositeOperation = "destination-out";
+      ctx.drawImage(IMG[S.child.img], L.bx, L.by, L.sw, L.sh); ctx.restore(); } });
+    const hz = tc.getImageData(0,0,W,H).data;
+    /* him alone into TMP2, for his alpha */
+    offscreen2(()=>{ ctx.drawImage(IMG[S.child.img], L.bx, L.by, L.sw, L.sh); });
+    const boy = tc2.getImageData(0,0,W,H).data;
+    /* SOLID HIM versus HIS OUTLINE, counted separately.
+       destination-out removes the destination in proportion to the source's alpha, so a
+       pixel that is 80% him keeps 20% of its haze — correct, because that pixel is 20%
+       sky. Those are his antialiased edge and they are supposed to hold a trace. The test
+       that matters is the interior: anywhere he is fully opaque, the haze must be gone. */
+    let solid=0, solidOn=0, worstSolid=0, edge=0, edgeOn=0, worstEdge=0;
+    for (let i=3;i<boy.length;i+=4){
+      if (boy[i] >= 252){ solid++; if (hz[i] > 4){ solidOn++; if (hz[i]>worstSolid) worstSolid=hz[i]; } }
+      else if (boy[i] > 24){ edge++; if (hz[i] > 4){ edgeOn++; if (hz[i]>worstEdge) worstEdge=hz[i]; } }
+    }
+    return { solidPixels:solid, hazeOnSolid:solidOn, worstOnSolid:worstSolid,
+             edgePixels:edge, hazeOnEdge:edgeOn, worstOnEdge:worstEdge,
+             verdict: solidOn === 0
+               ? "not one pixel of haze anywhere he is solid"
+               : "haze is landing on him" };
+  },
   /* IS ANY PIXEL OF HER OUTSIDE THE CENTRE SHEET'S OWN ALPHA.
      Not against the mesh outline — against the cloth as it is actually drawn, which is inset
      inside that outline by the width of the transparent margin its sprite carries. Both are

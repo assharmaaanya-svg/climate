@@ -181,6 +181,34 @@ const PLATES = {
        he loses his legs to a field he is supposed to be standing in. */
     bands:[{to:0.46,p:0.012},{to:0.64,p:0.035},{to:0.87,p:0.085},{to:1.0,p:0.24}]
   },
+  /* The same field after the air changed, at the same two times of day. Measured, these
+     two paintings are the same 1448x1086 as the clean pair and the same composition —
+     same chimney, same treeline, same river, same near meadow — so the crop, the band
+     cuts and the parallax factors are the clean plate's, deliberately, and the boy's
+     position in the painting needs no adjustment at all. The two of them are also framed
+     identically to EACH OTHER, which is what lets the evening dissolve into the night
+     without one pixel of the landscape moving. */
+  kiteSkyAfter: {
+    clean:"eveningnskyforthekite.png",
+    hazed:"pollutedairnightskyforkire.png",
+    dissolve:"full",
+    crop:{x:0, y:0.02, w:1, h:0.90},
+    /* AND THE NIGHT ONE IS PAINTED A LITTLE LOWER THAN THE EVENING ONE.
+       The pair is the same size and the same composition, but not quite the same framing:
+       located independently in each painting, the meadow's front edge sits at source row
+       788 in the evening and 806 at night, and rendered through this plate that showed up
+       as the edge sliding 14 screen pixels down during the dissolve — with two edges
+       visible at the halfway point instead of one, which is exactly what a misregistered
+       crossfade looks like. (Correlating whole edge profiles was tried first and could not
+       resolve it: one painting is at dusk and the other has its lights on, so the profiles
+       differ for reasons that have nothing to do with framing. Locating one hard feature
+       in each image separately did.) So the night image is sampled 15 rows lower, which is
+       that difference, and nothing in the landscape moves any more. Horizontal was left
+       alone deliberately: no measurement of it was strong enough to act on, and nudging on
+       a weak signal would only be a different error. */
+    align:{ x:0, y:0.0140 },
+    bands:[{to:0.46,p:0.012},{to:0.64,p:0.035},{to:0.87,p:0.085},{to:1.0,p:0.24}]
+  },
   /* the kite, in four lights */
   kiteDay:     { clean:"childflykite.png",         hazed:"pollutedkitefly.png", dissolve:"sky",
                  crop:{x:0,y:0,w:1,h:0.88},
@@ -229,7 +257,12 @@ function preloadPlates(){
        sheet, cropped at the hem because that is where the cloth stops, and her skirt below
        it. The uncropped full-body version she used to be drawn from is not loaded any more. */
     "momshadowcoughingcropped.png","skirtafterpollution.png",
-    "postpollutionbedroomupdate.png"];
+    "postpollutionbedroomupdate.png",
+    /* the field after the air changed: the two skies, the boy repainted for that light,
+       and the haze the kite is lost into. The haze is a plain sprite and not a plate —
+       it is one layer at one depth, drawn over the kite and under the near grass. */
+    "eveningnskyforthekite.png","pollutedairnightskyforkire.png",
+    "childkiteafterpollution.png","cloudhazetohidekite.png"];
   /* the binocular overlay is not here any more: the lookout draws its field of
      view rather than loading it. See build/06g-lookout.js. */
   for (const n of order) loadImg(n);
@@ -252,8 +285,16 @@ function sliceBands(def, which){
   const cw = Math.max(2, (W*(1+OVERSCAN))|0);
   const out = [];
   const crop = def.crop || {x:0,y:0,w:1,h:1};
-  const sx0 = crop.x*im.naturalWidth, sw = crop.w*im.naturalWidth;
-  const sy0 = crop.y*im.naturalHeight, sh = crop.h*im.naturalHeight;
+  /* AND ONE OF A PAIR MAY NEED NUDGING ONTO THE OTHER.
+     A pair can only be dissolved if the two paintings are framed identically, and almost
+     every pair here is. `align` is for the one that is not: it shifts where the HAZED image
+     is sampled from, in fractions of its own size, so its landscape lands on the clean
+     one's. It never applies to `clean`, which is the reference. Measured rather than
+     guessed — see kiteSkyAfter, and the note there on how. */
+  const al = (which === "hazed" && def.align) || null;
+  const ax = al ? al.x||0 : 0, ay = al ? al.y||0 : 0;
+  const sx0 = (crop.x+ax)*im.naturalWidth, sw = crop.w*im.naturalWidth;
+  const sy0 = (crop.y+ay)*im.naturalHeight, sh = crop.h*im.naturalHeight;
 
   let prev = 0;
   for (let i=0;i<def.bands.length;i++){

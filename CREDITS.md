@@ -28,6 +28,8 @@ originals are kept at the repository root; `assets/` holds only the loops built 
 | `assets/cough-mother.wav` | her, on the same washing line, afterwards |
 | `assets/kite-wind.wav` | open wind off the water |
 | `assets/kite-laugh.wav` | him, played whole and occasionally, never looped |
+| `assets/kite-after-air.wav` | the same field afterwards, in place of the wind |
+| `assets/kite-child-cough.wav` | him, in that field, three separate fits played one at a time |
 | `assets/night-crickets.wav` | from dusk onward |
 | `assets/night-birds.wav` | once it is properly dark |
 | `assets/look-valley.wav` | the town from the hill, while nothing in particular is being looked at |
@@ -54,6 +56,21 @@ kept at forty-eight kilohertz in thirty-two-bit float for a sound that plays at 
 through a low-pass; it is now twenty-two-oh-five and sixteen-bit like everything else, resampled
 through a windowed-sinc filter rather than by interpolation, since dropping from forty-eight without
 one folds the top of the recording back down into it. Neither was filtered, gained or equalised.
+
+The polluted field's two files were supplied in formats of their own and given the same treatment.
+The air arrived as ten minutes of 320 kbps stereo mp3 — a recording, not a loop — averaging −39.5
+dBFS, which is fifteen decibels under every other outdoor bed here and would have repeated this
+chapter's one previous complaint about ambience nobody could hear. Its steadiest sustained stretch
+is twenty-six seconds from 383 seconds in: crest factor 2.34, so nothing in it sticks out enough to
+be noticed twice, and its two ends match to within one and a half percent, so the join has almost
+nothing to hide. That window was downmixed, resampled to 22.05 kHz, folded, and normalised to −26
+dBFS, where the rest of the outdoor beds sit. Measured after building, the step across the loop
+point is 0.0049 against 0.0046 in the middle of the file — the seam is inside the noise floor.
+
+The cough was 44.1 kHz stereo and is now mono at 22.05 like everything else. It is kept whole rather
+than cut up, because it is not one cough: it is three separate fits with silence between them, at
+0.15, 2.24 and 4.24 seconds. The scene plays one of those at a time, by offset, never the same one
+twice running, and never two at once.
 
 The laugh is the exception: four seconds of a child cannot be looped, because looped laughter is a
 horror-film cue. It is played whole, occasionally, on its own envelope, faded up over its first

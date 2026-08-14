@@ -398,7 +398,9 @@ const BEATS = [
      pause and the sentence all have to fit inside it. */
   { id:"r-laundry", ch:3, len:1.9, gate:"cough",  ask:"Tap your mother to hear her hum",
     line:"Mum still hung them out." },
-  { id:"r-kite",    ch:3, len:1.3,  gate:"rkite",   ask:"Put it up again",
+  /* the same instruction as the evening chapter, word for word, because it is the same
+     gesture and the same kite, and a chapter that renames the verb implies a new one */
+  { id:"r-kite",    ch:3, len:1.6,  gate:"rkite",   ask:"Hold to bring the kite closer",
     line:"" },
   { id:"r-stars",   ch:3, len:1.35, gate:"rstars",  ask:"Find the shape again",
     line:"" },
@@ -495,6 +497,18 @@ HOLD_AT["r-laundry"] = { done: () => !!SHEETS_AFTER.over,
                          running: () => !!SHEETS_AFTER.said,
                          pass: () => { SHEETS_AFTER.said = 1; SHEETS_AFTER.over = 1;
                                        done.cough = true; } };
+
+/* The polluted field is the washing line's shape again: an interaction, and then a
+   sequence that plays itself out. It holds until the whole of it has — the light going,
+   the kite lost, him gone, the empty field and the sentence over it are the chapter, and
+   they all sit behind this. `running` exempts it from the patience backstop once the
+   ending has started, so nobody is dropped into the next chapter mid-disappearance. */
+HOLD_AT["r-kite"] = { done: () => !!KSKY_A.over,
+                      prog: () => kiteAfterProgress(),
+                      running: () => KSKY_A.goT >= 0,
+                      pass: () => { KSKY_A.flew = 1; KSKY_A.over = 1;
+                                    KSKY_A.kiteA = 0; KSKY_A.childA = 0;
+                                    done.rkite = true; } };
 
 HOLD_AT.laundry = { done: () => !!SHEETS.tapped,
                     prog: () => SHEETS.tapped ? 1 : 0,

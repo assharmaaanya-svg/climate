@@ -110,6 +110,18 @@ function initAudio(){
       COUGH.gain.connect(COUGH.pan); COUGH.pan.connect(master); }
     else COUGH.gain.connect(master);
 
+    /* the field after the air changed. Its own bed and its own child, built the same way
+       as the two above so this chapter can set its level without touching anything else. */
+    KAMB.gain = AC.createGain(); KAMB.gain.gain.value = 0;
+    KAMB.filt = AC.createBiquadFilter(); KAMB.filt.type = "lowpass";
+    KAMB.filt.frequency.value = 5000; KAMB.filt.Q.value = 0.4;
+    KAMB.filt.connect(KAMB.gain); KAMB.gain.connect(master);
+    KCOUGH.gain = AC.createGain(); KCOUGH.gain.gain.value = 1;
+    if (AC.createStereoPanner){ KCOUGH.pan = AC.createStereoPanner();
+      KCOUGH.pan.pan.value = -0.30;              // he is standing left of centre
+      KCOUGH.gain.connect(KCOUGH.pan); KCOUGH.pan.connect(master); }
+    else KCOUGH.gain.connect(master);
+
     /* The lookout. One layer per place, each of them silent until the visitor is
        looking at that place through the binoculars. */
     for (const k in LOOKA){
@@ -159,6 +171,16 @@ const LAUGH = { buf:null, gain:null, state:"idle", next: 4 };
    never loops. It goes through a stereo panner set from where she is standing in the frame,
    so it arrives from her rather than from the middle of the listener's head. */
 const COUGH = { buf:null, gain:null, pan:null, state:"idle" };
+/* THE FIELD AFTER THE AIR CHANGED.
+   Its bed is a loop like any other. Its cough is a one-shot like the laugh and hers, with
+   one difference that matters: the recording is not one cough, it is three separate fits
+   of coughing with silence between them, so `KCOUGH_CUTS` holds where each of them is and
+   the scene plays ONE at a time. That is what keeps it from being the same event on a
+   timer — three different coughs, in a random order, at intervals that do not repeat. */
+const KAMB = { buf:null, src:null, gain:null, filt:null, state:"idle" };
+const KCOUGH = { buf:null, gain:null, pan:null, state:"idle", until:0, last:-1 };
+/* (start, length) in seconds, measured off the supplied recording's envelope */
+const KCOUGH_CUTS = [[0.15,1.32],[2.24,0.82],[4.24,0.84]];
 /* the flat lift on the outdoor bed, shared by both halves so their relationship holds */
 const AMB_LIFT = 1.34;
 /* the polluted bed: a distant tunnel field recording, which is what the outside sounds like
@@ -256,6 +278,15 @@ function loadAmbience(){
      badly through a pipeline that turns every filename into a URL, and the original
      filename is recorded with its attribution in CREDITS.md where it belongs. */
   loadOne(AMB3, "amb-tunnel-distant.wav");
+  /* The polluted field's bed and its child, both rebuilt from the supplied files into the
+     format every other sound in this piece is in — mono 16-bit at 22.05 kHz. The bed is 26
+     seconds taken from 383 s into the artist's ten-minute recording, which is the steadiest
+     sustained stretch in it, closed into a loop by crossfading its head against the material
+     that follows its tail. It is normalised to -26 dBFS, which is where every other outdoor
+     bed here sits: the recording itself averages -39.5, and this chapter's whole problem
+     last time was a bed nobody could hear. See CREDITS.md. */
+  loadOne(KAMB, "kite-after-air.wav");
+  loadOne(KCOUGH, "kite-child-cough.wav");
   loadOne(CRICK, "night-crickets.wav");
   loadOne(NBIRD, "night-birds.wav");
   for (const k in LOOKA) loadOne(LOOKA[k], LOOKA[k].file);
@@ -322,7 +353,9 @@ function ambienceAfterOff(){
 }
 
 function startOne(layer){
-  if (layer === LAUGH || layer === COUGH) return;   // a one-shot has nothing to start
+  /* a one-shot has nothing to start. KCOUGH belongs here too: it is played in pieces from
+     an offset, and setting it looping would put a child coughing under the whole chapter. */
+  if (layer === LAUGH || layer === COUGH || layer === KCOUGH) return;
   if (!AC || !layer.buf || layer.src) return;
   const s = AC.createBufferSource();
   s.buffer = layer.buf; s.loop = true;
@@ -416,6 +449,78 @@ function kiteSound(dt, v, night, joy){
     LAUGH.next = 9 + Math.random()*11;
     fireLaugh(v * (0.20 + Math.random()*0.10) * (1 - night*0.45));
   }
+}
+
+/* ONE COUGH, WHOLE, AND NEVER TWO AT ONCE.
+   A fit of coughing arrives across a field the way anything does — you are hearing it
+   before you notice it started — so it comes up over a quarter of a second and goes back
+   down over rather longer, which is also what keeps a cut-out region of a recording from
+   clicking at either end. It is loud enough to be unmistakable over the bed and no
+   louder: the bed sits at -26 dBFS and this is played at about 0.5, which puts it clearly
+   above the air without being an event the interface has staged.
+
+   `until` is when the last one will have finished. Nothing can start before then, so two
+   can never overlap however the scene's clock lands. */
+function fireChildCough(vol){
+  if (!AC || !soundOn || KCOUGH.state !== "ready" || !KCOUGH.gain) return 0;
+  const now = AC.currentTime;
+  if (now < KCOUGH.until) return 0;              // one is still going
+  /* a different one from last time, so it is never the same cough twice running */
+  let k = Math.floor(Math.random()*KCOUGH_CUTS.length);
+  if (k === KCOUGH.last) k = (k + 1 + Math.floor(Math.random()*(KCOUGH_CUTS.length-1)))
+                             % KCOUGH_CUTS.length;
+  KCOUGH.last = k;
+  const cut = KCOUGH_CUTS[k], off = cut[0], dur = cut[1];
+  const s = AC.createBufferSource();
+  s.buffer = KCOUGH.buf;
+  const g = AC.createGain();
+  const up = 0.26, down = 0.42;
+  g.gain.setValueAtTime(0.0001, now);
+  g.gain.exponentialRampToValueAtTime(Math.max(0.0002, vol), now + up);
+  g.gain.setValueAtTime(Math.max(0.0002, vol), now + Math.max(up + 0.05, dur - down));
+  g.gain.exponentialRampToValueAtTime(0.0001, now + dur + 0.10);
+  s.connect(g); g.connect(KCOUGH.gain);
+  s.start(now, off, dur + 0.12);
+  s.stop(now + dur + 0.20);
+  KCOUGH.until = now + dur + 0.25;
+  return dur;
+}
+
+/* THE FIELD AFTER THE AIR CHANGED.
+   The bed is continuous and clearly present — it is the whole environment of the chapter
+   and the one thing that is still there at the end of it. It fades in on arrival and out
+   on leaving, and it is set well above where the other polluted bed was mixed, because a
+   scene whose ambience nobody can hear reads as broken rather than as bad air.
+
+   `going` is the ending: once he has started to disappear, no further coughs are
+   SCHEDULED. One already sounding is left alone and finishes on its own, which is why
+   this only stops the clock and never touches a playing source. */
+const KAFTQ = { t: 0 };
+function kiteAfterSound(dt, v, going){
+  KAFTQ.t = 0.3;
+  v = v * (1 - SILENCE);
+  if (!AC || !soundOn || !KAMB.gain) return;
+  if (KAMB.state === "ready" && !KAMB.src) startOne(KAMB);
+  envGain(KAMB.gain, Math.max(0, v*0.92*AMB_LIFT), 0.9);
+  /* every other bed gets out of the way: this chapter is only this air */
+  if (AMB.gain)  envGain(AMB.gain, 0, 1.1);
+  if (AMB2.gain) envGain(AMB2.gain, 0, 1.1);
+  if (AMB3.gain) envGain(AMB3.gain, 0, 1.2);
+  if (KWIND.gain) envGain(KWIND.gain, 0, 1.4);
+
+  if (going){ KSKY_A.coughT = 1e9; return; }
+  KSKY_A.coughT -= dt;
+  if (KSKY_A.coughT <= 0){
+    const dur = fireChildCough(v * 0.50);
+    /* the gap is long and it is never the same gap: seven to eighteen seconds of nothing
+       after each one, so it returns while the visitor is still here without ever becoming
+       something they could count on. If the sound was not ready, try again shortly. */
+    KSKY_A.coughT = dur > 0 ? 7 + Math.random()*11 : 1.5;
+  }
+}
+/* ...and the reverse, for every scene that is not this one */
+function kiteAfterSoundOff(){
+  if (KAMB.gain) envGain(KAMB.gain, 0, 1.3);
 }
 
 /* After dark: insects, which are everywhere and even, and one bird that only
@@ -537,6 +642,10 @@ function updSound(dt, t){
   else if (RUS.gain){ for (const L of [RUS, RUS2, HUM]) envGain(L.gain, 0, 0.9); HUMDUCK = 0; }
   if (KITEQ.t > 0){ KITEQ.t -= dt; }
   else if (KWIND.gain){ envGain(KWIND.gain, 0, 1.1); }
+  /* the polluted field's air fades out on the way out of the chapter rather than stopping
+     with it, which is the same courtesy every other bed here gets */
+  if (KAFTQ.t > 0){ KAFTQ.t -= dt; }
+  else kiteAfterSoundOff();
   if (NIGHTQ.t > 0){ NIGHTQ.t -= dt; }
   else if (CRICK.gain){ for (const L of [CRICK, NBIRD]) envGain(L.gain, 0, 2.0); }
   /* a place's memory does not follow the visitor out of the chapter it belongs to */

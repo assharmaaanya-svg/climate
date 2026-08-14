@@ -908,7 +908,11 @@ function buildPaper(){
 }
 
 /* the drawing on screen: fills the frame like a thing on a table under a lamp */
-const DRAW = { bleach:0, strokes:0, sunTouched:0, lastX:0, lastY:0, on:false, greyCrayon:0 };
+/* `marks` is how many times wax has actually gone down on the paper, as opposed to
+   `strokes`, which is how FAR it has travelled. The scroll waits on the first of those
+   and not the second: what this beat asks for is that the visitor picked the crayon up,
+   not that they filled anything in. See the gate. */
+const DRAW = { bleach:0, strokes:0, marks:0, sunTouched:0, lastX:0, lastY:0, on:false, greyCrayon:0 };
 function paperRect(){
   const m = MIN*0.055;
   let w = W-m*2, h = w*(PH/PW);
@@ -1037,8 +1041,21 @@ function crayonTo(x,y){
   pc.save(); pc.globalCompositeOperation="destination-out"; pc.restore();
   DRAW.lastX=x; DRAW.lastY=y;
   DRAW.strokes += Math.hypot(px2-qx,py2-qy)/PW;
+  /* Counted here and not at the top of the function, because the two early returns above
+     are the cases where nothing was drawn: a pointer outside the paper deposits no wax and
+     must not count as having coloured it in. Past this line the crayon has definitely put
+     something down — even a tap, where the segment has no length, still lays a jittered
+     dab of it under a round cap. */
+  DRAW.marks++;
   if (Math.random()<0.35) sfx.crayon();
 }
+/* ONE MARK IS THE WHOLE REQUIREMENT.
+   It used to want 0.55 of the paper's width in accumulated stroke length, which is a good
+   scribble, and a visitor who touched the crayon to the sky once and stopped was held
+   there being asked again for something they had already done. The point of the wait is
+   that nobody scrolls past this beat without having coloured, not that they colour a
+   quota of it. So: any wax on the paper at all, including a single tap, and the scroll
+   opens. `strokes` still exists and is still what the bleach and the dust read from. */
 function drawingInteract(g){
-  if (g==="colour" && DRAW.strokes>0.55) meet("colour");
+  if (g==="colour" && DRAW.marks>0) meet("colour");
 }
