@@ -69,10 +69,14 @@ const PRET_PAUSE  = 2.6;
    visitor might read as nothing happening. */
 const PRET_DOTS   = 3.0;
 const PRET_RED    = 6.5;
-/* and the sentence is HELD at the end of its drift, fully red, before the scroll opens. This
-   was 3.2 and it was a breath; at 4 it is a pause somebody is sitting in. Nothing else
-   happens during it — no scroll cue, no instruction. */
-const PRET_BREATH = 4.0;
+/* AND THE SCROLL OPENS ONE SECOND AFTER THE SENTENCE ARRIVES, not at the end of its colour.
+   It used to wait for the whole drift and then a four-second breath on top: ten and a half
+   seconds of a page that does not respond, which does not read as a pause somebody is
+   sitting in — it reads as broken. Nothing is lost by opening early, because the drift is a
+   CSS transition on the sentence itself and goes on drifting whether the visitor moves or
+   not, and the sentence is allowed to follow them into the next beat (see `evLineBeat`), so
+   the red still lands. What changes is only that they are never held while it does. */
+const PRET_BREATH = 1.0;
 
 /* WHAT THE TIMELINE ASKS BEFORE IT WILL LET ANYONE LEAVE.
    The polluted bedroom is not one interaction, it is a sequence, and it holds the scroll
@@ -88,11 +92,13 @@ function returnProgress(){
   if (!gateMet("pcurtain")) return 0.34*cl01(gateProgress("pcurtain"));
   if (!PRET.tried)          return 0.34 + 0.26*cl01(PRET.give/RCORD_FIRE);
   /* and through the phone, the pause, the answer and the breath */
-  const total = 1.2 + PRET_PAUSE + PRET_DOTS + PRET_RED + PRET_BREATH;
-  let left = PRET_RED + PRET_BREATH;
-  if (PRET.noteT > 0)      left = 1.2 + PRET_PAUSE + PRET_DOTS + PRET_RED + PRET_BREATH;
-  else if (PRET.dotsT > 0) left = PRET_PAUSE + PRET_DOTS + PRET_RED + PRET_BREATH;
-  else if (PRET.lineT > 0) left = PRET_DOTS + PRET_RED + PRET_BREATH;
+  /* the bar counts what the scroll is actually waiting for, which no longer includes the
+     colour drift — that finishes in its own time with the visitor free to go */
+  const total = 1.2 + PRET_PAUSE + PRET_DOTS + PRET_BREATH;
+  let left = PRET_BREATH;
+  if (PRET.noteT > 0)      left = 1.2 + PRET_PAUSE + PRET_DOTS + PRET_BREATH;
+  else if (PRET.dotsT > 0) left = PRET_PAUSE + PRET_DOTS + PRET_BREATH;
+  else if (PRET.lineT > 0) left = PRET_DOTS + PRET_BREATH;
   else if (PRET.redT > 0)  left = PRET.redT;
   return 0.60 + 0.40*cl01(1 - left/total);
 }
@@ -384,8 +390,10 @@ function drawReturn(t, dt, o){
          second and a half on the end the sentence was still on screen, fully red, once the
          scroll had opened — so it sat over the top of the next chapter's washing line. It
          begins its own fade at the moment the scroll is released. */
-      sayLine("Leave it closed.", PRET_RED + PRET_BREATH, { red:true });
-      PRET.redT = PRET_RED + PRET_BREATH;
+      /* the sentence stays for the whole of its colour drift; the SCROLL only waits a
+         second of it. The two used to be the same number and that was the freeze. */
+      sayLine("Leave it closed.", PRET_RED, { red:true });
+      PRET.redT = PRET_BREATH;
     }
   }
   if (PRET.redT > 0){
@@ -397,7 +405,15 @@ function drawReturn(t, dt, o){
      nothing coming through that window. */
   OUTSIDE = 0;
   MUFFLE = 1;
-  ambience(0.09 + 0.05*rev, 0.10);
+  /* WHAT IS OUTSIDE IS A CITY NOW, AND YOU CAN HEAR IT THROUGH THE GLASS.
+     This used to be the garden bed at a tenth of its level, which is the same room the
+     chapter before it had, only fainter — so the one place the contrast should have been
+     unmissable was the one place nothing had changed. It is the city recording instead,
+     already low-passed when it was built and low-passed again on the way out, held well
+     under the room. It comes up a little as the curtains are opened, because that is when
+     you would notice it, and it never gets loud: the point is not traffic, it is that the
+     quiet the room used to have is gone and something is always there behind it. */
+  cityIndoors(0.16 + 0.10*rev, 1 - 0.35*rev);
   if (!PRET.pulling && PRET.hover < 0.2) cv.className = wide ? "" : "grabbable";
 }
 

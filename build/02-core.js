@@ -400,7 +400,11 @@ const BEATS = [
     line:"Mum still hung them out." },
   /* the same instruction as the evening chapter, word for word, because it is the same
      gesture and the same kite, and a chapter that renames the verb implies a new one */
-  { id:"r-kite",    ch:3, len:1.6,  gate:"rkite",   ask:"Hold to bring the kite closer",
+  /* longer than the beat it replaced, because the light is the visitor's to move now and it
+     needs room to be moved through. Measured at 1.6 the whole evening went to night in about
+     three turns of a wheel, which is responsive but not an evening. The clean chapter spends
+     2.85 beats getting there, across `kite` and `climb`; this spends about 1.8 of its 2.4. */
+  { id:"r-kite",    ch:3, len:2.4,  gate:"rkite",   ask:"Hold to bring the kite closer",
     line:"" },
   { id:"r-stars",   ch:3, len:1.35, gate:"rstars",  ask:"Find the shape again",
     line:"" },

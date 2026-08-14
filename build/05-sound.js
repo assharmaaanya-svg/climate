@@ -116,6 +116,12 @@ function initAudio(){
     KAMB.filt = AC.createBiquadFilter(); KAMB.filt.type = "lowpass";
     KAMB.filt.frequency.value = 5000; KAMB.filt.Q.value = 0.4;
     KAMB.filt.connect(KAMB.gain); KAMB.gain.connect(master);
+    /* the city from inside the room. Its own filter as well as the baked one, set low, so
+       the walls can close a little further as the chapter goes on without re-cutting a file. */
+    KROOM.gain = AC.createGain(); KROOM.gain.gain.value = 0;
+    KROOM.filt = AC.createBiquadFilter(); KROOM.filt.type = "lowpass";
+    KROOM.filt.frequency.value = 900; KROOM.filt.Q.value = 0.5;
+    KROOM.filt.connect(KROOM.gain); KROOM.gain.connect(master);
     KCOUGH.gain = AC.createGain(); KCOUGH.gain.gain.value = 1;
     if (AC.createStereoPanner){ KCOUGH.pan = AC.createStereoPanner();
       KCOUGH.pan.pan.value = -0.30;              // he is standing left of centre
@@ -178,6 +184,14 @@ const COUGH = { buf:null, gain:null, pan:null, state:"idle" };
    the scene plays ONE at a time. That is what keeps it from being the same event on a
    timer — three different coughs, in a random order, at intervals that do not repeat. */
 const KAMB = { buf:null, src:null, gain:null, filt:null, state:"idle" };
+/* AND THE SAME CITY, HEARD FROM INSIDE THE HOUSE.
+   The polluted bedroom used to play the garden bed at a tenth of its level, which is why it
+   still sounded like the bedroom before the air changed — it WAS the bedroom before the air
+   changed, only quieter. This is the same recording the field outside uses, from a different
+   three minutes of it, already low-passed at 700 Hz when it was built. Turning the outdoor
+   bed down would not have done it: what makes a sound come from beyond a shut window is the
+   top of it missing, not the level. */
+const KROOM = { buf:null, src:null, gain:null, filt:null, state:"idle" };
 const KCOUGH = { buf:null, gain:null, pan:null, state:"idle", until:0, last:-1 };
 /* (start, length) in seconds, measured off the supplied recording's envelope */
 const KCOUGH_CUTS = [[0.15,1.32],[2.24,0.82],[4.24,0.84]];
@@ -278,14 +292,21 @@ function loadAmbience(){
      badly through a pipeline that turns every filename into a URL, and the original
      filename is recorded with its attribution in CREDITS.md where it belongs. */
   loadOne(AMB3, "amb-tunnel-distant.wav");
-  /* The polluted field's bed and its child, both rebuilt from the supplied files into the
-     format every other sound in this piece is in — mono 16-bit at 22.05 kHz. The bed is 26
-     seconds taken from 383 s into the artist's ten-minute recording, which is the steadiest
-     sustained stretch in it, closed into a loop by crossfading its head against the material
-     that follows its tail. It is normalised to -26 dBFS, which is where every other outdoor
-     bed here sits: the recording itself averages -39.5, and this chapter's whole problem
-     last time was a bed nobody could hear. See CREDITS.md. */
-  loadOne(KAMB, "kite-after-air.wav");
+  /* THE CITY, TWICE, FROM ONE RECORDING — AND NOT THE SAME PART OF IT TWICE.
+     `city-outside` is 24 s from 79 s in: crest factor 1.64, so there is nothing in it that
+     could be recognised on a second pass, and a zero-crossing rate of 509 Hz, which is what
+     a city sounds like from a long way off rather than from inside one. `city-indoors` is
+     19 s from 265 s in — three minutes away in the same recording — and low-passed at 700 Hz
+     with 24 dB an octave when it was built, because what puts a sound outside a shut window
+     is the top of it missing.
+
+     Both are stored at 11.025 kHz rather than the usual 22.05, and that is measured, not
+     assumed: through a 36 dB/octave high-pass, the outdoor one has 0.38% of its power above
+     4 kHz and 0.21% above 6 kHz, so the upper half of a 22 kHz file would have been empty.
+     Both are normalised (-26 outdoors, -29 in) and closed into loops whose seams measure
+     inside the noise floor. Their lengths differ so they can never fall into phase. */
+  loadOne(KAMB, "city-outside.wav");
+  loadOne(KROOM, "city-indoors.wav");
   loadOne(KCOUGH, "kite-child-cough.wav");
   loadOne(CRICK, "night-crickets.wav");
   loadOne(NBIRD, "night-birds.wav");
@@ -337,7 +358,9 @@ function coughSound(panX){
    as broken audio rather than as a place with less in it. So this bed is set high and kept
    there, and what makes the scene feel emptier is that almost nothing else is playing over
    it: no birds, no gust, the cloth well down, and her only when she is touched. */
+const AMB3Q = { t: 0 };
 function ambienceAfter(v){
+  AMB3Q.t = 0.3;
   v = v * (1 - SILENCE);
   if (!AC || !soundOn || !AMB3.gain) return;
   if (AMB3.state === "ready" && !AMB3.src) startOne(AMB3);
@@ -347,7 +370,11 @@ function ambienceAfter(v){
   if (AMB.gain)  envGain(AMB.gain, 0, 1.1);
   if (AMB2.gain) envGain(AMB2.gain, 0, 1.1);
 }
-/* ...and the reverse, for every scene that is not this one */
+/* ...and the reverse, for every scene that is not this one.
+   This existed and nothing ever called it, so the washing line's bed simply kept playing
+   once that chapter had been through — audible under everything after it except the
+   polluted field, which happened to zero AMB3 by hand. It is on a queue now like every
+   other layer: the scene asks for it each frame, and when it stops asking, it goes. */
 function ambienceAfterOff(){
   if (AMB3.gain) envGain(AMB3.gain, 0, 1.2);
 }
@@ -523,6 +550,35 @@ function kiteAfterSoundOff(){
   if (KAMB.gain) envGain(KAMB.gain, 0, 1.3);
 }
 
+/* THE ROOM WITH THE WINDOW SHUT.
+   `v` is how much of the city gets in, `close` how far the room has shut itself — the second
+   one only moves the filter, never the level, because a room going quieter and a room going
+   duller are different things and only the second one is what walls do.
+
+   Like every other bed here it fades rather than starts: `envGain` ramps, `startOne` is
+   called once and the source then loops forever, so nothing restarts when the visitor moves
+   and two copies can never overlap. The garden that used to play here is taken down at the
+   same time, over a slower ramp than this one comes up, so the two cross rather than cut. */
+const KROOMQ = { t: 0 };
+function cityIndoors(v, close){
+  KROOMQ.t = 0.3;
+  v = v * (1 - SILENCE);
+  if (!AC || !soundOn || !KROOM.gain) return;
+  if (KROOM.state === "ready" && !KROOM.src) startOne(KROOM);
+  envGain(KROOM.gain, Math.max(0, v*AMB_LIFT), 1.1);
+  if (KROOM.filt) KROOM.filt.frequency.setTargetAtTime(
+    980 - cl01(close||0)*300, AC.currentTime, 1.6);
+  /* and nothing else belongs in this room: not the garden it used to have, and not the
+     washing line's air either, which is a different outdoors two chapters away */
+  if (AMB.gain)  envGain(AMB.gain, 0, 1.8);
+  if (AMB2.gain) envGain(AMB2.gain, 0, 1.8);
+  if (AMB3.gain) envGain(AMB3.gain, 0, 1.5);
+  if (KWIND.gain) envGain(KWIND.gain, 0, 1.5);
+}
+function cityIndoorsOff(){
+  if (KROOM.gain) envGain(KROOM.gain, 0, 1.5);
+}
+
 /* After dark: insects, which are everywhere and even, and one bird that only
    calls at night, a long way off in the treeline.
 
@@ -646,6 +702,10 @@ function updSound(dt, t){
      with it, which is the same courtesy every other bed here gets */
   if (KAFTQ.t > 0){ KAFTQ.t -= dt; }
   else kiteAfterSoundOff();
+  if (KROOMQ.t > 0){ KROOMQ.t -= dt; }
+  else cityIndoorsOff();
+  if (AMB3Q.t > 0){ AMB3Q.t -= dt; }
+  else ambienceAfterOff();
   if (NIGHTQ.t > 0){ NIGHTQ.t -= dt; }
   else if (CRICK.gain){ for (const L of [CRICK, NBIRD]) envGain(L.gain, 0, 2.0); }
   /* a place's memory does not follow the visitor out of the chapter it belongs to */

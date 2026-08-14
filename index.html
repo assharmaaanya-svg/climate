@@ -1145,7 +1145,11 @@ const BEATS = [
     line:"Mum still hung them out." },
   /* the same instruction as the evening chapter, word for word, because it is the same
      gesture and the same kite, and a chapter that renames the verb implies a new one */
-  { id:"r-kite",    ch:3, len:1.6,  gate:"rkite",   ask:"Hold to bring the kite closer",
+  /* longer than the beat it replaced, because the light is the visitor's to move now and it
+     needs room to be moved through. Measured at 1.6 the whole evening went to night in about
+     three turns of a wheel, which is responsive but not an evening. The clean chapter spends
+     2.85 beats getting there, across `kite` and `climb`; this spends about 1.8 of its 2.4. */
+  { id:"r-kite",    ch:3, len:2.4,  gate:"rkite",   ask:"Hold to bring the kite closer",
     line:"" },
   { id:"r-stars",   ch:3, len:1.35, gate:"rstars",  ask:"Find the shape again",
     line:"" },
@@ -4907,6 +4911,12 @@ function initAudio(){
     KAMB.filt = AC.createBiquadFilter(); KAMB.filt.type = "lowpass";
     KAMB.filt.frequency.value = 5000; KAMB.filt.Q.value = 0.4;
     KAMB.filt.connect(KAMB.gain); KAMB.gain.connect(master);
+    /* the city from inside the room. Its own filter as well as the baked one, set low, so
+       the walls can close a little further as the chapter goes on without re-cutting a file. */
+    KROOM.gain = AC.createGain(); KROOM.gain.gain.value = 0;
+    KROOM.filt = AC.createBiquadFilter(); KROOM.filt.type = "lowpass";
+    KROOM.filt.frequency.value = 900; KROOM.filt.Q.value = 0.5;
+    KROOM.filt.connect(KROOM.gain); KROOM.gain.connect(master);
     KCOUGH.gain = AC.createGain(); KCOUGH.gain.gain.value = 1;
     if (AC.createStereoPanner){ KCOUGH.pan = AC.createStereoPanner();
       KCOUGH.pan.pan.value = -0.30;              // he is standing left of centre
@@ -4969,6 +4979,14 @@ const COUGH = { buf:null, gain:null, pan:null, state:"idle" };
    the scene plays ONE at a time. That is what keeps it from being the same event on a
    timer — three different coughs, in a random order, at intervals that do not repeat. */
 const KAMB = { buf:null, src:null, gain:null, filt:null, state:"idle" };
+/* AND THE SAME CITY, HEARD FROM INSIDE THE HOUSE.
+   The polluted bedroom used to play the garden bed at a tenth of its level, which is why it
+   still sounded like the bedroom before the air changed — it WAS the bedroom before the air
+   changed, only quieter. This is the same recording the field outside uses, from a different
+   three minutes of it, already low-passed at 700 Hz when it was built. Turning the outdoor
+   bed down would not have done it: what makes a sound come from beyond a shut window is the
+   top of it missing, not the level. */
+const KROOM = { buf:null, src:null, gain:null, filt:null, state:"idle" };
 const KCOUGH = { buf:null, gain:null, pan:null, state:"idle", until:0, last:-1 };
 /* (start, length) in seconds, measured off the supplied recording's envelope */
 const KCOUGH_CUTS = [[0.15,1.32],[2.24,0.82],[4.24,0.84]];
@@ -5069,14 +5087,21 @@ function loadAmbience(){
      badly through a pipeline that turns every filename into a URL, and the original
      filename is recorded with its attribution in CREDITS.md where it belongs. */
   loadOne(AMB3, "amb-tunnel-distant.wav");
-  /* The polluted field's bed and its child, both rebuilt from the supplied files into the
-     format every other sound in this piece is in — mono 16-bit at 22.05 kHz. The bed is 26
-     seconds taken from 383 s into the artist's ten-minute recording, which is the steadiest
-     sustained stretch in it, closed into a loop by crossfading its head against the material
-     that follows its tail. It is normalised to -26 dBFS, which is where every other outdoor
-     bed here sits: the recording itself averages -39.5, and this chapter's whole problem
-     last time was a bed nobody could hear. See CREDITS.md. */
-  loadOne(KAMB, "kite-after-air.wav");
+  /* THE CITY, TWICE, FROM ONE RECORDING — AND NOT THE SAME PART OF IT TWICE.
+     `city-outside` is 24 s from 79 s in: crest factor 1.64, so there is nothing in it that
+     could be recognised on a second pass, and a zero-crossing rate of 509 Hz, which is what
+     a city sounds like from a long way off rather than from inside one. `city-indoors` is
+     19 s from 265 s in — three minutes away in the same recording — and low-passed at 700 Hz
+     with 24 dB an octave when it was built, because what puts a sound outside a shut window
+     is the top of it missing.
+
+     Both are stored at 11.025 kHz rather than the usual 22.05, and that is measured, not
+     assumed: through a 36 dB/octave high-pass, the outdoor one has 0.38% of its power above
+     4 kHz and 0.21% above 6 kHz, so the upper half of a 22 kHz file would have been empty.
+     Both are normalised (-26 outdoors, -29 in) and closed into loops whose seams measure
+     inside the noise floor. Their lengths differ so they can never fall into phase. */
+  loadOne(KAMB, "city-outside.wav");
+  loadOne(KROOM, "city-indoors.wav");
   loadOne(KCOUGH, "kite-child-cough.wav");
   loadOne(CRICK, "night-crickets.wav");
   loadOne(NBIRD, "night-birds.wav");
@@ -5128,7 +5153,9 @@ function coughSound(panX){
    as broken audio rather than as a place with less in it. So this bed is set high and kept
    there, and what makes the scene feel emptier is that almost nothing else is playing over
    it: no birds, no gust, the cloth well down, and her only when she is touched. */
+const AMB3Q = { t: 0 };
 function ambienceAfter(v){
+  AMB3Q.t = 0.3;
   v = v * (1 - SILENCE);
   if (!AC || !soundOn || !AMB3.gain) return;
   if (AMB3.state === "ready" && !AMB3.src) startOne(AMB3);
@@ -5138,7 +5165,11 @@ function ambienceAfter(v){
   if (AMB.gain)  envGain(AMB.gain, 0, 1.1);
   if (AMB2.gain) envGain(AMB2.gain, 0, 1.1);
 }
-/* ...and the reverse, for every scene that is not this one */
+/* ...and the reverse, for every scene that is not this one.
+   This existed and nothing ever called it, so the washing line's bed simply kept playing
+   once that chapter had been through — audible under everything after it except the
+   polluted field, which happened to zero AMB3 by hand. It is on a queue now like every
+   other layer: the scene asks for it each frame, and when it stops asking, it goes. */
 function ambienceAfterOff(){
   if (AMB3.gain) envGain(AMB3.gain, 0, 1.2);
 }
@@ -5314,6 +5345,35 @@ function kiteAfterSoundOff(){
   if (KAMB.gain) envGain(KAMB.gain, 0, 1.3);
 }
 
+/* THE ROOM WITH THE WINDOW SHUT.
+   `v` is how much of the city gets in, `close` how far the room has shut itself — the second
+   one only moves the filter, never the level, because a room going quieter and a room going
+   duller are different things and only the second one is what walls do.
+
+   Like every other bed here it fades rather than starts: `envGain` ramps, `startOne` is
+   called once and the source then loops forever, so nothing restarts when the visitor moves
+   and two copies can never overlap. The garden that used to play here is taken down at the
+   same time, over a slower ramp than this one comes up, so the two cross rather than cut. */
+const KROOMQ = { t: 0 };
+function cityIndoors(v, close){
+  KROOMQ.t = 0.3;
+  v = v * (1 - SILENCE);
+  if (!AC || !soundOn || !KROOM.gain) return;
+  if (KROOM.state === "ready" && !KROOM.src) startOne(KROOM);
+  envGain(KROOM.gain, Math.max(0, v*AMB_LIFT), 1.1);
+  if (KROOM.filt) KROOM.filt.frequency.setTargetAtTime(
+    980 - cl01(close||0)*300, AC.currentTime, 1.6);
+  /* and nothing else belongs in this room: not the garden it used to have, and not the
+     washing line's air either, which is a different outdoors two chapters away */
+  if (AMB.gain)  envGain(AMB.gain, 0, 1.8);
+  if (AMB2.gain) envGain(AMB2.gain, 0, 1.8);
+  if (AMB3.gain) envGain(AMB3.gain, 0, 1.5);
+  if (KWIND.gain) envGain(KWIND.gain, 0, 1.5);
+}
+function cityIndoorsOff(){
+  if (KROOM.gain) envGain(KROOM.gain, 0, 1.5);
+}
+
 /* After dark: insects, which are everywhere and even, and one bird that only
    calls at night, a long way off in the treeline.
 
@@ -5437,6 +5497,10 @@ function updSound(dt, t){
      with it, which is the same courtesy every other bed here gets */
   if (KAFTQ.t > 0){ KAFTQ.t -= dt; }
   else kiteAfterSoundOff();
+  if (KROOMQ.t > 0){ KROOMQ.t -= dt; }
+  else cityIndoorsOff();
+  if (AMB3Q.t > 0){ AMB3Q.t -= dt; }
+  else ambienceAfterOff();
   if (NIGHTQ.t > 0){ NIGHTQ.t -= dt; }
   else if (CRICK.gain){ for (const L of [CRICK, NBIRD]) envGain(L.gain, 0, 2.0); }
   /* a place's memory does not follow the visitor out of the chapter it belongs to */
@@ -9359,14 +9423,22 @@ const KSKY_A = {
   coughT: 0        // when the next cough may happen
 };
 
-/* HOW LONG THE LIGHT TAKES.
-   Slow enough that nobody watches it happen — the brief for this asks for a transition
-   that is almost unnoticed while you are busy with the string, and half a minute is
-   about the shortest that reads as time passing rather than as a dissolve. It runs on
-   its own clock and not on the scroll, because the scroll is held here anyway and a
-   crossfade that only advances when somebody pushes the wheel is a slider, not an
-   evening. */
-const KA_NIGHT = 28.0;
+/* THE LIGHT IS MOVED BY THE VISITOR, NOT BY A CLOCK.
+   This ran on its own timer and it was the wrong instinct: a scene that changes while you
+   sit still gives you nothing to do and no reason to believe you are doing it. The evening
+   chapter has always driven its own light off scroll — `kite` takes night to 0.22 across
+   its beat and `climb` takes it the rest of the way — and this is that same idea in one
+   beat. Scroll and the sky goes over; stop and it stops.
+
+   `KA_SCROLL` is the fraction of the beat the whole dissolve is spread across. It ends
+   well before the beat does, so the light has finished and settled before the ending has
+   any business starting, and there is still scroll left underneath the visitor when it
+   does. The curve is ease-OUT — twice the slope of a straight line at the very start, and
+   flattening into night — because the one thing this must never do is give somebody a
+   stretch of scrolling where nothing appears to happen. A tenth of the way in is already
+   a fifth of the way to night, which is a dimming you can see. */
+const KA_SCROLL = 0.74;
+const kaNightAt = f => { const x = cl01(f/KA_SCROLL); return x*(2-x); };
 /* and how much of a pull counts as having flown it. Lower than the evening chapter's
    0.52, because by now the visitor has already learnt this gesture and being made to
    prove it twice is worse than letting them get on. */
@@ -9404,9 +9476,13 @@ function resetKiteAfter(){
 /* ---------------------------------------------------------------------------
    The clocks. One function, so the order things happen in is readable in one place.
    ------------------------------------------------------------------------- */
-function updKiteAfterGoing(dt){
+function updKiteAfterGoing(dt, f){
   const S = KSKY_A;
-  S.night = cl01(S.night + dt/KA_NIGHT);
+  /* `f` is how far through the beat the visitor has scrolled, already eased by the
+     timeline, so this inherits that smoothing and never steps on a wheel tick. Taken as a
+     high-water mark rather than read straight: scrolling back up should not un-set the
+     evening, and once the ending is running nothing may put the light back at all. */
+  S.night = Math.max(S.night, kaNightAt(f === undefined ? 0 : f));
   if (S.best >= KA_FLEW) S.flew = 1;
 
   /* THE CHILD AND THE KITE STAY THROUGH THE WHOLE TRANSITION.
@@ -9469,7 +9545,7 @@ function drawKiteSkyAfter(t, dt, o){
   const S = KSKY_A;
   if (!getPlate("kiteSkyAfter")){ ctx.fillStyle = "#3a3028"; ctx.fillRect(0,0,W,H); return; }
 
-  updKiteAfterGoing(dt);
+  updKiteAfterGoing(dt, o.f);
   const night = S.night;
 
   /* everything but the near grass, exactly as the evening chapter does it: he goes down
@@ -9565,8 +9641,9 @@ function drawKiteSkyAfter(t, dt, o){
 function kiteAfterProgress(){
   const S = KSKY_A;
   if (S.over) return 1;
-  if (!S.flew) return 0.34 * cl01(S.best/KA_FLEW);
-  return 0.34 + 0.30*S.night + 0.36*cl01(S.goT < 0 ? 0 : S.goT/KA_T5);
+  if (!S.flew) return 0.30 * cl01(S.best/KA_FLEW);
+  /* his turn with the string, then the light — which is theirs to move — then the leaving */
+  return 0.30 + 0.34*S.night + 0.36*cl01(S.goT < 0 ? 0 : S.goT/KA_T5);
 }
 /* ============================================================================
    PLATE SCENES
@@ -14659,10 +14736,14 @@ const PRET_PAUSE  = 2.6;
    visitor might read as nothing happening. */
 const PRET_DOTS   = 3.0;
 const PRET_RED    = 6.5;
-/* and the sentence is HELD at the end of its drift, fully red, before the scroll opens. This
-   was 3.2 and it was a breath; at 4 it is a pause somebody is sitting in. Nothing else
-   happens during it — no scroll cue, no instruction. */
-const PRET_BREATH = 4.0;
+/* AND THE SCROLL OPENS ONE SECOND AFTER THE SENTENCE ARRIVES, not at the end of its colour.
+   It used to wait for the whole drift and then a four-second breath on top: ten and a half
+   seconds of a page that does not respond, which does not read as a pause somebody is
+   sitting in — it reads as broken. Nothing is lost by opening early, because the drift is a
+   CSS transition on the sentence itself and goes on drifting whether the visitor moves or
+   not, and the sentence is allowed to follow them into the next beat (see `evLineBeat`), so
+   the red still lands. What changes is only that they are never held while it does. */
+const PRET_BREATH = 1.0;
 
 /* WHAT THE TIMELINE ASKS BEFORE IT WILL LET ANYONE LEAVE.
    The polluted bedroom is not one interaction, it is a sequence, and it holds the scroll
@@ -14678,11 +14759,13 @@ function returnProgress(){
   if (!gateMet("pcurtain")) return 0.34*cl01(gateProgress("pcurtain"));
   if (!PRET.tried)          return 0.34 + 0.26*cl01(PRET.give/RCORD_FIRE);
   /* and through the phone, the pause, the answer and the breath */
-  const total = 1.2 + PRET_PAUSE + PRET_DOTS + PRET_RED + PRET_BREATH;
-  let left = PRET_RED + PRET_BREATH;
-  if (PRET.noteT > 0)      left = 1.2 + PRET_PAUSE + PRET_DOTS + PRET_RED + PRET_BREATH;
-  else if (PRET.dotsT > 0) left = PRET_PAUSE + PRET_DOTS + PRET_RED + PRET_BREATH;
-  else if (PRET.lineT > 0) left = PRET_DOTS + PRET_RED + PRET_BREATH;
+  /* the bar counts what the scroll is actually waiting for, which no longer includes the
+     colour drift — that finishes in its own time with the visitor free to go */
+  const total = 1.2 + PRET_PAUSE + PRET_DOTS + PRET_BREATH;
+  let left = PRET_BREATH;
+  if (PRET.noteT > 0)      left = 1.2 + PRET_PAUSE + PRET_DOTS + PRET_BREATH;
+  else if (PRET.dotsT > 0) left = PRET_PAUSE + PRET_DOTS + PRET_BREATH;
+  else if (PRET.lineT > 0) left = PRET_DOTS + PRET_BREATH;
   else if (PRET.redT > 0)  left = PRET.redT;
   return 0.60 + 0.40*cl01(1 - left/total);
 }
@@ -14974,8 +15057,10 @@ function drawReturn(t, dt, o){
          second and a half on the end the sentence was still on screen, fully red, once the
          scroll had opened — so it sat over the top of the next chapter's washing line. It
          begins its own fade at the moment the scroll is released. */
-      sayLine("Leave it closed.", PRET_RED + PRET_BREATH, { red:true });
-      PRET.redT = PRET_RED + PRET_BREATH;
+      /* the sentence stays for the whole of its colour drift; the SCROLL only waits a
+         second of it. The two used to be the same number and that was the freeze. */
+      sayLine("Leave it closed.", PRET_RED, { red:true });
+      PRET.redT = PRET_BREATH;
     }
   }
   if (PRET.redT > 0){
@@ -14987,7 +15072,15 @@ function drawReturn(t, dt, o){
      nothing coming through that window. */
   OUTSIDE = 0;
   MUFFLE = 1;
-  ambience(0.09 + 0.05*rev, 0.10);
+  /* WHAT IS OUTSIDE IS A CITY NOW, AND YOU CAN HEAR IT THROUGH THE GLASS.
+     This used to be the garden bed at a tenth of its level, which is the same room the
+     chapter before it had, only fainter — so the one place the contrast should have been
+     unmissable was the one place nothing had changed. It is the city recording instead,
+     already low-passed when it was built and low-passed again on the way out, held well
+     under the room. It comes up a little as the curtains are opened, because that is when
+     you would notice it, and it never gets loud: the point is not traffic, it is that the
+     quiet the room used to have is gone and something is always there behind it. */
+  cityIndoors(0.16 + 0.10*rev, 1 - 0.35*rev);
   if (!PRET.pulling && PRET.hover < 0.2) cv.className = wide ? "" : "grabbable";
 }
 
@@ -15572,7 +15665,9 @@ function render(t, dt){
          the population is the difference between the two versions of this field as much
          as the paintings are. */
       setPop({ birds:0, butterflies:0, dragonflies:0, fireflies:0, seeds:0 });
-      drawKiteSkyAfter(t, dt, { gate:"rkite" });
+      /* `f` is the beat's own scroll fraction, and it is what moves the light here — the
+         same way the evening chapter's two beats drive theirs. */
+      drawKiteSkyAfter(t, dt, { gate:"rkite", f });
       break;
     }
     case "r-stars": {
@@ -16298,9 +16393,20 @@ window.__bluer = {
           put("amb-garden", AMB); put("amb-open", AMB2); put("amb-tunnel", AMB3);
           put("line-cloth", RUS); put("line-gust", RUS2); put("line-hum", HUM);
           put("kite-wind", KWIND); put("kite-laugh", LAUGH); put("cough", COUGH);
+          put("city-outside", KAMB); put("city-indoors", KROOM);
+          put("child-cough", KCOUGH);
           put("crickets", CRICK); put("night-birds", NBIRD);
           for (const k in LOOKA) put("look-"+k, LOOKA[k]);
           return o; },
+  /* the two polluted beds, live: what is actually loaded, what is actually running, and at
+     what gain — the question "is this scene playing the right city" has no visible answer */
+  cityAudio(){ const f = L => ({ state:L.state, playing:!!L.src,
+                 g: L.gain ? +L.gain.gain.value.toFixed(4) : null,
+                 hz: L.filt ? Math.round(L.filt.frequency.value) : null,
+                 secs: L.buf ? +L.buf.duration.toFixed(2) : null });
+               return { outside:f(KAMB), indoors:f(KROOM),
+                        garden:{ g: AMB.gain ? +AMB.gain.gain.value.toFixed(4) : null },
+                        tunnel:{ g: AMB3.gain ? +AMB3.gain.gain.value.toFixed(4) : null } }; },
   audio(){ return { ctx: AC ? AC.state : "none", on: soundOn,
                     a1: AMB.state, a2: AMB2.state,
                     g1: AMB.gain ? +AMB.gain.gain.value.toFixed(3) : null,
@@ -16342,7 +16448,9 @@ window.__bluer = {
                                 x:+L.kx.toFixed(2), y:+L.ky.toFixed(2),
                                 w:+L.kw.toFixed(2), h:+L.kh.toFixed(2),
                                 ax:+L.ax.toFixed(2), ay:+L.ay.toFixed(2) } : null,
-             times: { T1:KA_T1, T2:KA_T2, T3:KA_T3, T4:KA_T4, T5:KA_T5, night:KA_NIGHT } };
+             /* `night` is no longer a duration — it is the fraction of the beat the
+                visitor scrolls the light across */
+             times: { T1:KA_T1, T2:KA_T2, T3:KA_T3, T4:KA_T4, T5:KA_T5, nightSpan:KA_SCROLL } };
   },
   /* the same numbers for the evening chapter, so the two can be compared directly: the
      whole claim of that scene is that the boy is in the same place in both */
@@ -16520,7 +16628,9 @@ window.__bluer = {
   tl(){
     const max = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
     const at = v => { let i=N-1; for (let j=0;j<N;j++){ if (v < ofs[j+1]){ i=j; break; } } return BEATS[i].id; };
-    return { beat:id(), p:+T.p.toFixed(3), target:+T.target.toFixed(3),
+    /* `f` is how far through the current beat the playhead is, which is what the polluted
+       field's light is driven by — so it has to be readable from outside to be testable */
+    return { beat:id(), p:+T.p.toFixed(3), f:+T.f.toFixed(3), target:+T.target.toFixed(3),
              ceil:+T.ceil.toFixed(3), ceilAt:at(T.ceil),
              floor:+T.floor.toFixed(3), floorAt:T.floor>0?at(T.floor):null,
              blocked:T.blocked, y:Math.round(window.scrollY),

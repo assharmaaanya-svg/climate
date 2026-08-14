@@ -28,7 +28,8 @@ originals are kept at the repository root; `assets/` holds only the loops built 
 | `assets/cough-mother.wav` | her, on the same washing line, afterwards |
 | `assets/kite-wind.wav` | open wind off the water |
 | `assets/kite-laugh.wav` | him, played whole and occasionally, never looped |
-| `assets/kite-after-air.wav` | the same field afterwards, in place of the wind |
+| `assets/city-outside.wav` | the same field afterwards, in place of the wind |
+| `assets/city-indoors.wav` | the same city again, heard from inside the bedroom with the window shut |
 | `assets/kite-child-cough.wav` | him, in that field, three separate fits played one at a time |
 | `assets/night-crickets.wav` | from dusk onward |
 | `assets/night-birds.wav` | once it is properly dark |
@@ -57,15 +58,23 @@ through a low-pass; it is now twenty-two-oh-five and sixteen-bit like everything
 through a windowed-sinc filter rather than by interpolation, since dropping from forty-eight without
 one folds the top of the recording back down into it. Neither was filtered, gained or equalised.
 
-The polluted field's two files were supplied in formats of their own and given the same treatment.
-The air arrived as ten minutes of 320 kbps stereo mp3 — a recording, not a loop — averaging −39.5
-dBFS, which is fifteen decibels under every other outdoor bed here and would have repeated this
-chapter's one previous complaint about ambience nobody could hear. Its steadiest sustained stretch
-is twenty-six seconds from 383 seconds in: crest factor 2.34, so nothing in it sticks out enough to
-be noticed twice, and its two ends match to within one and a half percent, so the join has almost
-nothing to hide. That window was downmixed, resampled to 22.05 kHz, folded, and normalised to −26
-dBFS, where the rest of the outdoor beds sit. Measured after building, the step across the loop
-point is 0.0049 against 0.0046 in the middle of the file — the seam is inside the noise floor.
+The two polluted city beds come from one recording and deliberately not from the same part of it,
+because two scenes playing the same twenty seconds are one scene with the volume changed. The
+outdoor one is twenty-four seconds from 79 seconds in: a crest factor of 1.64, so there is nothing
+in it that could be recognised on a second pass, and a zero-crossing rate of 509 Hz, which is what a
+city sounds like from a long way off rather than from inside one. The indoor one is nineteen seconds
+from 265 seconds in — three minutes away in the same recording — and low-passed at 700 Hz at 24 dB
+an octave when it was built, because what puts a sound outside a shut window is the top of it
+missing, not the level. Their lengths differ so they can never fall into phase.
+
+Both are stored at 11.025 kHz rather than the usual 22.05, and that is measured rather than assumed:
+through a 36 dB/octave high-pass the outdoor one has 0.38 per cent of its power above 4 kHz and 0.21
+per cent above 6 kHz, so the upper half of a 22 kHz file would have held nothing. They are
+normalised to −26 and −29 dBFS, and the step across each loop point measures inside the noise floor
+of the file it sits in.
+
+An earlier version of this chapter's bed was cut from a different supplied recording; it was
+replaced rather than kept, and the file it produced is gone.
 
 The cough was 44.1 kHz stereo and is now mono at 22.05 like everything else. It is kept whole rather
 than cut up, because it is not one cough: it is three separate fits with silence between them, at

@@ -61,14 +61,22 @@ const KSKY_A = {
   coughT: 0        // when the next cough may happen
 };
 
-/* HOW LONG THE LIGHT TAKES.
-   Slow enough that nobody watches it happen — the brief for this asks for a transition
-   that is almost unnoticed while you are busy with the string, and half a minute is
-   about the shortest that reads as time passing rather than as a dissolve. It runs on
-   its own clock and not on the scroll, because the scroll is held here anyway and a
-   crossfade that only advances when somebody pushes the wheel is a slider, not an
-   evening. */
-const KA_NIGHT = 28.0;
+/* THE LIGHT IS MOVED BY THE VISITOR, NOT BY A CLOCK.
+   This ran on its own timer and it was the wrong instinct: a scene that changes while you
+   sit still gives you nothing to do and no reason to believe you are doing it. The evening
+   chapter has always driven its own light off scroll — `kite` takes night to 0.22 across
+   its beat and `climb` takes it the rest of the way — and this is that same idea in one
+   beat. Scroll and the sky goes over; stop and it stops.
+
+   `KA_SCROLL` is the fraction of the beat the whole dissolve is spread across. It ends
+   well before the beat does, so the light has finished and settled before the ending has
+   any business starting, and there is still scroll left underneath the visitor when it
+   does. The curve is ease-OUT — twice the slope of a straight line at the very start, and
+   flattening into night — because the one thing this must never do is give somebody a
+   stretch of scrolling where nothing appears to happen. A tenth of the way in is already
+   a fifth of the way to night, which is a dimming you can see. */
+const KA_SCROLL = 0.74;
+const kaNightAt = f => { const x = cl01(f/KA_SCROLL); return x*(2-x); };
 /* and how much of a pull counts as having flown it. Lower than the evening chapter's
    0.52, because by now the visitor has already learnt this gesture and being made to
    prove it twice is worse than letting them get on. */
@@ -106,9 +114,13 @@ function resetKiteAfter(){
 /* ---------------------------------------------------------------------------
    The clocks. One function, so the order things happen in is readable in one place.
    ------------------------------------------------------------------------- */
-function updKiteAfterGoing(dt){
+function updKiteAfterGoing(dt, f){
   const S = KSKY_A;
-  S.night = cl01(S.night + dt/KA_NIGHT);
+  /* `f` is how far through the beat the visitor has scrolled, already eased by the
+     timeline, so this inherits that smoothing and never steps on a wheel tick. Taken as a
+     high-water mark rather than read straight: scrolling back up should not un-set the
+     evening, and once the ending is running nothing may put the light back at all. */
+  S.night = Math.max(S.night, kaNightAt(f === undefined ? 0 : f));
   if (S.best >= KA_FLEW) S.flew = 1;
 
   /* THE CHILD AND THE KITE STAY THROUGH THE WHOLE TRANSITION.
@@ -171,7 +183,7 @@ function drawKiteSkyAfter(t, dt, o){
   const S = KSKY_A;
   if (!getPlate("kiteSkyAfter")){ ctx.fillStyle = "#3a3028"; ctx.fillRect(0,0,W,H); return; }
 
-  updKiteAfterGoing(dt);
+  updKiteAfterGoing(dt, o.f);
   const night = S.night;
 
   /* everything but the near grass, exactly as the evening chapter does it: he goes down
@@ -267,6 +279,7 @@ function drawKiteSkyAfter(t, dt, o){
 function kiteAfterProgress(){
   const S = KSKY_A;
   if (S.over) return 1;
-  if (!S.flew) return 0.34 * cl01(S.best/KA_FLEW);
-  return 0.34 + 0.30*S.night + 0.36*cl01(S.goT < 0 ? 0 : S.goT/KA_T5);
+  if (!S.flew) return 0.30 * cl01(S.best/KA_FLEW);
+  /* his turn with the string, then the light — which is theirs to move — then the leaving */
+  return 0.30 + 0.34*S.night + 0.36*cl01(S.goT < 0 ? 0 : S.goT/KA_T5);
 }

@@ -548,7 +548,9 @@ function render(t, dt){
          the population is the difference between the two versions of this field as much
          as the paintings are. */
       setPop({ birds:0, butterflies:0, dragonflies:0, fireflies:0, seeds:0 });
-      drawKiteSkyAfter(t, dt, { gate:"rkite" });
+      /* `f` is the beat's own scroll fraction, and it is what moves the light here — the
+         same way the evening chapter's two beats drive theirs. */
+      drawKiteSkyAfter(t, dt, { gate:"rkite", f });
       break;
     }
     case "r-stars": {
@@ -1274,9 +1276,20 @@ window.__bluer = {
           put("amb-garden", AMB); put("amb-open", AMB2); put("amb-tunnel", AMB3);
           put("line-cloth", RUS); put("line-gust", RUS2); put("line-hum", HUM);
           put("kite-wind", KWIND); put("kite-laugh", LAUGH); put("cough", COUGH);
+          put("city-outside", KAMB); put("city-indoors", KROOM);
+          put("child-cough", KCOUGH);
           put("crickets", CRICK); put("night-birds", NBIRD);
           for (const k in LOOKA) put("look-"+k, LOOKA[k]);
           return o; },
+  /* the two polluted beds, live: what is actually loaded, what is actually running, and at
+     what gain — the question "is this scene playing the right city" has no visible answer */
+  cityAudio(){ const f = L => ({ state:L.state, playing:!!L.src,
+                 g: L.gain ? +L.gain.gain.value.toFixed(4) : null,
+                 hz: L.filt ? Math.round(L.filt.frequency.value) : null,
+                 secs: L.buf ? +L.buf.duration.toFixed(2) : null });
+               return { outside:f(KAMB), indoors:f(KROOM),
+                        garden:{ g: AMB.gain ? +AMB.gain.gain.value.toFixed(4) : null },
+                        tunnel:{ g: AMB3.gain ? +AMB3.gain.gain.value.toFixed(4) : null } }; },
   audio(){ return { ctx: AC ? AC.state : "none", on: soundOn,
                     a1: AMB.state, a2: AMB2.state,
                     g1: AMB.gain ? +AMB.gain.gain.value.toFixed(3) : null,
@@ -1318,7 +1331,9 @@ window.__bluer = {
                                 x:+L.kx.toFixed(2), y:+L.ky.toFixed(2),
                                 w:+L.kw.toFixed(2), h:+L.kh.toFixed(2),
                                 ax:+L.ax.toFixed(2), ay:+L.ay.toFixed(2) } : null,
-             times: { T1:KA_T1, T2:KA_T2, T3:KA_T3, T4:KA_T4, T5:KA_T5, night:KA_NIGHT } };
+             /* `night` is no longer a duration — it is the fraction of the beat the
+                visitor scrolls the light across */
+             times: { T1:KA_T1, T2:KA_T2, T3:KA_T3, T4:KA_T4, T5:KA_T5, nightSpan:KA_SCROLL } };
   },
   /* the same numbers for the evening chapter, so the two can be compared directly: the
      whole claim of that scene is that the boy is in the same place in both */
@@ -1496,7 +1511,9 @@ window.__bluer = {
   tl(){
     const max = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
     const at = v => { let i=N-1; for (let j=0;j<N;j++){ if (v < ofs[j+1]){ i=j; break; } } return BEATS[i].id; };
-    return { beat:id(), p:+T.p.toFixed(3), target:+T.target.toFixed(3),
+    /* `f` is how far through the current beat the playhead is, which is what the polluted
+       field's light is driven by — so it has to be readable from outside to be testable */
+    return { beat:id(), p:+T.p.toFixed(3), f:+T.f.toFixed(3), target:+T.target.toFixed(3),
              ceil:+T.ceil.toFixed(3), ceilAt:at(T.ceil),
              floor:+T.floor.toFixed(3), floorAt:T.floor>0?at(T.floor):null,
              blocked:T.blocked, y:Math.round(window.scrollY),
