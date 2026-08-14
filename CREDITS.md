@@ -31,6 +31,7 @@ originals are kept at the repository root; `assets/` holds only the loops built 
 | `assets/city-outside.wav` | the same field afterwards, in place of the wind |
 | `assets/city-indoors.wav` | the same city again, heard from inside the bedroom with the window shut |
 | `assets/kite-child-cough.wav` | him, in that field, three separate fits played one at a time |
+| `assets/night-city-hum.wav` | the same field at night, years later, under the empty sky |
 | `assets/night-crickets.wav` | from dusk onward |
 | `assets/night-birds.wav` | once it is properly dark |
 | `assets/look-valley.wav` | the town from the hill, while nothing in particular is being looked at |
@@ -75,6 +76,14 @@ of the file it sits in.
 
 An earlier version of this chapter's bed was cut from a different supplied recording; it was
 replaced rather than kept, and the file it produced is gone.
+
+The sky afterwards has one bed and nothing over it. Its source arrived as three minutes of 8-bit
+stereo at 16 kHz, which is the only 8-bit file in the piece; the window taken from it is twenty-two
+seconds from 71 seconds in, the flattest stretch in the whole recording at a crest factor of 1.49 —
+nothing in it rises far enough to be a bird, a car, or an event of any kind, which is what a chapter
+about there being nothing requires. Seventy-two per cent of its energy sits below 250 Hz. Measured
+after building, the step across its loop point is smaller than the average step in the middle of the
+file, so the join is not merely inaudible, it is quieter than the material either side of it.
 
 The cough was 44.1 kHz stereo and is now mono at 22.05 like everything else. It is kept whole rather
 than cut up, because it is not one cough: it is three separate fits with silence between them, at

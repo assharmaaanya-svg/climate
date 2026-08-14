@@ -1151,7 +1151,11 @@ const BEATS = [
      2.85 beats getting there, across `kite` and `climb`; this spends about 1.8 of its 2.4. */
   { id:"r-kite",    ch:3, len:2.4,  gate:"rkite",   ask:"Hold to bring the kite closer",
     line:"" },
-  { id:"r-stars",   ch:3, len:1.35, gate:"rstars",  ask:"Find the shape again",
+  /* No instruction, because there is nothing to do here and inventing something to do
+     would be the one thing this chapter must not have. It is a beat you stand in and
+     read, and it holds the scroll while five sentences go by with silence between them —
+     which is only tolerable because the progress marker is moving the whole time. */
+  { id:"r-stars",   ch:3, len:2.2,  gate:"rstars",  ask:"",
     line:"" },
   { id:"r-horizon", ch:3, len:1.3,  gate:"rfind",   ask:"Press and hold to zoom in with the binoculars",
     line:"" },
@@ -1259,6 +1263,15 @@ HOLD_AT["r-kite"] = { done: () => !!KSKY_A.over,
                                     KSKY_A.kiteA = 0; KSKY_A.childA = 0;
                                     done.rkite = true; } };
 
+/* The sky afterwards is a reading beat: no gesture, five sentences, and one long silence in
+   the middle of them that is the whole point. It holds until the sequence has finished
+   saying nothing, and `running` keeps the patience backstop off it once it has started —
+   the sequence cannot be stuck, it can only be unfinished. */
+HOLD_AT["r-stars"] = { done: () => !!SKYA.over,
+                       prog: () => starsAfterProgress(),
+                       running: () => SKYA.seq >= 0,
+                       pass: () => { SKYA.over = 1; done.rstars = true; } };
+
 HOLD_AT.laundry = { done: () => !!SHEETS.tapped,
                     prog: () => SHEETS.tapped ? 1 : 0,
                     pass: () => { SHEETS.tapped = 1; } };
@@ -1284,6 +1297,11 @@ HOLD_AT["p-room"] = { done: () => returnDone(),
    is simply taking their time in a scene. Once a hold has let go it stays let go. */
 const HOLD_PATIENCE = 25;
 const holdFreed = Object.create(null);
+
+/* how far into a beat the visitor has to be before that beat's start becomes the boundary
+   behind them. A fifth: past the transition in, before anything in the beat has happened. */
+const MEM_IN = 0.20;
+let memFloor = 0;
 
 const N = BEATS.length;
 let ofs = [0]; for (let i=0;i<N;i++) ofs.push(ofs[i]+BEATS[i].len);
@@ -1402,13 +1420,41 @@ function readTimeline(dt){
      immediately threw them into the next scene — the exact opposite of ending on
      black. Here they are left on the black, free to go on when they choose and unable
      to go back before it. */
-  T.floor = 0;
+  /* EVERY MEMORY CLOSES BEHIND THE VISITOR, NOT JUST THE STATISTICS.
+     A memory is a scroll chapter of its own: inside it you may scrub back and forth as
+     much as you like — back to the beginning of the washing line, of the field, of the
+     sky — and that is right, because a memory you cannot look at twice is a slideshow.
+     But once you have properly entered the next one, the one before it is shut. Scrolling
+     up from the start of the memory you are in does not reopen the memory before it, does
+     not reverse the transition you just came through, and cannot drop you somewhere you
+     have already been and finished with.
+
+     `memFloor` is that boundary, and it only ever moves forward. It is raised when the
+     playhead is MEM_IN into a beat and not the instant it touches one: a boundary set on
+     contact would close behind somebody who is still halfway through the transition into
+     the beat, and strand them inside it. A fifth of a beat is comfortably past that and
+     comfortably before anything in the beat has happened.
+
+     It is deliberately a floor and not a lock. Forward scrolling is untouched, and inside
+     the current beat the visitor still has the whole of it to move around in. */
+  if (T.p >= MEM_IN){
+    let k = 0;
+    for (let i=0;i<N;i++){ if (T.p >= ofs[i] + MEM_IN) k = i; else break; }
+    if (ofs[k] > memFloor) memFloor = ofs[k];
+  }
+  T.floor = memFloor;
+  if (T.floor > 0 && want < T.floor) want = T.floor;
+
   if (oi >= 0 && onsPlayed()){
     /* the floor is the bedroom door. Not the black behind it: the black has already
        been left, by the piece rather than by the visitor, so there is nothing back
        there to return to and a floor inside it would only let them scroll back onto
        an empty screen. Back as far as the first post-pollution scene, and no further. */
-    T.floor = ofs[oi+1];
+    /* the statistics raise the boundary further than the per-memory one does — through the
+       black rather than merely to the start of the beat behind it — so it takes the higher
+       of the two rather than replacing it */
+    T.floor = Math.max(T.floor, ofs[oi+1]);
+    memFloor = T.floor;
     if (want < T.floor) want = T.floor;
   }
   const over = T.target - T.ceil;
@@ -1783,7 +1829,15 @@ const PLATES = {
                  bands:[{to:0.62,p:0.010},{to:0.78,p:0.05},{to:1.0,p:0.26}] },
   starsHazed:  { clean:"pollutedstargaze.png",
                  crop:{x:0,y:0,w:1,h:0.94},
-                 bands:[{to:0.62,p:0.010},{to:0.78,p:0.05},{to:1.0,p:0.26}] }
+                 bands:[{to:0.62,p:0.010},{to:0.78,p:0.05},{to:1.0,p:0.26}] },
+  /* The same field at night, years later. Unlike every other painting here this one is
+     already widescreen — 1672x941, which is 1.777 — so it needs no crop at all to fill the
+     frame, and cropping it would only throw away sky it has painted on purpose. The bands
+     are cut where the painting's own depths are: haze and moon, then the hills and the lit
+     town, then the water, then the dead meadow in front. */
+  starsAfter:  { clean:"afterpollutionstarscene.png",
+                 crop:{x:0,y:0,w:1,h:1},
+                 bands:[{to:0.58,p:0.008},{to:0.74,p:0.030},{to:0.82,p:0.070},{to:1.0,p:0.22}] }
 };
 
 /* preload everything the piece will need, in rough order of appearance */
@@ -1818,7 +1872,9 @@ function preloadPlates(){
        and the haze the kite is lost into. The haze is a plain sprite and not a plate —
        it is one layer at one depth, drawn over the kite and under the near grass. */
     "eveningnskyforthekite.png","pollutedairnightskyforkire.png",
-    "childkiteafterpollution.png","cloudhazetohidekite.png"];
+    "childkiteafterpollution.png","cloudhazetohidekite.png",
+    /* and the same field at night, years later */
+    "afterpollutionstarscene.png"];
   /* the binocular overlay is not here any more: the lookout draws its field of
      view rather than loading it. See build/06g-lookout.js. */
   for (const n of order) loadImg(n);
@@ -4917,6 +4973,10 @@ function initAudio(){
     KROOM.filt = AC.createBiquadFilter(); KROOM.filt.type = "lowpass";
     KROOM.filt.frequency.value = 900; KROOM.filt.Q.value = 0.5;
     KROOM.filt.connect(KROOM.gain); KROOM.gain.connect(master);
+    KNIGHT.gain = AC.createGain(); KNIGHT.gain.gain.value = 0;
+    KNIGHT.filt = AC.createBiquadFilter(); KNIGHT.filt.type = "lowpass";
+    KNIGHT.filt.frequency.value = 4200; KNIGHT.filt.Q.value = 0.4;
+    KNIGHT.filt.connect(KNIGHT.gain); KNIGHT.gain.connect(master);
     KCOUGH.gain = AC.createGain(); KCOUGH.gain.gain.value = 1;
     if (AC.createStereoPanner){ KCOUGH.pan = AC.createStereoPanner();
       KCOUGH.pan.pan.value = -0.30;              // he is standing left of centre
@@ -4987,6 +5047,13 @@ const KAMB = { buf:null, src:null, gain:null, filt:null, state:"idle" };
    bed down would not have done it: what makes a sound come from beyond a shut window is the
    top of it missing, not the level. */
 const KROOM = { buf:null, src:null, gain:null, filt:null, state:"idle" };
+/* AND THE SKY AFTERWARDS, WHICH IS A HUM AND NOT A PLACE.
+   72 per cent of this recording's energy is under 250 Hz — it is the bottom of a city heard
+   from a field at night, with nothing in it that could be called an event. That is the whole
+   requirement: the chapter is about there being nothing, so its sound has to be present
+   without ever being interesting, and everything that used to be out here — the crickets,
+   the bird that only calls at night — has to be gone rather than quiet. */
+const KNIGHT = { buf:null, src:null, gain:null, filt:null, state:"idle" };
 const KCOUGH = { buf:null, gain:null, pan:null, state:"idle", until:0, last:-1 };
 /* (start, length) in seconds, measured off the supplied recording's envelope */
 const KCOUGH_CUTS = [[0.15,1.32],[2.24,0.82],[4.24,0.84]];
@@ -5102,6 +5169,7 @@ function loadAmbience(){
      inside the noise floor. Their lengths differ so they can never fall into phase. */
   loadOne(KAMB, "city-outside.wav");
   loadOne(KROOM, "city-indoors.wav");
+  loadOne(KNIGHT, "night-city-hum.wav");
   loadOne(KCOUGH, "kite-child-cough.wav");
   loadOne(CRICK, "night-crickets.wav");
   loadOne(NBIRD, "night-birds.wav");
@@ -5374,6 +5442,28 @@ function cityIndoorsOff(){
   if (KROOM.gain) envGain(KROOM.gain, 0, 1.5);
 }
 
+/* THE FIELD AT NIGHT, AFTERWARDS.
+   One bed and nothing over it. It is set to be plainly there — the visitor is going to be
+   standing in this scene for the better part of a minute reading five sentences, and a
+   chapter about absence still has to sound like somewhere rather than like the audio having
+   failed. What makes it feel empty is not that it is quiet, it is that everything that used
+   to be out here is switched off underneath it: the insects, the bird, the garden, and both
+   of the other polluted beds, all of which would otherwise leak in from a neighbouring
+   chapter and put life back into a field that is supposed to have none. */
+const KNIGHTQ = { t: 0 };
+function cityNight(dt, v){
+  KNIGHTQ.t = 0.3;
+  v = v * (1 - SILENCE);
+  if (!AC || !soundOn || !KNIGHT.gain) return;
+  if (KNIGHT.state === "ready" && !KNIGHT.src) startOne(KNIGHT);
+  envGain(KNIGHT.gain, Math.max(0, v*0.86*AMB_LIFT), 1.2);
+  for (const L of [AMB, AMB2, AMB3, KAMB, KROOM, KWIND, CRICK, NBIRD])
+    if (L.gain) envGain(L.gain, 0, 1.6);
+}
+function cityNightOff(){
+  if (KNIGHT.gain) envGain(KNIGHT.gain, 0, 1.6);
+}
+
 /* After dark: insects, which are everywhere and even, and one bird that only
    calls at night, a long way off in the treeline.
 
@@ -5501,6 +5591,8 @@ function updSound(dt, t){
   else cityIndoorsOff();
   if (AMB3Q.t > 0){ AMB3Q.t -= dt; }
   else ambienceAfterOff();
+  if (KNIGHTQ.t > 0){ KNIGHTQ.t -= dt; }
+  else cityNightOff();
   if (NIGHTQ.t > 0){ NIGHTQ.t -= dt; }
   else if (CRICK.gain){ for (const L of [CRICK, NBIRD]) envGain(L.gain, 0, 2.0); }
   /* a place's memory does not follow the visitor out of the chapter it belongs to */
@@ -9644,6 +9736,191 @@ function kiteAfterProgress(){
   if (!S.flew) return 0.30 * cl01(S.best/KA_FLEW);
   /* his turn with the string, then the light — which is theirs to move — then the leaving */
   return 0.30 + 0.34*S.night + 0.36*cl01(S.goT < 0 ? 0 : S.goT/KA_T5);
+}
+/* ============================================================================
+   THE SKY, AFTER
+   ============================================================================
+   The same field, the same hour, the same reason to be standing in it. What is gone is
+   the sky — and the chapter's whole argument is that it is gone by SUBTRACTION. There is
+   no effect here. There is a painting, a handful of stars that are not really making it
+   through, and five sentences with silence between them.
+
+   WHAT THE PAINTING ALREADY DOES
+   afterpollutionstarscene.png arrives with the work mostly done: a brown-grey haze lit
+   from underneath by the city, a moon with a halo round it instead of an edge, two or
+   three faint stars near the top right, and no Milky Way at all. It is 1672x941, which is
+   close enough to a widescreen frame that it needs almost no crop — so it is a plate like
+   every other painting here, in bands with their own parallax, and it fills the frame and
+   drifts rather than sitting on the page as a picture.
+
+   WHAT IS ADDED, AND HOW LITTLE
+   Eleven stars. Not a field: eleven. Most of the sky has none, which is the point and not
+   an oversight. They are graded, because losing a sky is graded — the faint ones go first
+   and the bright ones only dim:
+
+     - seven that are barely there at all (peak alpha 0.05 to 0.13), soft-edged, no core
+     - three that hold on (0.18 to 0.30), with a bloom around them rather than a point
+     - one that is nearly the star it was, and still nowhere near white
+
+   Nothing is drawn as a crisp point. Every one of them is a small radial bloom in dirty
+   cream, because a star seen through particulate is not a point source any more — it is
+   a smeared one, and what reaches you is scattered as much as direct.
+
+   AND THEY DO NOT TWINKLE
+   Twinkling is beautiful and this must not be. What some of them do instead is fade: a
+   star that was just about visible becomes harder to see over ten or twenty seconds and
+   then comes back, or nearly does. Each one that does this has its own period, and those
+   periods do not divide into each other, so the sky never moves as one thing and nothing
+   in it is ever on a beat. Four of the eleven are held perfectly still on purpose, so
+   there is always something that is definitely not moving to compare the rest against.
+
+   WHAT IS NOT HERE
+   No shooting star — that is the chapter. No fireflies, no glow in the grass, nothing
+   that could be mistaken for one. No constellation to find, no star to tap, no card. The
+   sky the chapter before this one had is not hiding somewhere in this file.
+   ========================================================================== */
+
+const SKYA = {
+  seq: -1,        // the sequence clock, -1 until the scene is entered
+  line: -1,       // which sentence is showing, -1 for none
+  over: 0
+};
+
+/* THE ELEVEN.
+   `x`,`y` are fractions of the frame. Nothing is placed in the top left, because the moon
+   is painted there and a star beside a moon is a star nobody looks at. `m` is how much of
+   it survives — peak alpha. `r` is its bloom radius as a fraction of the smaller screen
+   dimension. `f` is its own fading period in seconds, or 0 for one that does not fade;
+   the periods are chosen not to divide into one another. `p` is its phase. */
+const SKYA_STARS = [
+  /* the seven that are barely there */
+  { x:0.552, y:0.104, m:0.070, r:0.0085, f:23.7, p:0.00 },
+  { x:0.618, y:0.318, m:0.055, r:0.0080, f: 0,   p:0.00 },
+  { x:0.769, y:0.152, m:0.092, r:0.0092, f:31.1, p:1.90 },
+  { x:0.836, y:0.352, m:0.061, r:0.0082, f:41.3, p:0.70 },
+  { x:0.404, y:0.213, m:0.084, r:0.0090, f: 0,   p:0.00 },
+  { x:0.912, y:0.238, m:0.128, r:0.0100, f:29.3, p:2.60 },
+  { x:0.331, y:0.086, m:0.058, r:0.0080, f:37.9, p:1.15 },
+  /* the three that hold on */
+  { x:0.688, y:0.196, m:0.205, r:0.0135, f:53.1, p:0.45 },
+  { x:0.474, y:0.291, m:0.181, r:0.0126, f: 0,   p:0.00 },
+  { x:0.884, y:0.108, m:0.238, r:0.0142, f:47.3, p:3.10 },
+  /* and the one that is nearly what it was */
+  { x:0.604, y:0.078, m:0.302, r:0.0168, f: 0,   p:0.00 }
+];
+/* dirty cream, not white. The brighter a star is the less of the haze's colour it has
+   taken, which is the one thing about this that is flattering to any of them. */
+const SKYA_DIM  = [188, 178, 158];
+const SKYA_LIT  = [226, 216, 192];
+
+/* THE SEQUENCE, AND THE SILENCE IN THE MIDDLE OF IT.
+   Five sentences. The gap between the fourth and the fifth is the longest thing in the
+   chapter and it is the reason the chapter exists: it is exactly long enough that somebody
+   who remembers the sky before this one starts watching for something to cross it. Nothing
+   does. Only then does the last sentence arrive, and it is left alone afterwards — nothing
+   follows it, and the empty sky finishes the thought.
+
+   (There is an optional sixth line in the brief for this — "After a while, you stopped
+   waiting." — to be used only if the scene needs one more beat. It does not. Five sentences
+   ending on two words is a stronger ending than six.) */
+const SKYA_SAY = [
+  { at: 1.2,  hold: 4.4, text:"You still looked for them." },
+  { at: 6.6,  hold: 4.8, text:"Most nights, there were only a few left." },
+  { at: 12.8, hold: 4.8, text:"Even those seemed to fade if you looked too long." },
+  { at: 19.0, hold: 4.4, text:"You kept waiting for a shooting star." },
+  /* 4.8 seconds of nothing at all across an empty sky */
+  { at: 29.4, hold: 6.0, text:"None came." }
+];
+const SKYA_END = 36.5;          // and then the scroll opens
+
+function resetStarsAfter(){
+  SKYA.seq = -1; SKYA.line = -1; SKYA.over = 0;
+}
+
+function updStarsAfter(dt){
+  SKYA.seq = SKYA.seq < 0 ? 0 : SKYA.seq + dt;
+  const s = SKYA.seq;
+  for (let i = 0; i < SKYA_SAY.length; i++){
+    const L = SKYA_SAY[i];
+    if (s >= L.at && SKYA.line < i){
+      SKYA.line = i;
+      if (typeof sayLine === "function") sayLine(L.text, L.hold);
+    }
+  }
+  if (s >= SKYA_END) SKYA.over = 1;
+}
+
+/* how far through the wait the visitor is. This one matters more than most: the scroll is
+   held for the whole sequence and the sky does not change while it is, so the moving bar is
+   the only thing telling somebody the piece is still running rather than stuck. */
+function starsAfterProgress(){
+  if (SKYA.over) return 1;
+  return SKYA.seq < 0 ? 0 : cl01(SKYA.seq / SKYA_END);
+}
+
+/* one star, as a bloom rather than a point */
+function drawFaintStar(t, st, air){
+  let a = st.m;
+  /* its own slow extinction, on its own period. Two waves whose ratio is irrational, so
+     the shape never repeats exactly, biased low so it spends longer being hard to see than
+     being easy to. It never reaches zero and never reaches full: what happens to a star in
+     dirty air is not a switch. */
+  if (st.f > 0){
+    const w = Math.sin(t*(TAU/st.f) + st.p)*0.62
+            + Math.sin(t*(TAU/(st.f*0.6180339)) + st.p*1.7)*0.38;
+    a *= 0.34 + 0.66*cl01(0.5 + w*0.5);
+  }
+  a *= air;
+  if (a <= 0.004) return;
+  const cx = AP.x + st.x*AP.w, cy = AP.y + st.y*AP.h;
+  const R = MIN*st.r;
+  ctx.save();
+  /* additive, because this is light arriving through something rather than paint sitting
+     on top of it — but at these alphas it never brightens the sky into a hole */
+  ctx.globalCompositeOperation = "lighter";
+  const col = mixL(SKYA_DIM, SKYA_LIT, cl01((st.m - 0.05)/0.28));
+  const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, R);
+  g.addColorStop(0.00, rgba(col, a));
+  g.addColorStop(0.35, rgba(col, a*0.42));
+  g.addColorStop(1.00, rgba(col, 0));
+  ctx.fillStyle = g;
+  ctx.beginPath(); ctx.arc(cx, cy, R, 0, TAU); ctx.fill();
+  /* the brighter ones get a small centre, still soft and still not white */
+  if (st.m > 0.16){
+    const g2 = ctx.createRadialGradient(cx, cy, 0, cx, cy, R*0.30);
+    g2.addColorStop(0, rgba(SKYA_LIT, a*0.80));
+    g2.addColorStop(1, rgba(SKYA_LIT, 0));
+    ctx.fillStyle = g2;
+    ctx.beginPath(); ctx.arc(cx, cy, R*0.30, 0, TAU); ctx.fill();
+  }
+  ctx.restore();
+}
+
+function drawStarsAfter(t, dt, o){
+  o = o || {};
+  apFull();
+  if (!getPlate("starsAfter")){ ctx.fillStyle = "#2a241d"; ctx.fillRect(0,0,W,H); return; }
+
+  updStarsAfter(dt);
+
+  /* the painting, in its bands, drifting. It is the scene — nothing is drawn under it and
+     nothing reconstructs any part of it. */
+  drawPlate("starsAfter", { air: 0 });
+
+  /* the air itself, thin and even. This is the only particle field in the chapter and it
+     is deliberately weak: the sky is already carrying the pollution in paint, and a visible
+     drift of motes over the top of it would be the scene explaining itself twice. */
+  partRole = 2;
+  drawParticles(t, 0.30, { x:W*0.5, y:H*0.28, r:H*1.2 });
+
+  /* and the eleven. Nothing else goes in this sky: no constellation, no meteor, and
+     nothing in the grass — see the header. */
+  for (const st of SKYA_STARS) drawFaintStar(t, st, 1);
+
+  /* the city under the horizon is the only sound, and it is a hum rather than a place */
+  cityNight(dt, 1);
+  cv.className = "";
+  if (o.gate && SKYA.over) meet(o.gate);
 }
 /* ============================================================================
    PLATE SCENES
@@ -15671,33 +15948,11 @@ function render(t, dt){
       break;
     }
     case "r-stars": {
-      // the fireflies are simply not here any more, and nothing says so
-      setPop({ birds:0, butterflies:0, dragonflies:0, fireflies:0, seeds:0.05 });
-      starsInteractP("rstars", dt, { air:0.78, glow:0.55 });
-      /* years later the insects are thinner too, and he has stopped calling */
-      ambience(0.02, 1);
-      nightSound(dt, 0.55, 0.30, 0);
-      drawStarsPlate(t, dt, { air:0.78, glow:0.55 });
-      if (false){ starsInteract("rstars", dt); drawStars(t, dt, {}); }
-      // the gaps where the shape used to close
-      let missing=0;
-      for (const st of CONST) if (!starVisible(st)) missing++;
-      if (missing>0 && SKYV.lit>0){
-        ctx.save();
-        ctx.setLineDash([2,7]);
-        ctx.strokeStyle="rgba(150,164,200,0.22)"; ctx.lineWidth=1;
-        ctx.beginPath();
-        let prev=null;
-        for (const i of CONST.order){
-          const st=CONST[i]; if (!st) continue;
-          const sx=((st.x-SKYV.panX)%3+3)%3;
-          const xx=AP.x+(sx%1)*AP.w, yy=AP.y+(st.y-SKYV.panY*0.4)*AP.h*0.96;
-          if (prev){ ctx.moveTo(prev[0],prev[1]); ctx.lineTo(xx,yy); }
-          prev=[xx,yy];
-        }
-        ctx.stroke(); ctx.setLineDash([]);
-        ctx.restore();
-      }
+      /* Nothing lives here now and nothing says so. No fireflies above all — the whole
+         relationship this chapter used to have, stars above and lights in the grass, is
+         one of the things that has gone. */
+      setPop({ birds:0, butterflies:0, dragonflies:0, fireflies:0, seeds:0 });
+      drawStarsAfter(t, dt, { gate:"rstars" });
       break;
     }
     case "r-horizon": {
@@ -16021,7 +16276,8 @@ function gateProgress(g){
     /* his turn with the string, and then the light and the leaving: the scene owns this
        because most of what the scroll is waiting for there is a clock, not a gesture */
     case "rkite": return kiteAfterProgress();
-    case "rstars":  { let v=0,n=0; for(const s2 of DIPPER){ if(starSeen(s2,0.78,0.55)){v++; if(STARY.lit[s2.id])n++;} } return v? n/v : 1; }
+    /* the sequence's own clock, and it is the only feedback there is while it runs */
+    case "rstars":  return starsAfterProgress();
     case "find":    return PLOOK.n/3;
     case "rfind":   return PLOOK.recall/0.75;
     /* binary on purpose: they have put the crayon on the paper or they have not */
@@ -16162,6 +16418,9 @@ function onEnter(bid){
      on `over`, because onEnter fires again on the way out and re-arming a finished
      sequence would reopen a hold the visitor has already been let through. */
   if (bid==="r-kite" && !KSKY_A.over) resetKiteAfter();
+  /* the same guard as the field's: the sequence starts over on arrival, but not once it
+     has finished, or leaving and coming back would re-close a hold already passed */
+  if (bid==="r-stars" && !SKYA.over) resetStarsAfter();
 
   if (bid==="indoors"){ if (!IN.sheets.length) buildIndoors(); }
   if (bid==="e-stars"){ if (!GRID.length) buildGrid(); }
@@ -16357,6 +16616,10 @@ document.getElementById("restart").addEventListener("click", ()=>{
   resetSheetsAfter(); STARY.wishSaid = 0;
   /* and the waits come back, including any that gave up on the last time through */
   T.wait = 0; for (const k in holdFreed) delete holdFreed[k];
+  /* and every memory is open again, or a restart would begin at the boundary the last run
+     ended on and the visitor would be unable to scroll back to the beginning of the piece */
+  memFloor = 0; T.floor = 0;
+  resetStarsAfter(); resetKiteAfter();
   document.body.classList.remove("onslaught");
   SILENCE = 0; onsNoiseStop();
   /* and the lookout starts over: an unticked list, and none of the eleven places
@@ -16394,7 +16657,7 @@ window.__bluer = {
           put("line-cloth", RUS); put("line-gust", RUS2); put("line-hum", HUM);
           put("kite-wind", KWIND); put("kite-laugh", LAUGH); put("cough", COUGH);
           put("city-outside", KAMB); put("city-indoors", KROOM);
-          put("child-cough", KCOUGH);
+          put("night-city-hum", KNIGHT); put("child-cough", KCOUGH);
           put("crickets", CRICK); put("night-birds", NBIRD);
           for (const k in LOOKA) put("look-"+k, LOOKA[k]);
           return o; },
@@ -16404,7 +16667,9 @@ window.__bluer = {
                  g: L.gain ? +L.gain.gain.value.toFixed(4) : null,
                  hz: L.filt ? Math.round(L.filt.frequency.value) : null,
                  secs: L.buf ? +L.buf.duration.toFixed(2) : null });
-               return { outside:f(KAMB), indoors:f(KROOM),
+               return { outside:f(KAMB), indoors:f(KROOM), night:f(KNIGHT),
+                        crickets:{ g: CRICK.gain ? +CRICK.gain.gain.value.toFixed(4) : null },
+                        nbird:{ g: NBIRD.gain ? +NBIRD.gain.gain.value.toFixed(4) : null },
                         garden:{ g: AMB.gain ? +AMB.gain.gain.value.toFixed(4) : null },
                         tunnel:{ g: AMB3.gain ? +AMB3.gain.gain.value.toFixed(4) : null } }; },
   audio(){ return { ctx: AC ? AC.state : "none", on: soundOn,
@@ -16428,6 +16693,28 @@ window.__bluer = {
               for (const s of all) if (s.id === nm && s._p) return { x:s._p.x, y:s._p.y };
               return null; },
   progress(g){ return gateProgress(g); },
+  get skyAfter(){ return SKYA; },
+  /* what is alive in the frame. The sky afterwards has to be able to prove that the answer
+     is nothing — in particular that there are no fireflies, which is a thing this scene is
+     defined by not having. */
+  get pop(){ return { birds:+LITPOP.birds.toFixed(3),
+                      butterflies:+LITPOP.butterflies.toFixed(3),
+                      dragonflies:+LITPOP.dragonflies.toFixed(3),
+                      fireflies:+LITPOP.fireflies.toFixed(3),
+                      seeds:+LITPOP.seeds.toFixed(3) }; },
+  /* the eleven, as they are actually being drawn this instant: enough to assert that most
+     of the sky is empty, that nothing in it is crisp, and that some of them are fading */
+  skyStars(){ return SKYA_STARS.map((st,i) => {
+      let a = st.m;
+      if (st.f > 0){
+        const t = performance.now()*0.001;
+        const w = Math.sin(t*(TAU/st.f)+st.p)*0.62
+                + Math.sin(t*(TAU/(st.f*0.6180339))+st.p*1.7)*0.38;
+        a *= 0.34 + 0.66*cl01(0.5 + w*0.5);
+      }
+      return { i, x:st.x, y:st.y, peak:st.m, alpha:+a.toFixed(4),
+               radiusPx:+(MIN*st.r).toFixed(1), fades: st.f > 0 };
+    }); },
   /* the polluted field: its flight state, its clocks, and — the thing worth being able to
      assert on — where the layout arithmetic actually puts him and the kite this frame */
   kiteAfter: KSKY_A,
@@ -16643,6 +16930,18 @@ window.__bluer = {
   goto(bid, f){
     const i = BEATS.findIndex(x => x.id === bid);
     if (i < 0) return false;
+    /* AND THE BOUNDARY DOES NOT APPLY TO THIS.
+       Memories close behind the visitor, which is the point of `memFloor` — but this hook
+       exists to put the piece anywhere so it can be looked at, and a debug jump that can
+       only ever go forwards is no use for comparing a scene against the one it echoes. The
+       floor is dropped to the target and rebuilds itself from there as normal. */
+    memFloor = Math.min(memFloor, ofs[i]);
+    T.floor = memFloor;
+    /* and jumping back to before the statistics un-sees them, for the same reason: the
+       piece will not let a visitor back across that on purpose, so without this a harness
+       that has once been past it can never look at the clean world again */
+    const oi0 = BEATS.findIndex(b => b.id === "onslaught");
+    if (oi0 >= 0 && i <= oi0){ ONS.played = 0; ONS.running = 0; ONS.t = 0; }
     for (let k=0;k<i;k++){
       if (BEATS[k].gate) done[BEATS[k].gate] = true;
       // and the places the scroll waits, which are not all gates
@@ -16656,7 +16955,16 @@ window.__bluer = {
       }
     }
     const max = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
-    window.scrollTo(0, (ofs[i] + BEATS[i].len*(f===undefined?0.35:f))/TOTAL * max);
+    const to = ofs[i] + BEATS[i].len*(f===undefined?0.35:f);
+    window.scrollTo(0, (to/TOTAL) * max);
+    /* AND THE PLAYHEAD GOES WITH IT, not eased toward it.
+       Setting the scroll position alone was not enough once memories started closing
+       behind the visitor: the playhead was still back where it had been, the boundary is
+       rebuilt from the playhead every frame, and so it snapped straight back up and undid
+       the jump before the ease could carry it anywhere. Moving all three together — the
+       scroll, the target and the playhead — makes the jump land, and the boundary then
+       rebuilds itself from the new position exactly as it would for a visitor. */
+    T.target = to; T.p = to; T.ceil = TOTAL; T.wait = 0;
     return true;
   },
   intro(){ return introOn; },

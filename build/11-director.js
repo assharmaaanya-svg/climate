@@ -554,33 +554,11 @@ function render(t, dt){
       break;
     }
     case "r-stars": {
-      // the fireflies are simply not here any more, and nothing says so
-      setPop({ birds:0, butterflies:0, dragonflies:0, fireflies:0, seeds:0.05 });
-      starsInteractP("rstars", dt, { air:0.78, glow:0.55 });
-      /* years later the insects are thinner too, and he has stopped calling */
-      ambience(0.02, 1);
-      nightSound(dt, 0.55, 0.30, 0);
-      drawStarsPlate(t, dt, { air:0.78, glow:0.55 });
-      if (false){ starsInteract("rstars", dt); drawStars(t, dt, {}); }
-      // the gaps where the shape used to close
-      let missing=0;
-      for (const st of CONST) if (!starVisible(st)) missing++;
-      if (missing>0 && SKYV.lit>0){
-        ctx.save();
-        ctx.setLineDash([2,7]);
-        ctx.strokeStyle="rgba(150,164,200,0.22)"; ctx.lineWidth=1;
-        ctx.beginPath();
-        let prev=null;
-        for (const i of CONST.order){
-          const st=CONST[i]; if (!st) continue;
-          const sx=((st.x-SKYV.panX)%3+3)%3;
-          const xx=AP.x+(sx%1)*AP.w, yy=AP.y+(st.y-SKYV.panY*0.4)*AP.h*0.96;
-          if (prev){ ctx.moveTo(prev[0],prev[1]); ctx.lineTo(xx,yy); }
-          prev=[xx,yy];
-        }
-        ctx.stroke(); ctx.setLineDash([]);
-        ctx.restore();
-      }
+      /* Nothing lives here now and nothing says so. No fireflies above all — the whole
+         relationship this chapter used to have, stars above and lights in the grass, is
+         one of the things that has gone. */
+      setPop({ birds:0, butterflies:0, dragonflies:0, fireflies:0, seeds:0 });
+      drawStarsAfter(t, dt, { gate:"rstars" });
       break;
     }
     case "r-horizon": {
@@ -904,7 +882,8 @@ function gateProgress(g){
     /* his turn with the string, and then the light and the leaving: the scene owns this
        because most of what the scroll is waiting for there is a clock, not a gesture */
     case "rkite": return kiteAfterProgress();
-    case "rstars":  { let v=0,n=0; for(const s2 of DIPPER){ if(starSeen(s2,0.78,0.55)){v++; if(STARY.lit[s2.id])n++;} } return v? n/v : 1; }
+    /* the sequence's own clock, and it is the only feedback there is while it runs */
+    case "rstars":  return starsAfterProgress();
     case "find":    return PLOOK.n/3;
     case "rfind":   return PLOOK.recall/0.75;
     /* binary on purpose: they have put the crayon on the paper or they have not */
@@ -1045,6 +1024,9 @@ function onEnter(bid){
      on `over`, because onEnter fires again on the way out and re-arming a finished
      sequence would reopen a hold the visitor has already been let through. */
   if (bid==="r-kite" && !KSKY_A.over) resetKiteAfter();
+  /* the same guard as the field's: the sequence starts over on arrival, but not once it
+     has finished, or leaving and coming back would re-close a hold already passed */
+  if (bid==="r-stars" && !SKYA.over) resetStarsAfter();
 
   if (bid==="indoors"){ if (!IN.sheets.length) buildIndoors(); }
   if (bid==="e-stars"){ if (!GRID.length) buildGrid(); }
@@ -1240,6 +1222,10 @@ document.getElementById("restart").addEventListener("click", ()=>{
   resetSheetsAfter(); STARY.wishSaid = 0;
   /* and the waits come back, including any that gave up on the last time through */
   T.wait = 0; for (const k in holdFreed) delete holdFreed[k];
+  /* and every memory is open again, or a restart would begin at the boundary the last run
+     ended on and the visitor would be unable to scroll back to the beginning of the piece */
+  memFloor = 0; T.floor = 0;
+  resetStarsAfter(); resetKiteAfter();
   document.body.classList.remove("onslaught");
   SILENCE = 0; onsNoiseStop();
   /* and the lookout starts over: an unticked list, and none of the eleven places
@@ -1277,7 +1263,7 @@ window.__bluer = {
           put("line-cloth", RUS); put("line-gust", RUS2); put("line-hum", HUM);
           put("kite-wind", KWIND); put("kite-laugh", LAUGH); put("cough", COUGH);
           put("city-outside", KAMB); put("city-indoors", KROOM);
-          put("child-cough", KCOUGH);
+          put("night-city-hum", KNIGHT); put("child-cough", KCOUGH);
           put("crickets", CRICK); put("night-birds", NBIRD);
           for (const k in LOOKA) put("look-"+k, LOOKA[k]);
           return o; },
@@ -1287,7 +1273,9 @@ window.__bluer = {
                  g: L.gain ? +L.gain.gain.value.toFixed(4) : null,
                  hz: L.filt ? Math.round(L.filt.frequency.value) : null,
                  secs: L.buf ? +L.buf.duration.toFixed(2) : null });
-               return { outside:f(KAMB), indoors:f(KROOM),
+               return { outside:f(KAMB), indoors:f(KROOM), night:f(KNIGHT),
+                        crickets:{ g: CRICK.gain ? +CRICK.gain.gain.value.toFixed(4) : null },
+                        nbird:{ g: NBIRD.gain ? +NBIRD.gain.gain.value.toFixed(4) : null },
                         garden:{ g: AMB.gain ? +AMB.gain.gain.value.toFixed(4) : null },
                         tunnel:{ g: AMB3.gain ? +AMB3.gain.gain.value.toFixed(4) : null } }; },
   audio(){ return { ctx: AC ? AC.state : "none", on: soundOn,
@@ -1311,6 +1299,28 @@ window.__bluer = {
               for (const s of all) if (s.id === nm && s._p) return { x:s._p.x, y:s._p.y };
               return null; },
   progress(g){ return gateProgress(g); },
+  get skyAfter(){ return SKYA; },
+  /* what is alive in the frame. The sky afterwards has to be able to prove that the answer
+     is nothing — in particular that there are no fireflies, which is a thing this scene is
+     defined by not having. */
+  get pop(){ return { birds:+LITPOP.birds.toFixed(3),
+                      butterflies:+LITPOP.butterflies.toFixed(3),
+                      dragonflies:+LITPOP.dragonflies.toFixed(3),
+                      fireflies:+LITPOP.fireflies.toFixed(3),
+                      seeds:+LITPOP.seeds.toFixed(3) }; },
+  /* the eleven, as they are actually being drawn this instant: enough to assert that most
+     of the sky is empty, that nothing in it is crisp, and that some of them are fading */
+  skyStars(){ return SKYA_STARS.map((st,i) => {
+      let a = st.m;
+      if (st.f > 0){
+        const t = performance.now()*0.001;
+        const w = Math.sin(t*(TAU/st.f)+st.p)*0.62
+                + Math.sin(t*(TAU/(st.f*0.6180339))+st.p*1.7)*0.38;
+        a *= 0.34 + 0.66*cl01(0.5 + w*0.5);
+      }
+      return { i, x:st.x, y:st.y, peak:st.m, alpha:+a.toFixed(4),
+               radiusPx:+(MIN*st.r).toFixed(1), fades: st.f > 0 };
+    }); },
   /* the polluted field: its flight state, its clocks, and — the thing worth being able to
      assert on — where the layout arithmetic actually puts him and the kite this frame */
   kiteAfter: KSKY_A,
@@ -1526,6 +1536,18 @@ window.__bluer = {
   goto(bid, f){
     const i = BEATS.findIndex(x => x.id === bid);
     if (i < 0) return false;
+    /* AND THE BOUNDARY DOES NOT APPLY TO THIS.
+       Memories close behind the visitor, which is the point of `memFloor` — but this hook
+       exists to put the piece anywhere so it can be looked at, and a debug jump that can
+       only ever go forwards is no use for comparing a scene against the one it echoes. The
+       floor is dropped to the target and rebuilds itself from there as normal. */
+    memFloor = Math.min(memFloor, ofs[i]);
+    T.floor = memFloor;
+    /* and jumping back to before the statistics un-sees them, for the same reason: the
+       piece will not let a visitor back across that on purpose, so without this a harness
+       that has once been past it can never look at the clean world again */
+    const oi0 = BEATS.findIndex(b => b.id === "onslaught");
+    if (oi0 >= 0 && i <= oi0){ ONS.played = 0; ONS.running = 0; ONS.t = 0; }
     for (let k=0;k<i;k++){
       if (BEATS[k].gate) done[BEATS[k].gate] = true;
       // and the places the scroll waits, which are not all gates
@@ -1539,7 +1561,16 @@ window.__bluer = {
       }
     }
     const max = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
-    window.scrollTo(0, (ofs[i] + BEATS[i].len*(f===undefined?0.35:f))/TOTAL * max);
+    const to = ofs[i] + BEATS[i].len*(f===undefined?0.35:f);
+    window.scrollTo(0, (to/TOTAL) * max);
+    /* AND THE PLAYHEAD GOES WITH IT, not eased toward it.
+       Setting the scroll position alone was not enough once memories started closing
+       behind the visitor: the playhead was still back where it had been, the boundary is
+       rebuilt from the playhead every frame, and so it snapped straight back up and undid
+       the jump before the ease could carry it anywhere. Moving all three together — the
+       scroll, the target and the playhead — makes the jump land, and the boundary then
+       rebuilds itself from the new position exactly as it would for a visitor. */
+    T.target = to; T.p = to; T.ceil = TOTAL; T.wait = 0;
     return true;
   },
   intro(){ return introOn; },

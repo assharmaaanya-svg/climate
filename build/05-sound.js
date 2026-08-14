@@ -122,6 +122,10 @@ function initAudio(){
     KROOM.filt = AC.createBiquadFilter(); KROOM.filt.type = "lowpass";
     KROOM.filt.frequency.value = 900; KROOM.filt.Q.value = 0.5;
     KROOM.filt.connect(KROOM.gain); KROOM.gain.connect(master);
+    KNIGHT.gain = AC.createGain(); KNIGHT.gain.gain.value = 0;
+    KNIGHT.filt = AC.createBiquadFilter(); KNIGHT.filt.type = "lowpass";
+    KNIGHT.filt.frequency.value = 4200; KNIGHT.filt.Q.value = 0.4;
+    KNIGHT.filt.connect(KNIGHT.gain); KNIGHT.gain.connect(master);
     KCOUGH.gain = AC.createGain(); KCOUGH.gain.gain.value = 1;
     if (AC.createStereoPanner){ KCOUGH.pan = AC.createStereoPanner();
       KCOUGH.pan.pan.value = -0.30;              // he is standing left of centre
@@ -192,6 +196,13 @@ const KAMB = { buf:null, src:null, gain:null, filt:null, state:"idle" };
    bed down would not have done it: what makes a sound come from beyond a shut window is the
    top of it missing, not the level. */
 const KROOM = { buf:null, src:null, gain:null, filt:null, state:"idle" };
+/* AND THE SKY AFTERWARDS, WHICH IS A HUM AND NOT A PLACE.
+   72 per cent of this recording's energy is under 250 Hz — it is the bottom of a city heard
+   from a field at night, with nothing in it that could be called an event. That is the whole
+   requirement: the chapter is about there being nothing, so its sound has to be present
+   without ever being interesting, and everything that used to be out here — the crickets,
+   the bird that only calls at night — has to be gone rather than quiet. */
+const KNIGHT = { buf:null, src:null, gain:null, filt:null, state:"idle" };
 const KCOUGH = { buf:null, gain:null, pan:null, state:"idle", until:0, last:-1 };
 /* (start, length) in seconds, measured off the supplied recording's envelope */
 const KCOUGH_CUTS = [[0.15,1.32],[2.24,0.82],[4.24,0.84]];
@@ -307,6 +318,7 @@ function loadAmbience(){
      inside the noise floor. Their lengths differ so they can never fall into phase. */
   loadOne(KAMB, "city-outside.wav");
   loadOne(KROOM, "city-indoors.wav");
+  loadOne(KNIGHT, "night-city-hum.wav");
   loadOne(KCOUGH, "kite-child-cough.wav");
   loadOne(CRICK, "night-crickets.wav");
   loadOne(NBIRD, "night-birds.wav");
@@ -579,6 +591,28 @@ function cityIndoorsOff(){
   if (KROOM.gain) envGain(KROOM.gain, 0, 1.5);
 }
 
+/* THE FIELD AT NIGHT, AFTERWARDS.
+   One bed and nothing over it. It is set to be plainly there — the visitor is going to be
+   standing in this scene for the better part of a minute reading five sentences, and a
+   chapter about absence still has to sound like somewhere rather than like the audio having
+   failed. What makes it feel empty is not that it is quiet, it is that everything that used
+   to be out here is switched off underneath it: the insects, the bird, the garden, and both
+   of the other polluted beds, all of which would otherwise leak in from a neighbouring
+   chapter and put life back into a field that is supposed to have none. */
+const KNIGHTQ = { t: 0 };
+function cityNight(dt, v){
+  KNIGHTQ.t = 0.3;
+  v = v * (1 - SILENCE);
+  if (!AC || !soundOn || !KNIGHT.gain) return;
+  if (KNIGHT.state === "ready" && !KNIGHT.src) startOne(KNIGHT);
+  envGain(KNIGHT.gain, Math.max(0, v*0.86*AMB_LIFT), 1.2);
+  for (const L of [AMB, AMB2, AMB3, KAMB, KROOM, KWIND, CRICK, NBIRD])
+    if (L.gain) envGain(L.gain, 0, 1.6);
+}
+function cityNightOff(){
+  if (KNIGHT.gain) envGain(KNIGHT.gain, 0, 1.6);
+}
+
 /* After dark: insects, which are everywhere and even, and one bird that only
    calls at night, a long way off in the treeline.
 
@@ -706,6 +740,8 @@ function updSound(dt, t){
   else cityIndoorsOff();
   if (AMB3Q.t > 0){ AMB3Q.t -= dt; }
   else ambienceAfterOff();
+  if (KNIGHTQ.t > 0){ KNIGHTQ.t -= dt; }
+  else cityNightOff();
   if (NIGHTQ.t > 0){ NIGHTQ.t -= dt; }
   else if (CRICK.gain){ for (const L of [CRICK, NBIRD]) envGain(L.gain, 0, 2.0); }
   /* a place's memory does not follow the visitor out of the chapter it belongs to */

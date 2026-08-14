@@ -406,7 +406,11 @@ const BEATS = [
      2.85 beats getting there, across `kite` and `climb`; this spends about 1.8 of its 2.4. */
   { id:"r-kite",    ch:3, len:2.4,  gate:"rkite",   ask:"Hold to bring the kite closer",
     line:"" },
-  { id:"r-stars",   ch:3, len:1.35, gate:"rstars",  ask:"Find the shape again",
+  /* No instruction, because there is nothing to do here and inventing something to do
+     would be the one thing this chapter must not have. It is a beat you stand in and
+     read, and it holds the scroll while five sentences go by with silence between them —
+     which is only tolerable because the progress marker is moving the whole time. */
+  { id:"r-stars",   ch:3, len:2.2,  gate:"rstars",  ask:"",
     line:"" },
   { id:"r-horizon", ch:3, len:1.3,  gate:"rfind",   ask:"Press and hold to zoom in with the binoculars",
     line:"" },
@@ -514,6 +518,15 @@ HOLD_AT["r-kite"] = { done: () => !!KSKY_A.over,
                                     KSKY_A.kiteA = 0; KSKY_A.childA = 0;
                                     done.rkite = true; } };
 
+/* The sky afterwards is a reading beat: no gesture, five sentences, and one long silence in
+   the middle of them that is the whole point. It holds until the sequence has finished
+   saying nothing, and `running` keeps the patience backstop off it once it has started —
+   the sequence cannot be stuck, it can only be unfinished. */
+HOLD_AT["r-stars"] = { done: () => !!SKYA.over,
+                       prog: () => starsAfterProgress(),
+                       running: () => SKYA.seq >= 0,
+                       pass: () => { SKYA.over = 1; done.rstars = true; } };
+
 HOLD_AT.laundry = { done: () => !!SHEETS.tapped,
                     prog: () => SHEETS.tapped ? 1 : 0,
                     pass: () => { SHEETS.tapped = 1; } };
@@ -539,6 +552,11 @@ HOLD_AT["p-room"] = { done: () => returnDone(),
    is simply taking their time in a scene. Once a hold has let go it stays let go. */
 const HOLD_PATIENCE = 25;
 const holdFreed = Object.create(null);
+
+/* how far into a beat the visitor has to be before that beat's start becomes the boundary
+   behind them. A fifth: past the transition in, before anything in the beat has happened. */
+const MEM_IN = 0.20;
+let memFloor = 0;
 
 const N = BEATS.length;
 let ofs = [0]; for (let i=0;i<N;i++) ofs.push(ofs[i]+BEATS[i].len);
@@ -657,13 +675,41 @@ function readTimeline(dt){
      immediately threw them into the next scene — the exact opposite of ending on
      black. Here they are left on the black, free to go on when they choose and unable
      to go back before it. */
-  T.floor = 0;
+  /* EVERY MEMORY CLOSES BEHIND THE VISITOR, NOT JUST THE STATISTICS.
+     A memory is a scroll chapter of its own: inside it you may scrub back and forth as
+     much as you like — back to the beginning of the washing line, of the field, of the
+     sky — and that is right, because a memory you cannot look at twice is a slideshow.
+     But once you have properly entered the next one, the one before it is shut. Scrolling
+     up from the start of the memory you are in does not reopen the memory before it, does
+     not reverse the transition you just came through, and cannot drop you somewhere you
+     have already been and finished with.
+
+     `memFloor` is that boundary, and it only ever moves forward. It is raised when the
+     playhead is MEM_IN into a beat and not the instant it touches one: a boundary set on
+     contact would close behind somebody who is still halfway through the transition into
+     the beat, and strand them inside it. A fifth of a beat is comfortably past that and
+     comfortably before anything in the beat has happened.
+
+     It is deliberately a floor and not a lock. Forward scrolling is untouched, and inside
+     the current beat the visitor still has the whole of it to move around in. */
+  if (T.p >= MEM_IN){
+    let k = 0;
+    for (let i=0;i<N;i++){ if (T.p >= ofs[i] + MEM_IN) k = i; else break; }
+    if (ofs[k] > memFloor) memFloor = ofs[k];
+  }
+  T.floor = memFloor;
+  if (T.floor > 0 && want < T.floor) want = T.floor;
+
   if (oi >= 0 && onsPlayed()){
     /* the floor is the bedroom door. Not the black behind it: the black has already
        been left, by the piece rather than by the visitor, so there is nothing back
        there to return to and a floor inside it would only let them scroll back onto
        an empty screen. Back as far as the first post-pollution scene, and no further. */
-    T.floor = ofs[oi+1];
+    /* the statistics raise the boundary further than the per-memory one does — through the
+       black rather than merely to the start of the beat behind it — so it takes the higher
+       of the two rather than replacing it */
+    T.floor = Math.max(T.floor, ofs[oi+1]);
+    memFloor = T.floor;
     if (want < T.floor) want = T.floor;
   }
   const over = T.target - T.ceil;

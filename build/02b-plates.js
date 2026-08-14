@@ -227,7 +227,15 @@ const PLATES = {
                  bands:[{to:0.62,p:0.010},{to:0.78,p:0.05},{to:1.0,p:0.26}] },
   starsHazed:  { clean:"pollutedstargaze.png",
                  crop:{x:0,y:0,w:1,h:0.94},
-                 bands:[{to:0.62,p:0.010},{to:0.78,p:0.05},{to:1.0,p:0.26}] }
+                 bands:[{to:0.62,p:0.010},{to:0.78,p:0.05},{to:1.0,p:0.26}] },
+  /* The same field at night, years later. Unlike every other painting here this one is
+     already widescreen — 1672x941, which is 1.777 — so it needs no crop at all to fill the
+     frame, and cropping it would only throw away sky it has painted on purpose. The bands
+     are cut where the painting's own depths are: haze and moon, then the hills and the lit
+     town, then the water, then the dead meadow in front. */
+  starsAfter:  { clean:"afterpollutionstarscene.png",
+                 crop:{x:0,y:0,w:1,h:1},
+                 bands:[{to:0.58,p:0.008},{to:0.74,p:0.030},{to:0.82,p:0.070},{to:1.0,p:0.22}] }
 };
 
 /* preload everything the piece will need, in rough order of appearance */
@@ -262,7 +270,9 @@ function preloadPlates(){
        and the haze the kite is lost into. The haze is a plain sprite and not a plate —
        it is one layer at one depth, drawn over the kite and under the near grass. */
     "eveningnskyforthekite.png","pollutedairnightskyforkire.png",
-    "childkiteafterpollution.png","cloudhazetohidekite.png"];
+    "childkiteafterpollution.png","cloudhazetohidekite.png",
+    /* and the same field at night, years later */
+    "afterpollutionstarscene.png"];
   /* the binocular overlay is not here any more: the lookout draws its field of
      view rather than loading it. See build/06g-lookout.js. */
   for (const n of order) loadImg(n);
