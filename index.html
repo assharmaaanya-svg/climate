@@ -7845,79 +7845,40 @@ function roomSound(dt, t, rev){
    matters, so that when it is put into their hands they have already seen it. */
 const TAPED = { x0:0.786, y0:0.161, x1:0.894, y1:0.313 };
 /* ---------------------------------------------------------------------------
-   THE EDGE OF THE PAPER.
+   THE EDGE OF THE PAPER, AND WHERE THE OPENING ACTUALLY IS.
 
-   THERE IS NO TORN OPENING IN THIS WALL and there never was — the brief for this asked
-   for the drawing to be masked to an existing irregular hole in the plaster, and no such
-   hole exists anywhere in the piece. What the complaint was actually describing is real
-   though, and it is this function: a sheet of paper drawn as `drawImage(PAPER, x, y, w, h)`,
-   which is a rectangle with four hard corners sitting on a painted wall, and that is
-   exactly what "a rectangular digital image placed over the wall" looks like.
+   There IS an opening, and it took looking at the thing at four times size to find it: it
+   is PAINTED INTO THE WALL, not drawn in code. The artist's bedroom already has a rough
+   pale patch on that wall with torn-looking edges and painted tape at its corners — the
+   place a drawing is meant to go. Nothing in the code knew about it.
 
-   So the boundary the brief wanted to mask against is BUILT rather than borrowed: the
-   sheet gets its own torn edge. A closed path is walked around the rectangle with the
-   deviation coming from `hash`, so it is the same edge every frame and the same edge in
-   both bedrooms; it is deliberately quiet on the two long sides, where a sheet is cut, and
-   loosest at the corners and the bottom, where one comes away from a wall. The artwork is
-   drawn oversize behind it and the mask crops it, which is the layer order asked for —
-   edge in front, drawing beneath, wall behind — and it means no rectangular boundary can
-   ever be visible, because the rectangle now ends outside the shape that is shown.
+   So the sheet was being drawn INSIDE it and too small: inset by 5.5% of the width and
+   7.5% of the height, which left the painted backing showing all the way round, worst on
+   the right, and the artwork's own boundary sitting outside the sheet's boundary. Two
+   edges, one inside the other, which is exactly the "doubled imagery" and "underlying
+   artwork peeking around the wrong places" this kept being described as.
 
-   Cached per size, and derived only from the size, so the clean bedroom and the polluted
-   one cannot get different masks and a crossfade between them cannot mismatch.
+   The fix is to stop inventing a boundary and use the one the painting already has. The
+   sheet is drawn OVER the painted patch, a little larger than it rather than smaller, so
+   the backing cannot show anywhere; the painted torn edge and the painted tape stay
+   visible around it because they are outside the sheet, in the wall, where they always
+   were. There is no procedural mask any more — an added torn edge was a second irregular
+   boundary competing with the real one, and cutting across it.
    ------------------------------------------------------------------------- */
-const TORN = { key:"", cv:null, bkey:"", buf:null };
-/* its own scratch canvas rather than the washing line's two, which are cached by size for a
-   different scene and would only thrash against this one */
-function tornBuf(w, h){
-  const key = w+"x"+h;
-  if (TORN.bkey === key && TORN.buf) return TORN.buf;
-  const c = document.createElement("canvas");
-  c.width = w; c.height = h;
-  TORN.bkey = key; TORN.buf = c;
-  return c;
-}
-function tornPaper(w, h){
-  w = Math.max(8, Math.round(w)); h = Math.max(8, Math.round(h));
-  const key = w+"x"+h;
-  if (TORN.key === key && TORN.cv) return TORN.cv;
-  const c = document.createElement("canvas");
-  c.width = w; c.height = h;
-  const g = c.getContext("2d");
-  /* how far the edge wanders, as a fraction of the short side. Small: this is a torn
-     sheet, not a burnt one. */
-  const A = Math.min(w, h) * 0.030;
-  const pt = (u, side) => {
-    /* `side` 0 top, 1 right, 2 bottom, 3 left. The sides a child would have cut are
-       steadier than the bottom, which is the corner that lifts off a wall. */
-    const amp = A * (side === 2 ? 1.35 : side === 0 ? 0.85 : 0.55);
-    const n = (hash(u*7.3 + side*31.7)-0.5) * 1.5
-            + (hash(u*19.1 + side*11.3)-0.5) * 0.8;
-    const d = n * amp;
-    if (side === 0) return [u*w, Math.max(0, A*1.2 + d)];
-    if (side === 1) return [w - Math.max(0, A*1.2 + d), u*h];
-    if (side === 2) return [(1-u)*w, h - Math.max(0, A*1.2 + d)];
-    return [Math.max(0, A*1.2 + d), (1-u)*h];
-  };
-  g.beginPath();
-  const STEP = 22;
-  for (let side=0; side<4; side++){
-    for (let i=0; i<=STEP; i++){
-      const p = pt(i/STEP + side, side);
-      if (side===0 && i===0) g.moveTo(p[0], p[1]); else g.lineTo(p[0], p[1]);
-    }
-  }
-  g.closePath();
-  g.fillStyle = "#fff"; g.fill();
-  TORN.key = key; TORN.cv = c;
-  return c;
-}
-
 function drawTapedDrawing(t, rev, air){
   if (!paperBuilt) return;
+  if (window.__noPaper) return;      // measurement hook: the wall without the sheet on it
   const c = roomCam(CAM_WALL);
-  // inset, so the painted tape at its corners still holds it to the wall
-  const ix = (TAPED.x1-TAPED.x0)*0.055, iy = (TAPED.y1-TAPED.y0)*0.075;
+  /* NEGATIVE inset: the sheet is drawn a little LARGER than the painted patch rather than
+     smaller, so its own rectangle ends underneath the painted torn edge and the pale
+     backing behind it cannot show anywhere. Measured off a 4x enlargement of the rendered
+     wall, the sheet was falling short by about 5 px on the left, 7 on the right and 3 at
+     the top of a 196x152 patch. Going from +5.5% to -1% adds about 9 px on each side,
+     which covers the shortfall and no more: pushed further (-3.5% was tried) the sheet
+     swallows the painted torn edge and the tape as well, and the wall loses the very
+     boundary that stops this reading as a rectangle. It is a fraction of the patch rather
+     than a pixel count, so it holds at any viewport size. */
+  const ix = -(TAPED.x1-TAPED.x0)*0.010, iy = -(TAPED.y1-TAPED.y0)*0.010;
   const x0 = (TAPED.x0+ix)*W + c.x, x1 = (TAPED.x1-ix)*W + c.x;
   const y0 = (TAPED.y0+iy)*H + c.y, y1 = (TAPED.y1-iy)*H + c.y;
   const cx = (x0+x1)/2, cy = (y0+y1)/2, w = x1-x0, h = y1-y0;
@@ -7925,42 +7886,11 @@ function drawTapedDrawing(t, rev, air){
   ctx.save();
   ctx.translate(cx, cy);
   ctx.rotate(Math.sin(t*0.5)*0.004*(0.3+PROOM.breeze*2.2));
-  /* the room's own light, on it — the same warm lamp everything else is under,
-     otherwise it reads as a sticker rather than a piece of paper on a wall.
-
-     It goes down OVERSIZE and is then cropped by the torn edge. The overscale is what
-     makes the crop safe: the drawing's own rectangle now ends well outside the shape the
-     wall shows, so no straight boundary of it can appear at any size, and the illustrated
-     part still fills the opening rather than leaving a gap inside it. */
-  const OVER = 1.075;
-  const pw = w*OVER, ph = h*OVER;
-  const mask = tornPaper(w, h);
-  const buf = tornBuf(Math.max(8,Math.round(w)), Math.max(8,Math.round(h)));
-  const bg = buf.getContext("2d");
-  bg.setTransform(1,0,0,1,0,0);
-  bg.clearRect(0,0,buf.width,buf.height);
-  bg.drawImage(litSprite(PAPER, "paper", pw, ph, 1-lit, 0.52),
-               (w-pw)/2, (h-ph)/2, pw, ph);
-  bg.globalCompositeOperation = "destination-in";
-  bg.drawImage(mask, 0, 0);
-  /* and the wall sits very slightly over the paper at the edge, so the sheet reads as
-     being under the surface rather than stuck on top of it. A hair of darkness inside the
-     torn line and nothing else: no drop shadow, no blur, no glow. */
-  bg.globalCompositeOperation = "source-atop";
-  const eg = bg.createLinearGradient(0, 0, 0, h);
-  eg.addColorStop(0.00, "rgba(24,16,10,0.20)");
-  eg.addColorStop(0.055, "rgba(24,16,10,0)");
-  eg.addColorStop(0.945, "rgba(24,16,10,0)");
-  eg.addColorStop(1.00, "rgba(24,16,10,0.26)");
-  bg.fillStyle = eg; bg.fillRect(0,0,w,h);
-  const eh = bg.createLinearGradient(0, 0, w, 0);
-  eh.addColorStop(0.00, "rgba(24,16,10,0.16)");
-  eh.addColorStop(0.045, "rgba(24,16,10,0)");
-  eh.addColorStop(0.955, "rgba(24,16,10,0)");
-  eh.addColorStop(1.00, "rgba(24,16,10,0.16)");
-  bg.fillStyle = eh; bg.fillRect(0,0,w,h);
-  bg.globalCompositeOperation = "source-over";
-  ctx.drawImage(buf, 0, 0, w, h, -w/2, -h/2, w, h);
+  /* the room's own light, on it — the same warm lamp everything else is under, otherwise
+     it reads as a sticker rather than a piece of paper on a wall. One draw, at the size
+     worked out above: the irregular boundary belongs to the wall painting, and nothing
+     here competes with it any more. */
+  ctx.drawImage(litSprite(PAPER, "paper", w, h, 1-lit, 0.52), -w/2, -h/2, w, h);
   ctx.restore();
 }
 
