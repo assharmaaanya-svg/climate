@@ -35,7 +35,7 @@ const AIRPLAN = {
   "r-stars":   { pm:[72,84],    tod:[0.950,0.975], glow:[0.48,0.60] },
   "r-horizon": { pm:[88,102],   tod:[0.360,0.420], glow:[0,0] },
   "r-drawing": { pm:[104,116],  tod:[0.440,0.460], glow:[0,0] },
-  "fade":      { pm:[104,116],  tod:[0.440,0.460], glow:[0,0] }
+  "end":       { pm:[104,116],  tod:[0.440,0.460], glow:[0,0] }
 };
 function setAir(bid, f){
   const a = AIRPLAN[bid];
@@ -579,10 +579,8 @@ function render(t, dt){
        The colouring, going out. The scene keeps drawing underneath so the last thing
        the visitor sees is the drawing itself dimming rather than a cut, and the black
        arrives over the back half of the beat and then stays black. */
-    case "fade": {
-      drawDrawing(t, { town:true });
-      ctx.fillStyle = "rgba(0,0,0," + ease.io(cl01((f - 0.18)/0.55)).toFixed(3) + ")";
-      ctx.fillRect(0, 0, W, H);
+    case "end": {
+      drawEnding(dt);
       break;
     }
     /* -------------------------------- the evidence */
@@ -623,7 +621,11 @@ function render(t, dt){
      which is invisible over a painting and is a pair of brown smudges over an empty
      screen — and the sequence has a good deal of empty screen in it. It brings its
      own static instead. */
-  if (bid !== "onslaught"){
+  /* THE ENDING GETS NONE OF THIS. The black is supposed to be black: a vignette is a
+     shape and grain is a texture, and both of them are visible on an empty frame in a
+     way they never are over a painting. The onslaught is excluded for its own reason
+     — it draws its own static. */
+  if (bid !== "onslaught" && bid !== "end"){
     // bloom first, so light spills before the frame is darkened
     const night = (AIR.tod<0.14||AIR.tod>0.86);
     bloom(autoLow ? 0.16 : (night ? 0.34 : 0.26 + AIR.h*0.18), night);
@@ -702,7 +704,7 @@ function updText(now, dt){
   // the last line holds a long time, then goes out on its own, and only then does
   // the title come up. They must never share the frame.
   const titleFrom = 0.74;
-  const lineOut = bid==="fade";
+  const lineOut = bid==="end";
   const show = line && !lineOut &&
     ((bid.startsWith("f-")) ? f>=0.28 : (f>0.06 && f<0.62));
   let want = show ? line : "";
@@ -792,7 +794,7 @@ function updText(now, dt){
 
   /* the scroll arrow: small, and there the whole way, because scrolling is the
      one thing the visitor has to know and the only thing the card tells them */
-  const moreToGo = T.p < TOTAL-0.35 && bid!=="fade";
+  const moreToGo = T.p < TOTAL-0.35 && bid!=="end";
   /* not while the scroll is waiting: one says carry on down and the other says you
      have something to do here first, and they were sitting on top of each other */
   const cue = moreToGo && !introOn && !(T.blocked && holding);
@@ -1014,6 +1016,20 @@ function onEnter(bid){
   if (bid!=="p-room" && bid!=="p-shut") hideNote();
   if (bid==="onslaught") resetOnslaught();
   else { document.body.classList.remove("onslaught"); SILENCE = 0; onsNoiseStop(); }
+  /* THE ENDING ARMS ITSELF ON ARRIVAL AND CLEANS THE SCREEN OFF FIRST.
+     Everything that lives at the edges of the frame — the instruction plaque, the chapter
+     label, the scroll cue, whatever answer the last scene happened to be saying — belongs
+     to a place, and there is no place here. Unlike the field and the sky this one is NOT
+     guarded on having finished: an ending you have scrolled away from and come back to
+     should play, not show you a black screen it thinks you have already seen. */
+  if (bid==="end"){
+    resetEnding();
+    setAsk(""); hideAQ(); hideNote(); showCard(null);
+    evLine = ""; evLineT = 0;
+    capEl.classList.remove("on", "redshift", "redset");
+    chEl.classList.remove("on");
+  }
+  else if (END.on){ END.on = 0; endingSoundOff(); }
   if (bid!=="stopped" && bid!=="named") hideAQ();
   if (bid!=="stars" && bid!=="wish" && bid!=="r-stars") hideStarStory();
   if (!bid.startsWith("e-")) { showCard(null); }
@@ -1519,6 +1535,26 @@ window.__bluer = {
              yCeil:Math.round((T.ceil+0.12)/TOTAL*max),
              yFloor:T.floor>0?Math.round(T.floor/TOTAL*max):null,
              hold:BEATS.filter(b=>HOLD_AT[b.id]&&!HOLD_AT[b.id].done()).map(b=>b.id) };
+  },
+  /* scrub the ending's own clock, so its forty seconds can be inspected a moment at a
+     time instead of waited through. It only moves the playhead: every sound the score
+     has already started stays exactly as it is, which is why jumping backwards through
+     it is not meaningful and jumping forwards past a memory's cue skips that memory. */
+  endAt(sec){ END.on = 1; END.done = 0; END.t = sec; return sec; },
+  /* the ending, from outside: where it is in its own score, what the black and the
+     master fader are doing, and which memories are currently sounding */
+  ending(){
+    const v = [];
+    for (const k in EBUS){
+      const g = EBUS[k].g.gain.value;
+      if (g > 0.004) v.push(k+":"+g.toFixed(3));
+    }
+    return { beat:id(), t:END.t, on:END.on, done:END.done, black:END.black,
+             mute:ENDMUTE, total:+E_TOTAL.toFixed(2), voices:v,
+             ceil:T.ceil, floor:T.floor, blocked:T.blocked,
+             lines: ESCORE.filter(L => END.t >= L.t0 &&
+                      END.t <= L.t0 + L.in + L.hold + (L.keepHold||0) + (L.grade||0) + L.out)
+                    .map(L => L.text.slice(0,22)) };
   },
   /* jump the scroll to a named beat, marking every gate before it as met, so a
      chapter can be driven and screenshotted without playing the whole piece */

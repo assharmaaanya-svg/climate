@@ -1181,11 +1181,13 @@ const BEATS = [
     line:"" },
   { id:"r-drawing", ch:3, len:1.3,
     line:"She kept it on the fridge for eleven years." },
-  /* ------------- WHERE IT ENDS, FOR NOW -------------
-     The piece finishes on the colouring and goes to black. The chapters that used to
-     follow are still in the source and still work; they are simply not on the
-     timeline while this ending is being built. */
-  { id:"fade",      ch:3, len:1.6, line:"" }
+  /* ------------- THE ENDING -------------
+     One beat, and the only one in the piece that does not care where the scroll is.
+     It pins the playhead when it is entered and runs on its own clock: the colouring
+     goes out, the air goes with it, and then six sentences over a black screen with
+     the memories coming back as sound. `len` here is scroll geometry and nothing else
+     — the timing lives in the score. */
+  { id:"end",       ch:3, len:1.6, line:"" }
 ];
 const CH_NAME = { 1:"i · the world came inside", 2:"ii · life happened outdoors",
                   3:"iii · the change is almost invisible", 4:"iv · habits change first",
@@ -1387,6 +1389,16 @@ function readTimeline(dt){
   if (oi >= 0 && onslaughtHolding()){
     T.ceil = Math.min(T.ceil, ofs[oi] + BEATS[oi].len*0.70);
   }
+  /* AND THE ENDING, WHICH IS THE SAME KIND OF WAIT AGAIN AND STRICTER.
+     Not a gate: it asks for nothing and cannot be failed. It is forty seconds of authored
+     time with six sentences in it, each one paced against reading speed and against the
+     sounds leaving one at a time, and a trackpad flick through it would turn the whole
+     argument into a flicker. So the playhead is pinned just inside the beat for exactly
+     as long as the sequence is running, and released the moment it finishes. */
+  const ei = typeof endBeatIndex === "function" ? endBeatIndex() : -1;
+  if (ei >= 0 && endingHolding()){
+    T.ceil = Math.min(T.ceil, ofs[ei] + BEATS[ei].len*0.28);
+  }
 
   let want = Math.min(T.target, T.ceil);
 
@@ -1404,6 +1416,12 @@ function readTimeline(dt){
      the pin takes over from there. Once it has played it is free ground again. */
   if (oi >= 0 && !onsPlayed()){
     const start = ofs[oi] + 0.02;
+    if (T.p < start && want > start) want = start;
+  }
+  /* the same guard for the ending, for the same reason: a beat 1.6 long is well inside
+     one step of a hard flick, and stepping over this one would skip the end of the piece */
+  if (ei >= 0 && !endingPlayed()){
+    const start = ofs[ei] + 0.02;
     if (T.p < start && want > start) want = start;
   }
 
@@ -1453,6 +1471,13 @@ function readTimeline(dt){
     if (back > memFloor) memFloor = back;
   }
   T.floor = memFloor;
+  /* AND THE ENDING CLOSES BEHIND THE VISITOR THE INSTANT IT STARTS, not a fifth of the
+     way in like every other memory. The per-memory rule would leave the door to the
+     colouring open for the whole of the first sentence, and a wheel flick backward there
+     abandons the sequence mid-thought with the sound still playing. Both directions are
+     shut for as long as it runs; it opens again by itself at the end, so nobody is left
+     on a page that will not move. */
+  if (ei >= 0 && endingHolding() && ofs[ei] > T.floor) T.floor = ofs[ei];
   if (T.floor > 0 && want < T.floor) want = T.floor;
 
   if (oi >= 0 && onsPlayed()){
@@ -4877,6 +4902,20 @@ function cc(txt){
   if (ccEl.textContent === "♪ "+txt && ccT>0.7) return;
   ccEl.textContent = "♪ "+txt; ccEl.classList.add("on"); ccT = 2.6;
 }
+/* A CAPTION THAT LASTS EXACTLY AS LONG AS ITS SOUND DOES.
+   `cc` is for events: something happened, here is what it was, and two and a half seconds
+   later it is gone whether the sound is or not. The ending needs the other kind. Its
+   memory fragments come up out of silence, sit there, and leave, and the caption has to
+   leave WITH the sound rather than on a timer of its own — a caption still reading
+   "birds calling" over a silence that is the whole point would be worse than no caption.
+   So this is called every frame while the sound is up and given barely more life than a
+   frame; the instant the caller stops asking, it lapses and the element fades on its own
+   0.45s transition. Nothing ever writes down that a sound has stopped. */
+function ccHold(txt){
+  if (!ccOn || !ccEl) return;
+  if (ccEl.textContent !== "\u266a "+txt){ ccEl.textContent = "\u266a "+txt; ccEl.classList.add("on"); }
+  ccT = Math.max(ccT, 0.28);
+}
 function updCC(dt){ if (ccT>0){ ccT-=dt; if (ccT<=0) ccEl && ccEl.classList.remove("on"); } }
 
 function noiseBuf(ac, secs){
@@ -5533,6 +5572,14 @@ let LOOKDUCK = 0;
    only the static, and after the cut not even that. One number does it, so there
    is no chance of a layer surviving into a sequence that is supposed to be silent. */
 let SILENCE = 0;
+/* THE ENDING TAKES THE WHOLE MIX DOWN AND KEEPS ITS OWN SOUND BELOW THE FADER.
+   Same lesson the onslaught taught, applied the other way round. A layer only gets quiet
+   if something calls it, so muting the world scene by scene is a game you lose the next
+   time a scene is added — the master fader is the only thing nothing can be forgotten out
+   of. But the ending is not silence, it is silence with five remembered sounds in it, so
+   those cannot hang off the master or they would go down with everything else. They hang
+   off `postBus`, below the fader, exactly where the onslaught's static hangs. */
+let ENDMUTE = 0;
 function lookSound(dt, v, place, focus, open, after){
   LOOKQ.t = 0.3;
   if (!AC || !soundOn) return;
@@ -5594,7 +5641,7 @@ function updSound(dt, t){
      it was given. Chasing that layer by layer is a game you lose the next time a
      layer is added. So the whole mix comes down at the fader, which nothing can be
      forgotten out of, and the static hangs off the bus below it. */
-  envGain(master, 0.85*(1-SILENCE), SILENCE > 0.02 ? 0.22 : 0.9);
+  envGain(master, 0.85*(1-SILENCE)*(1-ENDMUTE), SILENCE > 0.02 ? 0.22 : 0.9);
   const h = AIR.h, night = (AIR.tod<0.14||AIR.tod>0.84)?1:0;
   const out = OUTSIDE;                                   // 0 in the room, 1 outdoors
   /* while a place is being remembered through the binoculars, the weather steps
@@ -5744,6 +5791,19 @@ bCC.addEventListener("click", ()=>{
    instruction stops offering something the visitor has decided against, and then
    moves the page along. */
 bSkip.addEventListener("click", ()=>{
+  /* AND IN THE ENDING IT MEANS THE SAME THING WITHOUT LEAVING THE ENDING.
+     The last beat pins the scroll in both directions for the length of an authored
+     sequence, which is right for the work and wrong for anybody who has decided they
+     are finished with it — scrolling harder does nothing there, and a page that will
+     not move is a page that looks broken. So the control the interface already has for
+     "move on" runs the sequence out instead: the sounds go, the words stop, and it
+     lands on the black it was going to land on anyway. No new button, and nothing on
+     screen has to announce that the scroll is being held. */
+  if (typeof endingHolding === "function" && endingHolding()){
+    endingSkip();
+    bSkip.blur();
+    return;
+  }
   const g = BEATS[T.i].gate;
   if (g) meet(g);
   window.scrollBy(0, H*0.9);
@@ -15437,6 +15497,399 @@ function hideNote(){
   noteEl.setAttribute("aria-hidden", "true");
 }
 /* ============================================================================
+   THE ENDING
+   ============================================================================
+
+   Everything before this is a place. This is not a place, and that is the whole
+   design: after the colouring goes out there is no image, no montage, no
+   silhouette, no particle, no texture and no grain. A black rectangle for forty
+   seconds, and the memories arrive as SOUND, because the argument the ending is
+   making — that you did not notice because nothing happened all at once — cannot
+   be made by showing somebody a picture of it.
+
+   THE SOUNDS ARE NOT NEW. Every fragment here is a recording the visitor has
+   already spent minutes inside: the cloth on the washing line, the birds the
+   binoculars find, the child in the field, the insects under the stars, the town
+   heard from the hill. Recognition is the mechanism. A new recording of "birds"
+   would be a sound effect; THIS one is a place they have been, and the difference
+   is the entire point of reusing them.
+
+   WHY IT RUNS ON A CLOCK AND NOT ON THE SCROLL. Every other beat in the piece is
+   a property of where the visitor's scroll is, which is right for a memory you are
+   allowed to move around inside. An ending is not that. Six sentences with pauses
+   between them, timed against reading speed and against the sounds leaving one at
+   a time, cannot survive being scrubbed — a fast trackpad would turn the whole
+   argument into a flicker. So the beat pins the playhead the moment it is entered
+   and runs on its own seconds, both directions locked, and lets go when it is
+   finished. No message says so. The screen is black; there is nothing there to
+   suggest scrolling would do anything.
+
+   THE PACING IS LONGER THAN THE BRIEF'S 20-25 SECONDS AND THE ARITHMETIC IS WHY.
+   Six text moments, each needing about a second to become legible, about two to be
+   read, and about a second to leave, is already twenty-four seconds of type before
+   a single pause. On top of that the brief asks for a two-second black at the top,
+   a beat of silence between every thought, four sounds leaving one at a time, a
+   second silence before the key line, and another two-second hold before the turn.
+   Those are not decoration, they ARE the ending. Compressing to twenty-five would
+   mean cutting sentences or making them unreadable. `E_RATE` scales the whole
+   score if it ever needs to be tightened; the shape survives.  */
+
+/* how fast the whole score runs. 1 is as written; 0.8 would take about eight
+   seconds out of it without changing a single relationship inside it */
+const E_RATE = 1.0;
+
+const END = {
+  on: 0, done: 0, t: 0,
+  /* the drawing going out. Separate from `t` only so the fade can be read at a
+     glance when tuning it */
+  black: 0,
+  started: {}, stopped: {}
+};
+
+/* the two colours the ending is allowed. The ivory is the narration's own, and the
+   red is the piece's single red — the one "Leave it closed." and "None came." use,
+   and nothing else in the work is permitted to. */
+const E_INK = [251,250,245];
+const E_RED = [166,50,50];
+const E_SERIF = '"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif';
+
+/* ---------------------------------------------------------------- the score */
+
+/* THE DRAWING LEAVES BEFORE ANYTHING ELSE HAPPENS.
+   Two and a half seconds of the colouring dimming, with the polluted air going with
+   it, and then two full seconds of black before a single sound or word. The visitor
+   is supposed to wonder whether it is over. That doubt is doing work: it is what
+   makes the first remembered sound arrive as a memory rather than as the next cue. */
+const E_FADE = 2.5;          // the drawing to black
+const E_HOLD = 2.0;          // and then nothing at all
+
+/* THE MEMORIES, AS SOUND.
+   `at` when it starts, `off` when it begins to go, `up`/`down` how long each takes.
+   They deliberately do not arrive together and do not leave together: two at a time
+   at most is the ceiling, because three recognisable places at once stops being
+   remembering and becomes a mix. Levels are all low. This is what something sounds
+   like when you have not heard it for years, not what it sounded like at the time. */
+const EMEM = [
+  { key:"sheets", src:()=>RUS,          at: 3.9, up:2.2, off:10.6, down:1.5,
+    vol:0.30, lp:6200, cc:"sheets on the line" },
+  { key:"birds",  src:()=>LOOKA.birds,  at: 5.6, up:2.4, off:12.0, down:1.6,
+    vol:0.32, lp:8200, cc:"birds calling" },
+  { key:"night",  src:()=>CRICK,        at:10.2, up:2.6, off:14.2, down:1.7,
+    vol:0.26, lp:9000, cc:"insects, after dark" },
+  { key:"town",   src:()=>LOOKA.town,   at:12.6, up:2.6, off:14.8, down:1.6,
+    vol:0.20, lp:2400, cc:"the town, from the hill" }
+];
+/* the child is a one-shot and always was — four seconds of a real boy, which there is
+   no honest way to loop. It plays once, quietly, in the middle of the first two beds,
+   and it is the one fragment allowed to hold the caption while it is sounding: it is
+   the most recognisable thing in the ending and a bed coming up underneath should not
+   take the words off it. */
+const ELAUGH = { at: 8.2, vol:0.26, cc:"a child laughing, far off", len:3.0 };
+const EOPEN = { at: 33.2, up:4.2, off:41.6, down:2.0, vol:0.17, lp:5200,
+                cc:"wind through the grass" };
+
+/* THE SENTENCES.
+   `t0` is when the words begin to become legible, `in` how long that takes, `hold` how
+   long the whole sentence sits at full strength, `out` how long a word takes to go.
+
+   `keepFrom` is the index of the first word that is allowed to outlive the rest of its
+   sentence, and `keepHold` is by how much. `grade` staggers the words BEFORE it by a
+   fraction of a second across the whole run, so the sentence lets go from the left
+   rather than switching off — small enough that most visitors will not see it happen
+   and will only notice that a few words are still there.
+
+   `red` is a word and the window over which it takes the piece's red. It emerges; it
+   does not flash, and the sentence around it never changes colour. */
+const ESCORE = [
+  { t0: 4.6,  in:1.2, hold:1.4, out:0.9,
+    text:"I thought I was remembering places." },
+
+  /* THE REALIZATION. Only the last word turns, and it turns slowly enough that the
+     change is over before it can be seen starting. It also outlives the sentence it
+     is in by three quarters of a second, which is the first moment in the ending
+     where the typography is saying something the words are not. */
+  { t0: 9.2,  in:1.2, hold:1.9, out:1.1,
+    text:"I was remembering things that disappeared.",
+    red:{ i:5, from:1.6, to:3.6 }, keepFrom:5, keepHold:0.75 },
+
+  /* THE KEY LINE, and the one place the fading itself is the argument. The sentence
+     must be READ first — the stagger begins only after two full seconds at strength —
+     and then it comes apart from the left until "all at once." is alone. Nothing about
+     it is difficult to read; the effect happens entirely after comprehension. */
+  { t0: 18.2, in:1.3, hold:2.0, out:1.0, grade:0.80, keepFrom:4, keepHold:1.9,
+    text:"None of it disappeared all at once." },
+
+  /* and the line the whole interaction has been building to. No animation, no colour,
+     no sound cue. "notice." is left alone in the dark for a second, because that is
+     the word for what the visitor has spent the entire piece doing. */
+  { t0: 25.6, in:1.2, hold:1.8, out:0.9, keepFrom:4, keepHold:1.7,
+    text:"That's why we didn't notice." },
+
+  /* THE TURN. Not "everything is fine now" — nothing in the world outside has changed
+     and the piece would be lying if it said so. Back to the ivory the memories were
+     written in, because the direction has changed and the colour is how the piece says
+     which way it is facing. */
+  { t0: 33.2, in:1.3, hold:1.3, out:0.8,
+    text:"But remembering what was there…" },
+  { t0: 37.4, in:1.3, hold:1.8, out:0.9, keepFrom:6, keepHold:1.5,
+    text:"…is how we know what's worth saving." }
+];
+
+/* when the whole thing is over: the last word gone, the last sound gone, and a breath
+   after it. Computed rather than typed so editing the score cannot leave it stale. */
+const E_TOTAL = (()=>{
+  let last = EOPEN.off + EOPEN.down + 0.6;
+  for (const L of ESCORE){
+    const end = L.t0 + L.in + L.hold + (L.keepHold||0) + (L.grade||0) + L.out;
+    if (end > last) last = end;
+  }
+  return last;
+})();
+
+/* ------------------------------------------------------------ the memory bus
+   Fresh sources, not the scene layers.
+
+   The layers are owned by their chapters: each one is started once, looped forever,
+   and driven by a queue that fades it out when its scene stops asking. Borrowing them
+   here would mean fighting four queues at once for control of four gain nodes, and
+   losing the argument every time a queue happened to tick first. So the ending reads
+   the BUFFERS — which is the part that carries the recognition — and plays them on its
+   own nodes into `postBus`, below the master fader that is taking the rest of the world
+   away. Nothing here can be turned off by a scene that has been left behind. */
+const EBUS = {};
+function eVoice(key, layer, o){
+  if (!AC || !soundOn || !layer || !layer.buf) return null;
+  if (EBUS[key]) return EBUS[key];
+  const s = AC.createBufferSource();
+  s.buffer = layer.buf; s.loop = true;
+  const f = AC.createBiquadFilter(); f.type = "lowpass";
+  f.frequency.value = o.lp || 8000; f.Q.value = 0.4;
+  const g = AC.createGain(); g.gain.value = 0.0001;
+  s.connect(f); f.connect(g); g.connect(postBus || AC.destination);
+  // never at the same point in the recording twice, so a second listen is not a rerun
+  s.start(0, Math.random() * layer.buf.duration);
+  return (EBUS[key] = { s, f, g });
+}
+function eVoiceSet(key, v, tc){
+  const V = EBUS[key];
+  if (V) V.g.gain.setTargetAtTime(Math.max(0.0001, v), AC.currentTime, tc||1.0);
+}
+function eVoiceStop(key){
+  const V = EBUS[key];
+  if (!V) return;
+  try { V.s.stop(AC.currentTime + 0.1); } catch(e){}
+  delete EBUS[key];
+}
+function endingSoundOff(){
+  for (const k in EBUS) eVoiceStop(k);
+  ENDMUTE = 0;
+}
+/* the child, once. Faded up over a second because that is how a sound arrives across a
+   field — you are hearing it before you notice it started — and this one has to arrive
+   as something remembered rather than as something triggered. */
+function eLaugh(vol){
+  if (!AC || !soundOn || !LAUGH.buf) return;
+  const s = AC.createBufferSource(); s.buffer = LAUGH.buf;
+  const g = AC.createGain();
+  const now = AC.currentTime, d = LAUGH.buf.duration;
+  g.gain.setValueAtTime(0.0001, now);
+  g.gain.exponentialRampToValueAtTime(Math.max(0.0002, vol), now + 1.15);
+  g.gain.setValueAtTime(Math.max(0.0002, vol), now + Math.max(1.2, d - 1.6));
+  g.gain.exponentialRampToValueAtTime(0.0001, now + d);
+  s.connect(g); g.connect(postBus || AC.destination);
+  s.start(now); s.stop(now + d + 0.05);
+}
+
+/* -------------------------------------------------------------- typography
+   Laid out on the canvas rather than in the caption element, and the reason is
+   per-word timing: the last three lines each need individual words to outlive the
+   rest of their sentence by a measured amount, which in the DOM would mean building
+   a span for every word and animating each one. On a black screen with nothing else
+   on it the canvas is simply the better instrument. The face, the size, the tracking
+   and the ivory are all the narration's own, taken from the same values `#cap` uses,
+   so this reads as the same voice that has been speaking the whole time. */
+let ELAY = null, elayKey = "";
+function eLayout(L){
+  const fs = Math.min(28, Math.max(17.6, W*0.035));
+  const key = L.text + "|" + Math.round(W) + "x" + Math.round(H);
+  if (elayKey === key && ELAY) return ELAY;
+  ctx.save();
+  ctx.font = fs + "px " + E_SERIF;
+  const maxW = Math.min(W*0.86, fs*18.5);
+  const words = L.text.split(" ");
+  const sp = ctx.measureText(" ").width;
+  const rows = []; let row = [], rw = 0;
+  for (let i=0;i<words.length;i++){
+    const w = ctx.measureText(words[i]).width;
+    if (row.length && rw + sp + w > maxW){ rows.push({ items:row, w:rw }); row = []; rw = 0; }
+    if (row.length) rw += sp;
+    row.push({ i, text:words[i], w });
+    rw += w;
+  }
+  if (row.length) rows.push({ items:row, w:rw });
+  ctx.restore();
+  elayKey = key;
+  return (ELAY = { fs, rows, sp, lh: fs*1.4 });
+}
+/* how alive each word is, in seconds since the beat began */
+function eWordAlpha(L, i, t){
+  const a = sm(t, L.t0, L.t0 + L.in);
+  if (a <= 0) return 0;
+  const base = L.t0 + L.in + L.hold;
+  let delay = 0;
+  if (L.keepFrom !== undefined && i >= L.keepFrom) delay = L.keepHold || 0;
+  else if (L.grade){
+    /* the stagger, across the words that are going: small, even, and left to right.
+       Divided by the count rather than by count-1 so the last of them still starts
+       fractionally before the kept tail does, and the sentence never appears to
+       hesitate in the middle. */
+    const n = (L.keepFrom !== undefined ? L.keepFrom : L.text.split(" ").length);
+    delay = L.grade * (i/Math.max(1, n));
+  }
+  return a * (1 - sm(t, base + delay, base + delay + L.out));
+}
+function eDrawLine(L, t){
+  const lay = eLayout(L);
+  const y0 = H*0.5 - (lay.rows.length-1)*lay.lh*0.5;
+  ctx.save();
+  ctx.font = lay.fs + "px " + E_SERIF;
+  ctx.textBaseline = "middle";
+  ctx.textAlign = "left";
+  /* the narration's own shadow. Invisible against black, and that is fine — it is here
+     so the type is identical to the type everywhere else rather than nearly identical,
+     and it does its work on any screen where the black is not quite black. */
+  ctx.shadowColor = "rgba(6,10,16,0.85)";
+  ctx.shadowBlur = lay.fs*0.5;
+  for (let r=0;r<lay.rows.length;r++){
+    const row = lay.rows[r];
+    let x = (W - row.w)/2;
+    for (const it of row.items){
+      const a = eWordAlpha(L, it.i, t);
+      if (a > 0.002){
+        let col = E_INK;
+        if (L.red && L.red.i === it.i){
+          const q = ease.io(cl01((t - (L.t0 + L.red.from)) / Math.max(0.001, L.red.to - L.red.from)));
+          col = [ Math.round(lerp(E_INK[0], E_RED[0], q)),
+                  Math.round(lerp(E_INK[1], E_RED[1], q)),
+                  Math.round(lerp(E_INK[2], E_RED[2], q)) ];
+        }
+        ctx.fillStyle = rgba(col, a);
+        ctx.fillText(it.text, x, y0 + r*lay.lh);
+      }
+      x += it.w + lay.sp;
+    }
+  }
+  ctx.restore();
+}
+
+/* ------------------------------------------------------------------ the beat */
+function endBeatIndex(){
+  for (let i=0;i<N;i++) if (BEATS[i].id === "end") return i;
+  return -1;
+}
+/* what the scroll asks: is this still running, and may the playhead move.
+   Both directions are pinned while it is — forward so the sentences cannot be scrubbed
+   past, backward so a flick of the wheel cannot drop the visitor back into the colouring
+   halfway through. It lets go on its own, and there is never a message about it. */
+function endingHolding(){ return !!(END.on && !END.done); }
+function endingPlayed(){ return !!END.done; }
+
+function resetEnding(){
+  endingSoundOff();
+  END.on = 1; END.done = 0; END.t = 0; END.black = 0;
+  END.started = {}; END.stopped = {};
+  ELAY = null; elayKey = "";
+}
+
+function drawEnding(dt){
+  if (!END.on) resetEnding();
+  if (!END.done) END.t += dt * E_RATE;
+  const t = END.t;
+
+  /* ------------------------------------------------------- the picture leaving */
+  if (t < E_FADE + 0.35){
+    drawDrawing(performance.now()/1000, { town:true });
+    END.black = ease.io(cl01(t / E_FADE));
+    ctx.fillStyle = rgba([0,0,0], END.black);
+    ctx.fillRect(0, 0, W, H);
+  } else {
+    END.black = 1;
+    ctx.fillStyle = "#000";
+    ctx.fillRect(0, 0, W, H);
+  }
+
+  /* ---------------------------------------------------------------- the world going
+     The mix comes down at the fader over the same two and a half seconds the picture
+     takes, so the polluted air of the last chapter leaves WITH it rather than after it,
+     and by the time the black is complete there is nothing playing at all. */
+  ENDMUTE = cl01(t / (E_FADE + 0.9));
+
+  /* ------------------------------------------------------------- the memories */
+  let caption = "", capAt = -1;
+  for (const M of EMEM){
+    const on = t >= M.at, going = t >= M.off;
+    if (on && !END.started[M.key]){
+      END.started[M.key] = 1;
+      eVoice(M.key, M.src(), { lp:M.lp });
+      eVoiceSet(M.key, M.vol, M.up/2.4);
+    }
+    if (going && !END.stopped[M.key]){
+      END.stopped[M.key] = 1;
+      eVoiceSet(M.key, 0, M.down/2.4);
+    }
+    /* the caption belongs to whichever memory came up last and is still up, so two
+       overlapping sounds do not produce two lines of text fighting for one slot */
+    if (on && t < M.off + M.down && M.at > capAt){ capAt = M.at; caption = M.cc; }
+  }
+  if (t >= ELAUGH.at && !END.started.laugh){
+    END.started.laugh = 1;
+    eLaugh(ELAUGH.vol);
+  }
+  if (t >= ELAUGH.at && t < ELAUGH.at + ELAUGH.len){
+    capAt = 1e9; caption = ELAUGH.cc;
+  }
+  /* and the one that comes back */
+  if (t >= EOPEN.at && !END.started.open){
+    END.started.open = 1;
+    eVoice("open", AMB2, { lp:EOPEN.lp });
+    eVoiceSet("open", EOPEN.vol, EOPEN.up/2.4);
+  }
+  if (t >= EOPEN.off && !END.stopped.open){
+    END.stopped.open = 1;
+    eVoiceSet("open", 0, EOPEN.down/2.4);
+  }
+  if (t >= EOPEN.at + 1.4 && t < EOPEN.off + EOPEN.down){ caption = EOPEN.cc; }
+  if (caption) ccHold(caption);
+
+  /* ---------------------------------------------------------------- the words */
+  for (const L of ESCORE){
+    if (t < L.t0 - 0.05) continue;
+    if (t > L.t0 + L.in + L.hold + (L.keepHold||0) + (L.grade||0) + L.out + 0.2) continue;
+    eDrawLine(L, t);
+  }
+
+  /* -------------------------------------------------------------------- and out.
+     The scroll is given back, quietly. There is nothing to scroll to — the screen is
+     black and stays black — but a visitor left on a page that will not move is a
+     visitor who thinks the piece has crashed, and the lock has done its job by now. */
+  if (t >= E_TOTAL && !END.done){
+    END.done = 1;
+    for (const k in EBUS) eVoiceStop(k);
+  }
+}
+function endingProgress(){ return cl01(END.t / E_TOTAL); }
+/* WHAT "SKIP" MEANS HERE.
+   Not a jump to the end frame: the sounds are real nodes with real envelopes, and cutting
+   them dead leaves a click and a caption still on screen. The clock is pushed to just
+   inside the last second instead, and everything currently sounding is given a fast but
+   genuine fade — so the sequence ENDS rather than stops, and it ends on the same black
+   and the same silence it would have reached on its own. */
+function endingSkip(){
+  if (!END.on || END.done) return;
+  for (const k in EBUS) eVoiceSet(k, 0, 0.28);
+  END.t = Math.max(END.t, E_TOTAL - 0.9);
+}
+/* ============================================================================
    THE DIRECTOR
    Sets the air for each beat, dispatches the scene, and owns the morphs.
 
@@ -15473,7 +15926,7 @@ const AIRPLAN = {
   "r-stars":   { pm:[72,84],    tod:[0.950,0.975], glow:[0.48,0.60] },
   "r-horizon": { pm:[88,102],   tod:[0.360,0.420], glow:[0,0] },
   "r-drawing": { pm:[104,116],  tod:[0.440,0.460], glow:[0,0] },
-  "fade":      { pm:[104,116],  tod:[0.440,0.460], glow:[0,0] }
+  "end":       { pm:[104,116],  tod:[0.440,0.460], glow:[0,0] }
 };
 function setAir(bid, f){
   const a = AIRPLAN[bid];
@@ -16017,10 +16470,8 @@ function render(t, dt){
        The colouring, going out. The scene keeps drawing underneath so the last thing
        the visitor sees is the drawing itself dimming rather than a cut, and the black
        arrives over the back half of the beat and then stays black. */
-    case "fade": {
-      drawDrawing(t, { town:true });
-      ctx.fillStyle = "rgba(0,0,0," + ease.io(cl01((f - 0.18)/0.55)).toFixed(3) + ")";
-      ctx.fillRect(0, 0, W, H);
+    case "end": {
+      drawEnding(dt);
       break;
     }
     /* -------------------------------- the evidence */
@@ -16061,7 +16512,11 @@ function render(t, dt){
      which is invisible over a painting and is a pair of brown smudges over an empty
      screen — and the sequence has a good deal of empty screen in it. It brings its
      own static instead. */
-  if (bid !== "onslaught"){
+  /* THE ENDING GETS NONE OF THIS. The black is supposed to be black: a vignette is a
+     shape and grain is a texture, and both of them are visible on an empty frame in a
+     way they never are over a painting. The onslaught is excluded for its own reason
+     — it draws its own static. */
+  if (bid !== "onslaught" && bid !== "end"){
     // bloom first, so light spills before the frame is darkened
     const night = (AIR.tod<0.14||AIR.tod>0.86);
     bloom(autoLow ? 0.16 : (night ? 0.34 : 0.26 + AIR.h*0.18), night);
@@ -16140,7 +16595,7 @@ function updText(now, dt){
   // the last line holds a long time, then goes out on its own, and only then does
   // the title come up. They must never share the frame.
   const titleFrom = 0.74;
-  const lineOut = bid==="fade";
+  const lineOut = bid==="end";
   const show = line && !lineOut &&
     ((bid.startsWith("f-")) ? f>=0.28 : (f>0.06 && f<0.62));
   let want = show ? line : "";
@@ -16230,7 +16685,7 @@ function updText(now, dt){
 
   /* the scroll arrow: small, and there the whole way, because scrolling is the
      one thing the visitor has to know and the only thing the card tells them */
-  const moreToGo = T.p < TOTAL-0.35 && bid!=="fade";
+  const moreToGo = T.p < TOTAL-0.35 && bid!=="end";
   /* not while the scroll is waiting: one says carry on down and the other says you
      have something to do here first, and they were sitting on top of each other */
   const cue = moreToGo && !introOn && !(T.blocked && holding);
@@ -16452,6 +16907,20 @@ function onEnter(bid){
   if (bid!=="p-room" && bid!=="p-shut") hideNote();
   if (bid==="onslaught") resetOnslaught();
   else { document.body.classList.remove("onslaught"); SILENCE = 0; onsNoiseStop(); }
+  /* THE ENDING ARMS ITSELF ON ARRIVAL AND CLEANS THE SCREEN OFF FIRST.
+     Everything that lives at the edges of the frame — the instruction plaque, the chapter
+     label, the scroll cue, whatever answer the last scene happened to be saying — belongs
+     to a place, and there is no place here. Unlike the field and the sky this one is NOT
+     guarded on having finished: an ending you have scrolled away from and come back to
+     should play, not show you a black screen it thinks you have already seen. */
+  if (bid==="end"){
+    resetEnding();
+    setAsk(""); hideAQ(); hideNote(); showCard(null);
+    evLine = ""; evLineT = 0;
+    capEl.classList.remove("on", "redshift", "redset");
+    chEl.classList.remove("on");
+  }
+  else if (END.on){ END.on = 0; endingSoundOff(); }
   if (bid!=="stopped" && bid!=="named") hideAQ();
   if (bid!=="stars" && bid!=="wish" && bid!=="r-stars") hideStarStory();
   if (!bid.startsWith("e-")) { showCard(null); }
@@ -16957,6 +17426,26 @@ window.__bluer = {
              yCeil:Math.round((T.ceil+0.12)/TOTAL*max),
              yFloor:T.floor>0?Math.round(T.floor/TOTAL*max):null,
              hold:BEATS.filter(b=>HOLD_AT[b.id]&&!HOLD_AT[b.id].done()).map(b=>b.id) };
+  },
+  /* scrub the ending's own clock, so its forty seconds can be inspected a moment at a
+     time instead of waited through. It only moves the playhead: every sound the score
+     has already started stays exactly as it is, which is why jumping backwards through
+     it is not meaningful and jumping forwards past a memory's cue skips that memory. */
+  endAt(sec){ END.on = 1; END.done = 0; END.t = sec; return sec; },
+  /* the ending, from outside: where it is in its own score, what the black and the
+     master fader are doing, and which memories are currently sounding */
+  ending(){
+    const v = [];
+    for (const k in EBUS){
+      const g = EBUS[k].g.gain.value;
+      if (g > 0.004) v.push(k+":"+g.toFixed(3));
+    }
+    return { beat:id(), t:END.t, on:END.on, done:END.done, black:END.black,
+             mute:ENDMUTE, total:+E_TOTAL.toFixed(2), voices:v,
+             ceil:T.ceil, floor:T.floor, blocked:T.blocked,
+             lines: ESCORE.filter(L => END.t >= L.t0 &&
+                      END.t <= L.t0 + L.in + L.hold + (L.keepHold||0) + (L.grade||0) + L.out)
+                    .map(L => L.text.slice(0,22)) };
   },
   /* jump the scroll to a named beat, marking every gate before it as met, so a
      chapter can be driven and screenshotted without playing the whole piece */

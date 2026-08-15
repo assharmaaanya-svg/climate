@@ -16,6 +16,20 @@ function cc(txt){
   if (ccEl.textContent === "♪ "+txt && ccT>0.7) return;
   ccEl.textContent = "♪ "+txt; ccEl.classList.add("on"); ccT = 2.6;
 }
+/* A CAPTION THAT LASTS EXACTLY AS LONG AS ITS SOUND DOES.
+   `cc` is for events: something happened, here is what it was, and two and a half seconds
+   later it is gone whether the sound is or not. The ending needs the other kind. Its
+   memory fragments come up out of silence, sit there, and leave, and the caption has to
+   leave WITH the sound rather than on a timer of its own — a caption still reading
+   "birds calling" over a silence that is the whole point would be worse than no caption.
+   So this is called every frame while the sound is up and given barely more life than a
+   frame; the instant the caller stops asking, it lapses and the element fades on its own
+   0.45s transition. Nothing ever writes down that a sound has stopped. */
+function ccHold(txt){
+  if (!ccOn || !ccEl) return;
+  if (ccEl.textContent !== "\u266a "+txt){ ccEl.textContent = "\u266a "+txt; ccEl.classList.add("on"); }
+  ccT = Math.max(ccT, 0.28);
+}
 function updCC(dt){ if (ccT>0){ ccT-=dt; if (ccT<=0) ccEl && ccEl.classList.remove("on"); } }
 
 function noiseBuf(ac, secs){
@@ -672,6 +686,14 @@ let LOOKDUCK = 0;
    only the static, and after the cut not even that. One number does it, so there
    is no chance of a layer surviving into a sequence that is supposed to be silent. */
 let SILENCE = 0;
+/* THE ENDING TAKES THE WHOLE MIX DOWN AND KEEPS ITS OWN SOUND BELOW THE FADER.
+   Same lesson the onslaught taught, applied the other way round. A layer only gets quiet
+   if something calls it, so muting the world scene by scene is a game you lose the next
+   time a scene is added — the master fader is the only thing nothing can be forgotten out
+   of. But the ending is not silence, it is silence with five remembered sounds in it, so
+   those cannot hang off the master or they would go down with everything else. They hang
+   off `postBus`, below the fader, exactly where the onslaught's static hangs. */
+let ENDMUTE = 0;
 function lookSound(dt, v, place, focus, open, after){
   LOOKQ.t = 0.3;
   if (!AC || !soundOn) return;
@@ -733,7 +755,7 @@ function updSound(dt, t){
      it was given. Chasing that layer by layer is a game you lose the next time a
      layer is added. So the whole mix comes down at the fader, which nothing can be
      forgotten out of, and the static hangs off the bus below it. */
-  envGain(master, 0.85*(1-SILENCE), SILENCE > 0.02 ? 0.22 : 0.9);
+  envGain(master, 0.85*(1-SILENCE)*(1-ENDMUTE), SILENCE > 0.02 ? 0.22 : 0.9);
   const h = AIR.h, night = (AIR.tod<0.14||AIR.tod>0.84)?1:0;
   const out = OUTSIDE;                                   // 0 in the room, 1 outdoors
   /* while a place is being remembered through the binoculars, the weather steps
@@ -883,6 +905,19 @@ bCC.addEventListener("click", ()=>{
    instruction stops offering something the visitor has decided against, and then
    moves the page along. */
 bSkip.addEventListener("click", ()=>{
+  /* AND IN THE ENDING IT MEANS THE SAME THING WITHOUT LEAVING THE ENDING.
+     The last beat pins the scroll in both directions for the length of an authored
+     sequence, which is right for the work and wrong for anybody who has decided they
+     are finished with it — scrolling harder does nothing there, and a page that will
+     not move is a page that looks broken. So the control the interface already has for
+     "move on" runs the sequence out instead: the sounds go, the words stop, and it
+     lands on the black it was going to land on anyway. No new button, and nothing on
+     screen has to announce that the scroll is being held. */
+  if (typeof endingHolding === "function" && endingHolding()){
+    endingSkip();
+    bSkip.blur();
+    return;
+  }
   const g = BEATS[T.i].gate;
   if (g) meet(g);
   window.scrollBy(0, H*0.9);

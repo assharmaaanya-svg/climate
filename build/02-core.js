@@ -423,11 +423,13 @@ const BEATS = [
     line:"" },
   { id:"r-drawing", ch:3, len:1.3,
     line:"She kept it on the fridge for eleven years." },
-  /* ------------- WHERE IT ENDS, FOR NOW -------------
-     The piece finishes on the colouring and goes to black. The chapters that used to
-     follow are still in the source and still work; they are simply not on the
-     timeline while this ending is being built. */
-  { id:"fade",      ch:3, len:1.6, line:"" }
+  /* ------------- THE ENDING -------------
+     One beat, and the only one in the piece that does not care where the scroll is.
+     It pins the playhead when it is entered and runs on its own clock: the colouring
+     goes out, the air goes with it, and then six sentences over a black screen with
+     the memories coming back as sound. `len` here is scroll geometry and nothing else
+     — the timing lives in the score. */
+  { id:"end",       ch:3, len:1.6, line:"" }
 ];
 const CH_NAME = { 1:"i · the world came inside", 2:"ii · life happened outdoors",
                   3:"iii · the change is almost invisible", 4:"iv · habits change first",
@@ -629,6 +631,16 @@ function readTimeline(dt){
   if (oi >= 0 && onslaughtHolding()){
     T.ceil = Math.min(T.ceil, ofs[oi] + BEATS[oi].len*0.70);
   }
+  /* AND THE ENDING, WHICH IS THE SAME KIND OF WAIT AGAIN AND STRICTER.
+     Not a gate: it asks for nothing and cannot be failed. It is forty seconds of authored
+     time with six sentences in it, each one paced against reading speed and against the
+     sounds leaving one at a time, and a trackpad flick through it would turn the whole
+     argument into a flicker. So the playhead is pinned just inside the beat for exactly
+     as long as the sequence is running, and released the moment it finishes. */
+  const ei = typeof endBeatIndex === "function" ? endBeatIndex() : -1;
+  if (ei >= 0 && endingHolding()){
+    T.ceil = Math.min(T.ceil, ofs[ei] + BEATS[ei].len*0.28);
+  }
 
   let want = Math.min(T.target, T.ceil);
 
@@ -646,6 +658,12 @@ function readTimeline(dt){
      the pin takes over from there. Once it has played it is free ground again. */
   if (oi >= 0 && !onsPlayed()){
     const start = ofs[oi] + 0.02;
+    if (T.p < start && want > start) want = start;
+  }
+  /* the same guard for the ending, for the same reason: a beat 1.6 long is well inside
+     one step of a hard flick, and stepping over this one would skip the end of the piece */
+  if (ei >= 0 && !endingPlayed()){
+    const start = ofs[ei] + 0.02;
     if (T.p < start && want > start) want = start;
   }
 
@@ -695,6 +713,13 @@ function readTimeline(dt){
     if (back > memFloor) memFloor = back;
   }
   T.floor = memFloor;
+  /* AND THE ENDING CLOSES BEHIND THE VISITOR THE INSTANT IT STARTS, not a fifth of the
+     way in like every other memory. The per-memory rule would leave the door to the
+     colouring open for the whole of the first sentence, and a wheel flick backward there
+     abandons the sequence mid-thought with the sound still playing. Both directions are
+     shut for as long as it runs; it opens again by itself at the end, so nobody is left
+     on a page that will not move. */
+  if (ei >= 0 && endingHolding() && ofs[ei] > T.floor) T.floor = ofs[ei];
   if (T.floor > 0 && want < T.floor) want = T.floor;
 
   if (oi >= 0 && onsPlayed()){
