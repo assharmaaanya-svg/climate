@@ -90,7 +90,8 @@ const fieldAx = () => Math.min(W*0.46, H*FIELD.ay*FIELD.aspect);
 const PLOOK = {
   ready:false,
   cx:0, cy:0, vx:0, vy:0,          // aim, in source px, and its throw
-  z:1, lift:0,                     // magnification, and the raise-to-the-eyes
+  z:1, lift:0, after:0,            // magnification, the raise-to-the-eyes, and
+                                   // whether this is the chapter after the air changed
   focus:0, recall:0,               // how long you have held, and what it looks like
   found:Object.create(null),       // the four, ticked
   said:Object.create(null),        // everything else, said once
@@ -108,6 +109,9 @@ const PLOOK = {
    steady adds on top. Beyond about 2.4 the painting has no more detail to give
    and starts to look like a photograph of a painting. */
 const Z_BASE = 1.66, Z_MAX = 2.34;
+/* the colour the distance dissolves into out here: the pale warm grey the artist's
+   polluted valley is painted in, sampled from its own horizon rather than invented. */
+const LOOK_HAZE = [186, 182, 170];
 /* the out-of-focus copy of the frame, at half resolution. Its own buffer rather
    than the shared TMP2, because resizing a buffer that four other scenes draw
    full-frame into is a bug waiting for the next chapter. */
@@ -171,7 +175,7 @@ function lookComposite(im, imh, air){
   lcc.drawImage(im, 0, 0);
   if (q > 0.004 && imgReady(imh)){
     lcc.globalAlpha = q;
-    lcc.drawImage(imh, 0, 0);
+    lcc.drawImage(imh, 0, 0, LCOMP.width, LCOMP.height);
     lcc.globalAlpha = 1;
   }
   return LCOMP;
@@ -192,17 +196,25 @@ const LMARK = [
   { id:"school", x:0.4250, y:0.6880, r:0.070, key:true, aud:"school",
     tick:"Your school",
     say:"Your school. The red brick one, with the little tower on top.",
+    /* AND WHAT EACH ONE IS AFTER.
+       Four lines that walk the eye outward — the school just there, the wire above it,
+       the water beyond that, and then the hills, which are the furthest thing and the
+       first thing to go. None of them names the cause. */
+    aft:"You could see your school from here.",
     glint:{ x:0.4232, y:0.6560, w:0.010 } },              // the cupola glazing
   { id:"wires",  x:0.2480, y:0.4790, r:0.062, key:true, aud:"birds",
     tick:"The birds on the wire",
-    say:"The birds on the wire. There were always more than you could count." },
+    say:"The birds on the wire. There were always more than you could count.",
+    aft:"They're gone." },
   { id:"tower",  x:0.6752, y:0.6280, r:0.056, key:true, aud:"tower",
     tick:"The water tower",
     say:"The water tower. You could see it from anywhere in town.",
+    aft:"The water used to be clean here.",
     glint:{ x:0.6690, y:0.6130, w:0.013 } },              // sun on the tank
   { id:"hills",  x:0.4550, y:0.5620, r:0.140, key:true, aud:"hills",
     tick:"The far hills",
-    say:"The far hills. On a clear day, every one of them." },
+    say:"The far hills. On a clear day, every one of them.",
+    aft:"And beyond it, all the way to the far hills." },
 
   { id:"lane",   x:0.2450, y:0.7130, r:0.082, aud:"town",
     say:"Your street. Fourth along, the one with the gate that stuck." },
@@ -322,7 +334,11 @@ function drawLookout(t, dt, o){
   o = o||{};
   apFull();
   const im  = loadImg("viewoftown.png");
-  const imh = loadImg("viewoftownafterpollution.png");
+  /* the artist's high-quality polluted valley. It is 1470x1070 against the clean
+     painting's 1537x1023 — the same view, framed a little differently — so it is drawn to
+     the clean one's bounds rather than at 1:1, and every landmark coordinate in this file
+     stays exactly where it was measured. */
+  const imh = loadImg("afterrpllutionhighquality.png");
   if (!imgReady(im)){
     // until it decodes, the plate, so the beat is never a blank screen
     drawPlate("town", { air:o.air0===undefined?0.4:o.air0 });
@@ -332,6 +348,7 @@ function drawLookout(t, dt, o){
   const SW = im.naturalWidth, SH = im.naturalHeight;
   const air0 = o.air0===undefined ? 0.40 : o.air0;
   const air1 = o.air1===undefined ? 0.00 : o.air1;
+  PLOOK.after = o.after ? 1 : 0;
   const fall = o.fall || 3.6;
 
   /* ---------------------------------------------------------- raising them */
@@ -542,6 +559,33 @@ function drawLookout(t, dt, o){
     }
   }
 
+  /* --------------------------------------------------- the air, inside the lens
+     The binoculars are working perfectly. What is between them and the town is not.
+
+     So this is not on the glass and it is not a texture: it is a vertical gradient in the
+     colour of the haze already in the painting, laid over the magnified view, weakest in
+     the meadow a few yards away and heaviest at the hills on the horizon — because that is
+     what a column of dirty air does, it accumulates with distance. It also thickens with
+     magnification, since the further in you go the further away what you are looking at
+     is. Deliberately restrained at the near end: the landmark stays legible and only the
+     ridges behind it dissolve. Nothing happens here at all in the clean chapter. */
+  if (PLOOK.after > 0.004){
+    const zf = cl01((PLOOK.z - Z_BASE)/Math.max(0.001, Z_MAX - Z_BASE));
+    const k = PLOOK.after * (0.30 + 0.42*zf);
+    /* the horizon in screen terms: the meadow's top edge is the near limit, and the top
+       of the frame is as far as the valley goes */
+    const hy = cl01(meadowY / Math.max(1, H));
+    const hg = ctx.createLinearGradient(0, 0, 0, H);
+    hg.addColorStop(0.00, rgba(LOOK_HAZE, 0.62*k));
+    hg.addColorStop(Math.max(0.02, hy*0.72), rgba(LOOK_HAZE, 0.46*k));
+    hg.addColorStop(Math.min(0.98, hy), rgba(LOOK_HAZE, 0.13*k));
+    hg.addColorStop(1.00, rgba(LOOK_HAZE, 0.04*k));
+    ctx.save();
+    ctx.fillStyle = hg;
+    ctx.fillRect(0, 0, W, H);
+    ctx.restore();
+  }
+
   /* ---------------------------------------------------------- colour, last
      Colour is the slowest thing to come back, because it is the slowest thing to
      come back. Out of focus the valley is nearly grey and slightly milky, the way
@@ -605,7 +649,7 @@ function drawLookout(t, dt, o){
         if (m.key && !PLOOK.found[k]){
           PLOOK.found[k] = true; PLOOK.n++;
           tickLookList(k);
-          whisper(m.say);
+          whisper(PLOOK.after > 0.5 && m.aft ? m.aft : m.say);
           if (!FOUND["mark-"+k]){ FOUND["mark-"+k] = true; foundN++; }
         } else if (!m.key && !PLOOK.said[k]){
           PLOOK.said[k] = true;
@@ -642,7 +686,7 @@ function drawLookout(t, dt, o){
   /* The valley, and then one place in it. `bed` is how loud the wider world is
      while nothing in particular is being remembered — quieter on the second visit,
      because by then there is less out there making a noise. */
-  lookSound(dt, 0.95, best && best.aud, PLOOK.focus, o.bed===undefined?0.60:o.bed);
+  lookSound(dt, 0.95, best && best.aud, PLOOK.focus, o.bed===undefined?0.60:o.bed, PLOOK.after);
   cv.className = P.down ? "grabbing" : "grabbable";
 }
 

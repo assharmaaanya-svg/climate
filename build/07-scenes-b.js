@@ -923,13 +923,32 @@ function drawDrawing(t, o){
   o=o||{};
   buildPaper();
   const r = paperRect();
-  // the table it is lying on
-  const tg=ctx.createLinearGradient(0,0,0,H);
-  tg.addColorStop(0,"#3a2c22"); tg.addColorStop(0.5,"#4a382a"); tg.addColorStop(1,"#2e231c");
-  ctx.fillStyle=tg; ctx.fillRect(0,0,W,H);
-  for (let i=0;i<16;i++){
-    ctx.strokeStyle="rgba(20,14,10,0.20)"; ctx.lineWidth=Math.max(1,MIN*0.002);
-    ctx.beginPath(); ctx.moveTo(0, H*i/16+Math.sin(i)*4); ctx.lineTo(W, H*i/16+Math.sin(i+1)*4); ctx.stroke();
+  /* WHAT IT IS LYING ON.
+     A table, in the chapter where the drawing is being made. But in the chapter years
+     later it is the valley itself behind it — the polluted view of the town, the same
+     painting the binoculars look at — because by then the drawing and the thing it is a
+     drawing OF are the same subject, and putting the paper back on a table there would be
+     hiding that. It is dimmed and slightly desaturated so it stays a ground rather than
+     competing with the sheet in front of it. */
+  const back = o.town ? loadImg("afterrpllutionhighquality.png") : null;
+  if (back && imgReady(back)){
+    const sc = Math.max(W/back.naturalWidth, H/back.naturalHeight);
+    const bw = back.naturalWidth*sc, bh = back.naturalHeight*sc;
+    ctx.drawImage(back, (W-bw)/2, (H-bh)*0.62, bw, bh);
+    ctx.save();
+    ctx.globalCompositeOperation="saturation";
+    ctx.fillStyle=rgba([128,128,128], 0.30); ctx.fillRect(0,0,W,H);
+    ctx.restore();
+    ctx.fillStyle=rgba([26,20,14], 0.46); ctx.fillRect(0,0,W,H);
+  } else {
+    // the table it is lying on
+    const tg=ctx.createLinearGradient(0,0,0,H);
+    tg.addColorStop(0,"#3a2c22"); tg.addColorStop(0.5,"#4a382a"); tg.addColorStop(1,"#2e231c");
+    ctx.fillStyle=tg; ctx.fillRect(0,0,W,H);
+    for (let i=0;i<16;i++){
+      ctx.strokeStyle="rgba(20,14,10,0.20)"; ctx.lineWidth=Math.max(1,MIN*0.002);
+      ctx.beginPath(); ctx.moveTo(0, H*i/16+Math.sin(i)*4); ctx.lineTo(W, H*i/16+Math.sin(i+1)*4); ctx.stroke();
+    }
   }
   // lamp light falling on it
   ctx.save(); ctx.globalCompositeOperation="lighter";

@@ -541,6 +541,9 @@ function kiteAfterSound(dt, v, going){
   if (!AC || !soundOn || !KAMB.gain) return;
   if (KAMB.state === "ready" && !KAMB.src) startOne(KAMB);
   envGain(KAMB.gain, Math.max(0, v*0.92*AMB_LIFT), 0.9);
+  /* the hill borrows this same layer through a much lower filter, so the field has to ask
+     for its own back rather than inheriting whichever scene ran last */
+  if (KAMB.filt) KAMB.filt.frequency.setTargetAtTime(5000, AC.currentTime, 1.2);
   /* every other bed gets out of the way: this chapter is only this air */
   if (AMB.gain)  envGain(AMB.gain, 0, 1.1);
   if (AMB2.gain) envGain(AMB2.gain, 0, 1.1);
@@ -669,7 +672,7 @@ let LOOKDUCK = 0;
    only the static, and after the cut not even that. One number does it, so there
    is no chance of a layer surviving into a sequence that is supposed to be silent. */
 let SILENCE = 0;
-function lookSound(dt, v, place, focus, open){
+function lookSound(dt, v, place, focus, open, after){
   LOOKQ.t = 0.3;
   if (!AC || !soundOn) return;
   /* a place has to be genuinely in focus before it is heard at all: the sound is
@@ -694,7 +697,30 @@ function lookSound(dt, v, place, focus, open){
     envGain(L.gain, want, want > 0.0005 ? 2.1 : 3.0);
   }
   // the birds and the open countryside step back with everything else
-  ambience((open===undefined ? 0.6 : open) * away, 1);
+  const bedV = (open===undefined ? 0.6 : open) * away;
+  if (!after){ ambience(bedV, 1); return; }
+
+  /* AND AFTER THE AIR CHANGED, THE HILL HAS A CITY UNDER IT.
+     Not a new recording — this is `city-outside.wav`, the same twenty-four seconds the
+     polluted field uses, which is already the right thing: crest factor 1.64 so nothing in
+     it can be picked out twice, and a zero-crossing rate of 509 Hz, which is a city heard
+     from a long way off rather than from inside one. That is exactly what this is: an open
+     hillside with a town a couple of kilometres below it.
+
+     What is different here is the distance. It runs through a lower filter than the field
+     does — two kilometres of air is itself a low-pass — and it sits lower, because the
+     visitor is above it rather than standing in it. It ducks with everything else when a
+     place comes into focus, so a memory still arrives out of a quieter world, and it comes
+     back on its own when the lenses come down, because `away` returns to 1. */
+  KAFTQ.t = 0.3;
+  if (!KAMB.gain) return;
+  if (KAMB.state === "ready" && !KAMB.src) startOne(KAMB);
+  envGain(KAMB.gain, Math.max(0, bedV*0.62*AMB_LIFT), 1.4);
+  if (KAMB.filt) KAMB.filt.frequency.setTargetAtTime(2400, AC.currentTime, 1.8);
+  /* and the clean world's beds are not on this hill */
+  if (AMB.gain)  envGain(AMB.gain, 0, 1.6);
+  if (AMB2.gain) envGain(AMB2.gain, 0, 1.6);
+  if (AMB3.gain) envGain(AMB3.gain, 0, 1.6);
 }
 
 function updSound(dt, t){

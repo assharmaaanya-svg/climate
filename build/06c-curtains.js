@@ -112,8 +112,17 @@ function panelGeom(side, t, rev, W_, H_){
      polluted bedroom that seam was the polluted view leaking through a scene whose whole
      job is to be dark until the visitor opens it. So the closed position carries an
      overlap comfortably wider than the sway can ever be, and the existing lerp toward the
-     open position tapers it away as they are drawn back. */
-  const xInClosed = CG.mid*W_ + CC.x + dirn*W_*0.008, xInOpen = inOpenF*W_ + CC.x;
+     open position tapers it away as they are drawn back.
+
+     AND THE OVERLAP HAS TO BE BIGGER THAN THE BREATHING.
+     It was 0.008 of the width each side. Each panel's inner edge sways by up to
+     W*0.0090 (swayA at its maximum, times the 1.15 the row weighting can reach), and the
+     two panels are given opposite phases on purpose — so at the worst moment they could
+     part by more than the overlap held them together, and the seam came back. At 0.016 the
+     overlap is comfortably wider than either panel can swing, so the pair cannot separate
+     at any viewport size, and the lerp toward the open position still tapers it away the
+     moment they are drawn back. */
+  const xInClosed = CG.mid*W_ + CC.x + dirn*W_*0.016, xInOpen = inOpenF*W_ + CC.x;
   const xIn0 = lerp(xInClosed, xInOpen, pull);
 
   const top = CG.top*H_ + CC.y;
@@ -131,7 +140,10 @@ function panelGeom(side, t, rev, W_, H_){
   const rowMap = (v, X, K)=>{
     // the leading edge lags at the bottom, and the whole panel breathes
     const lag  = pull*(1-pull*0.35)*MIN*0.030*v*v;
-    const sway = Math.sin(t*0.62 + side*2.3 + v*1.9)*swayA*(0.25+v*0.9);
+    /* and a shut curtain barely breathes at its leading edge, because it is resting
+       against the other one. Damped by how far it has been drawn back, so the cloth is
+       still alive when it is open and still when it is closed. */
+    const sway = Math.sin(t*0.62 + side*2.3 + v*1.9)*swayA*(0.25+v*0.9)*(0.30+0.70*pull);
     const xIn = xIn0 - dirn*lag + sway;
     const w = Math.abs(xIn - xOut);
     const s = cl01(w/fab);                                 // mean compression
@@ -361,14 +373,21 @@ function drawPanel(g, lut, t){
 function drawCurtains(t, dt, o){
   o = o||{};
   const lut = curtainLut(Math.round(cl01(o.air||0)*4));
-  const gapOpen = Math.abs(CGEO.R.edges[0].xIn - CGEO.L.edges[0].xIn);
+  /* SIGNED, not absolute — this was the seam.
+     When the panels overlap, the right one's inner edge is to the LEFT of the left one's,
+     so this difference goes negative. Taking its absolute value turned an overlap of forty
+     pixels into a "gap" of forty pixels and lit it, which is why a curtain that was
+     genuinely shut still had a bright strip down the middle of it: the light was not
+     leaking through anything, it was being drawn on purpose. Negative now means closed,
+     and closed draws nothing. */
+  const gapOpen = CGEO.R.edges[0].xIn - CGEO.L.edges[0].xIn;
 
   drawPanel(CGEO.L, lut, t);
   drawPanel(CGEO.R, lut, t);
 
   /* the light between them. When they are all but shut this is the slit in the
      painting; once they are open it is the window doing its own work. */
-  const slit = 1 - cl01(gapOpen/(W*0.045));
+  const slit = gapOpen <= 0 ? 0 : 1 - cl01(gapOpen/(W*0.045));
   if (slit > 0.01){
     const cx = (CGEO.L.edges[0].xIn + CGEO.R.edges[0].xIn)*0.5;
     const y0 = CG.top*H, y1 = CGEO.L.hemY[0];

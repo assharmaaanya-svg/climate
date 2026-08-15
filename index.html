@@ -1904,7 +1904,7 @@ function preloadPlates(){
     "eveningnskyforthekite.png","pollutedairnightskyforkire.png",
     "childkiteafterpollution.png","cloudhazetohidekite.png",
     /* and the same field at night, years later */
-    "afterpollutionstarscene.png"];
+    "afterpollutionstarscene.png","afterrpllutionhighquality.png"];
   /* the binocular overlay is not here any more: the lookout draws its field of
      view rather than loading it. See build/06g-lookout.js. */
   for (const n of order) loadImg(n);
@@ -5422,6 +5422,9 @@ function kiteAfterSound(dt, v, going){
   if (!AC || !soundOn || !KAMB.gain) return;
   if (KAMB.state === "ready" && !KAMB.src) startOne(KAMB);
   envGain(KAMB.gain, Math.max(0, v*0.92*AMB_LIFT), 0.9);
+  /* the hill borrows this same layer through a much lower filter, so the field has to ask
+     for its own back rather than inheriting whichever scene ran last */
+  if (KAMB.filt) KAMB.filt.frequency.setTargetAtTime(5000, AC.currentTime, 1.2);
   /* every other bed gets out of the way: this chapter is only this air */
   if (AMB.gain)  envGain(AMB.gain, 0, 1.1);
   if (AMB2.gain) envGain(AMB2.gain, 0, 1.1);
@@ -5550,7 +5553,7 @@ let LOOKDUCK = 0;
    only the static, and after the cut not even that. One number does it, so there
    is no chance of a layer surviving into a sequence that is supposed to be silent. */
 let SILENCE = 0;
-function lookSound(dt, v, place, focus, open){
+function lookSound(dt, v, place, focus, open, after){
   LOOKQ.t = 0.3;
   if (!AC || !soundOn) return;
   /* a place has to be genuinely in focus before it is heard at all: the sound is
@@ -5575,7 +5578,30 @@ function lookSound(dt, v, place, focus, open){
     envGain(L.gain, want, want > 0.0005 ? 2.1 : 3.0);
   }
   // the birds and the open countryside step back with everything else
-  ambience((open===undefined ? 0.6 : open) * away, 1);
+  const bedV = (open===undefined ? 0.6 : open) * away;
+  if (!after){ ambience(bedV, 1); return; }
+
+  /* AND AFTER THE AIR CHANGED, THE HILL HAS A CITY UNDER IT.
+     Not a new recording — this is `city-outside.wav`, the same twenty-four seconds the
+     polluted field uses, which is already the right thing: crest factor 1.64 so nothing in
+     it can be picked out twice, and a zero-crossing rate of 509 Hz, which is a city heard
+     from a long way off rather than from inside one. That is exactly what this is: an open
+     hillside with a town a couple of kilometres below it.
+
+     What is different here is the distance. It runs through a lower filter than the field
+     does — two kilometres of air is itself a low-pass — and it sits lower, because the
+     visitor is above it rather than standing in it. It ducks with everything else when a
+     place comes into focus, so a memory still arrives out of a quieter world, and it comes
+     back on its own when the lenses come down, because `away` returns to 1. */
+  KAFTQ.t = 0.3;
+  if (!KAMB.gain) return;
+  if (KAMB.state === "ready" && !KAMB.src) startOne(KAMB);
+  envGain(KAMB.gain, Math.max(0, bedV*0.62*AMB_LIFT), 1.4);
+  if (KAMB.filt) KAMB.filt.frequency.setTargetAtTime(2400, AC.currentTime, 1.8);
+  /* and the clean world's beds are not on this hill */
+  if (AMB.gain)  envGain(AMB.gain, 0, 1.6);
+  if (AMB2.gain) envGain(AMB2.gain, 0, 1.6);
+  if (AMB3.gain) envGain(AMB3.gain, 0, 1.6);
 }
 
 function updSound(dt, t){
@@ -6853,8 +6879,17 @@ function panelGeom(side, t, rev, W_, H_){
      polluted bedroom that seam was the polluted view leaking through a scene whose whole
      job is to be dark until the visitor opens it. So the closed position carries an
      overlap comfortably wider than the sway can ever be, and the existing lerp toward the
-     open position tapers it away as they are drawn back. */
-  const xInClosed = CG.mid*W_ + CC.x + dirn*W_*0.008, xInOpen = inOpenF*W_ + CC.x;
+     open position tapers it away as they are drawn back.
+
+     AND THE OVERLAP HAS TO BE BIGGER THAN THE BREATHING.
+     It was 0.008 of the width each side. Each panel's inner edge sways by up to
+     W*0.0090 (swayA at its maximum, times the 1.15 the row weighting can reach), and the
+     two panels are given opposite phases on purpose — so at the worst moment they could
+     part by more than the overlap held them together, and the seam came back. At 0.016 the
+     overlap is comfortably wider than either panel can swing, so the pair cannot separate
+     at any viewport size, and the lerp toward the open position still tapers it away the
+     moment they are drawn back. */
+  const xInClosed = CG.mid*W_ + CC.x + dirn*W_*0.016, xInOpen = inOpenF*W_ + CC.x;
   const xIn0 = lerp(xInClosed, xInOpen, pull);
 
   const top = CG.top*H_ + CC.y;
@@ -6872,7 +6907,10 @@ function panelGeom(side, t, rev, W_, H_){
   const rowMap = (v, X, K)=>{
     // the leading edge lags at the bottom, and the whole panel breathes
     const lag  = pull*(1-pull*0.35)*MIN*0.030*v*v;
-    const sway = Math.sin(t*0.62 + side*2.3 + v*1.9)*swayA*(0.25+v*0.9);
+    /* and a shut curtain barely breathes at its leading edge, because it is resting
+       against the other one. Damped by how far it has been drawn back, so the cloth is
+       still alive when it is open and still when it is closed. */
+    const sway = Math.sin(t*0.62 + side*2.3 + v*1.9)*swayA*(0.25+v*0.9)*(0.30+0.70*pull);
     const xIn = xIn0 - dirn*lag + sway;
     const w = Math.abs(xIn - xOut);
     const s = cl01(w/fab);                                 // mean compression
@@ -7102,14 +7140,21 @@ function drawPanel(g, lut, t){
 function drawCurtains(t, dt, o){
   o = o||{};
   const lut = curtainLut(Math.round(cl01(o.air||0)*4));
-  const gapOpen = Math.abs(CGEO.R.edges[0].xIn - CGEO.L.edges[0].xIn);
+  /* SIGNED, not absolute — this was the seam.
+     When the panels overlap, the right one's inner edge is to the LEFT of the left one's,
+     so this difference goes negative. Taking its absolute value turned an overlap of forty
+     pixels into a "gap" of forty pixels and lit it, which is why a curtain that was
+     genuinely shut still had a bright strip down the middle of it: the light was not
+     leaking through anything, it was being drawn on purpose. Negative now means closed,
+     and closed draws nothing. */
+  const gapOpen = CGEO.R.edges[0].xIn - CGEO.L.edges[0].xIn;
 
   drawPanel(CGEO.L, lut, t);
   drawPanel(CGEO.R, lut, t);
 
   /* the light between them. When they are all but shut this is the slit in the
      painting; once they are open it is the window doing its own work. */
-  const slit = 1 - cl01(gapOpen/(W*0.045));
+  const slit = gapOpen <= 0 ? 0 : 1 - cl01(gapOpen/(W*0.045));
   if (slit > 0.01){
     const cx = (CGEO.L.edges[0].xIn + CGEO.R.edges[0].xIn)*0.5;
     const y0 = CG.top*H, y1 = CGEO.L.hemY[0];
@@ -11284,7 +11329,8 @@ const fieldAx = () => Math.min(W*0.46, H*FIELD.ay*FIELD.aspect);
 const PLOOK = {
   ready:false,
   cx:0, cy:0, vx:0, vy:0,          // aim, in source px, and its throw
-  z:1, lift:0,                     // magnification, and the raise-to-the-eyes
+  z:1, lift:0, after:0,            // magnification, the raise-to-the-eyes, and
+                                   // whether this is the chapter after the air changed
   focus:0, recall:0,               // how long you have held, and what it looks like
   found:Object.create(null),       // the four, ticked
   said:Object.create(null),        // everything else, said once
@@ -11302,6 +11348,9 @@ const PLOOK = {
    steady adds on top. Beyond about 2.4 the painting has no more detail to give
    and starts to look like a photograph of a painting. */
 const Z_BASE = 1.66, Z_MAX = 2.34;
+/* the colour the distance dissolves into out here: the pale warm grey the artist's
+   polluted valley is painted in, sampled from its own horizon rather than invented. */
+const LOOK_HAZE = [186, 182, 170];
 /* the out-of-focus copy of the frame, at half resolution. Its own buffer rather
    than the shared TMP2, because resizing a buffer that four other scenes draw
    full-frame into is a bug waiting for the next chapter. */
@@ -11365,7 +11414,7 @@ function lookComposite(im, imh, air){
   lcc.drawImage(im, 0, 0);
   if (q > 0.004 && imgReady(imh)){
     lcc.globalAlpha = q;
-    lcc.drawImage(imh, 0, 0);
+    lcc.drawImage(imh, 0, 0, LCOMP.width, LCOMP.height);
     lcc.globalAlpha = 1;
   }
   return LCOMP;
@@ -11386,17 +11435,25 @@ const LMARK = [
   { id:"school", x:0.4250, y:0.6880, r:0.070, key:true, aud:"school",
     tick:"Your school",
     say:"Your school. The red brick one, with the little tower on top.",
+    /* AND WHAT EACH ONE IS AFTER.
+       Four lines that walk the eye outward — the school just there, the wire above it,
+       the water beyond that, and then the hills, which are the furthest thing and the
+       first thing to go. None of them names the cause. */
+    aft:"You could see your school from here.",
     glint:{ x:0.4232, y:0.6560, w:0.010 } },              // the cupola glazing
   { id:"wires",  x:0.2480, y:0.4790, r:0.062, key:true, aud:"birds",
     tick:"The birds on the wire",
-    say:"The birds on the wire. There were always more than you could count." },
+    say:"The birds on the wire. There were always more than you could count.",
+    aft:"They're gone." },
   { id:"tower",  x:0.6752, y:0.6280, r:0.056, key:true, aud:"tower",
     tick:"The water tower",
     say:"The water tower. You could see it from anywhere in town.",
+    aft:"The water used to be clean here.",
     glint:{ x:0.6690, y:0.6130, w:0.013 } },              // sun on the tank
   { id:"hills",  x:0.4550, y:0.5620, r:0.140, key:true, aud:"hills",
     tick:"The far hills",
-    say:"The far hills. On a clear day, every one of them." },
+    say:"The far hills. On a clear day, every one of them.",
+    aft:"And beyond it, all the way to the far hills." },
 
   { id:"lane",   x:0.2450, y:0.7130, r:0.082, aud:"town",
     say:"Your street. Fourth along, the one with the gate that stuck." },
@@ -11516,7 +11573,11 @@ function drawLookout(t, dt, o){
   o = o||{};
   apFull();
   const im  = loadImg("viewoftown.png");
-  const imh = loadImg("viewoftownafterpollution.png");
+  /* the artist's high-quality polluted valley. It is 1470x1070 against the clean
+     painting's 1537x1023 — the same view, framed a little differently — so it is drawn to
+     the clean one's bounds rather than at 1:1, and every landmark coordinate in this file
+     stays exactly where it was measured. */
+  const imh = loadImg("afterrpllutionhighquality.png");
   if (!imgReady(im)){
     // until it decodes, the plate, so the beat is never a blank screen
     drawPlate("town", { air:o.air0===undefined?0.4:o.air0 });
@@ -11526,6 +11587,7 @@ function drawLookout(t, dt, o){
   const SW = im.naturalWidth, SH = im.naturalHeight;
   const air0 = o.air0===undefined ? 0.40 : o.air0;
   const air1 = o.air1===undefined ? 0.00 : o.air1;
+  PLOOK.after = o.after ? 1 : 0;
   const fall = o.fall || 3.6;
 
   /* ---------------------------------------------------------- raising them */
@@ -11736,6 +11798,33 @@ function drawLookout(t, dt, o){
     }
   }
 
+  /* --------------------------------------------------- the air, inside the lens
+     The binoculars are working perfectly. What is between them and the town is not.
+
+     So this is not on the glass and it is not a texture: it is a vertical gradient in the
+     colour of the haze already in the painting, laid over the magnified view, weakest in
+     the meadow a few yards away and heaviest at the hills on the horizon — because that is
+     what a column of dirty air does, it accumulates with distance. It also thickens with
+     magnification, since the further in you go the further away what you are looking at
+     is. Deliberately restrained at the near end: the landmark stays legible and only the
+     ridges behind it dissolve. Nothing happens here at all in the clean chapter. */
+  if (PLOOK.after > 0.004){
+    const zf = cl01((PLOOK.z - Z_BASE)/Math.max(0.001, Z_MAX - Z_BASE));
+    const k = PLOOK.after * (0.30 + 0.42*zf);
+    /* the horizon in screen terms: the meadow's top edge is the near limit, and the top
+       of the frame is as far as the valley goes */
+    const hy = cl01(meadowY / Math.max(1, H));
+    const hg = ctx.createLinearGradient(0, 0, 0, H);
+    hg.addColorStop(0.00, rgba(LOOK_HAZE, 0.62*k));
+    hg.addColorStop(Math.max(0.02, hy*0.72), rgba(LOOK_HAZE, 0.46*k));
+    hg.addColorStop(Math.min(0.98, hy), rgba(LOOK_HAZE, 0.13*k));
+    hg.addColorStop(1.00, rgba(LOOK_HAZE, 0.04*k));
+    ctx.save();
+    ctx.fillStyle = hg;
+    ctx.fillRect(0, 0, W, H);
+    ctx.restore();
+  }
+
   /* ---------------------------------------------------------- colour, last
      Colour is the slowest thing to come back, because it is the slowest thing to
      come back. Out of focus the valley is nearly grey and slightly milky, the way
@@ -11799,7 +11888,7 @@ function drawLookout(t, dt, o){
         if (m.key && !PLOOK.found[k]){
           PLOOK.found[k] = true; PLOOK.n++;
           tickLookList(k);
-          whisper(m.say);
+          whisper(PLOOK.after > 0.5 && m.aft ? m.aft : m.say);
           if (!FOUND["mark-"+k]){ FOUND["mark-"+k] = true; foundN++; }
         } else if (!m.key && !PLOOK.said[k]){
           PLOOK.said[k] = true;
@@ -11836,7 +11925,7 @@ function drawLookout(t, dt, o){
   /* The valley, and then one place in it. `bed` is how loud the wider world is
      while nothing in particular is being remembered — quieter on the second visit,
      because by then there is less out there making a noise. */
-  lookSound(dt, 0.95, best && best.aud, PLOOK.focus, o.bed===undefined?0.60:o.bed);
+  lookSound(dt, 0.95, best && best.aud, PLOOK.focus, o.bed===undefined?0.60:o.bed, PLOOK.after);
   cv.className = P.down ? "grabbing" : "grabbable";
 }
 
@@ -13032,13 +13121,32 @@ function drawDrawing(t, o){
   o=o||{};
   buildPaper();
   const r = paperRect();
-  // the table it is lying on
-  const tg=ctx.createLinearGradient(0,0,0,H);
-  tg.addColorStop(0,"#3a2c22"); tg.addColorStop(0.5,"#4a382a"); tg.addColorStop(1,"#2e231c");
-  ctx.fillStyle=tg; ctx.fillRect(0,0,W,H);
-  for (let i=0;i<16;i++){
-    ctx.strokeStyle="rgba(20,14,10,0.20)"; ctx.lineWidth=Math.max(1,MIN*0.002);
-    ctx.beginPath(); ctx.moveTo(0, H*i/16+Math.sin(i)*4); ctx.lineTo(W, H*i/16+Math.sin(i+1)*4); ctx.stroke();
+  /* WHAT IT IS LYING ON.
+     A table, in the chapter where the drawing is being made. But in the chapter years
+     later it is the valley itself behind it — the polluted view of the town, the same
+     painting the binoculars look at — because by then the drawing and the thing it is a
+     drawing OF are the same subject, and putting the paper back on a table there would be
+     hiding that. It is dimmed and slightly desaturated so it stays a ground rather than
+     competing with the sheet in front of it. */
+  const back = o.town ? loadImg("afterrpllutionhighquality.png") : null;
+  if (back && imgReady(back)){
+    const sc = Math.max(W/back.naturalWidth, H/back.naturalHeight);
+    const bw = back.naturalWidth*sc, bh = back.naturalHeight*sc;
+    ctx.drawImage(back, (W-bw)/2, (H-bh)*0.62, bw, bh);
+    ctx.save();
+    ctx.globalCompositeOperation="saturation";
+    ctx.fillStyle=rgba([128,128,128], 0.30); ctx.fillRect(0,0,W,H);
+    ctx.restore();
+    ctx.fillStyle=rgba([26,20,14], 0.46); ctx.fillRect(0,0,W,H);
+  } else {
+    // the table it is lying on
+    const tg=ctx.createLinearGradient(0,0,0,H);
+    tg.addColorStop(0,"#3a2c22"); tg.addColorStop(0.5,"#4a382a"); tg.addColorStop(1,"#2e231c");
+    ctx.fillStyle=tg; ctx.fillRect(0,0,W,H);
+    for (let i=0;i<16;i++){
+      ctx.strokeStyle="rgba(20,14,10,0.20)"; ctx.lineWidth=Math.max(1,MIN*0.002);
+      ctx.beginPath(); ctx.moveTo(0, H*i/16+Math.sin(i)*4); ctx.lineTo(W, H*i/16+Math.sin(i+1)*4); ctx.stroke();
+    }
   }
   // lamp light falling on it
   ctx.save(); ctx.globalCompositeOperation="lighter";
@@ -16028,14 +16136,14 @@ function render(t, dt){
       setPop({ birds:0.05, butterflies:0, dragonflies:0, fireflies:0, seeds:0.1 });
       OUTSIDE = 1;
       lookoutInteract("rfind", dt);
-      drawLookout(t, dt, { air0:0.97, air1:0.52, fall:2.2, bed:0.34 });
+      drawLookout(t, dt, { air0:0.97, air1:0.52, fall:2.2, bed:0.34, after:1 });
       break;
     }
     case "r-drawing": {
       DRAW.bleach = sm(f, 0.08, 0.86);
       DRAW.greyCrayon = sm(f, 0.55, 0.95);
       grimeAdd(dt*0.06);
-      drawDrawing(t, {});
+      drawDrawing(t, { town:true });
       updLens(dt, true);
       if (LENS.a>0.02){
         // holding brings the pigment back under your hand
@@ -16764,6 +16872,14 @@ window.__bluer = {
               for (const s of all) if (s.id === nm && s._p) return { x:s._p.x, y:s._p.y };
               return null; },
   progress(g){ return gateProgress(g); },
+  lookState(){ return { after:PLOOK.after, z:+PLOOK.z.toFixed(3), focus:+PLOOK.focus.toFixed(3),
+                   n:PLOOK.n, found:Object.keys(PLOOK.found) }; },
+  /* the signed distance between the two inner edges. Negative is an overlap, which is what
+     shut has to mean; anything above zero is a gap the window could show through. */
+  curtainGap(){ if (!CGEO.built) return null;
+    return { gapPx:+(CGEO.R.edges[0].xIn - CGEO.L.edges[0].xIn).toFixed(2),
+             cL:+PROOM.cL.toFixed(3), cR:+PROOM.cR.toFixed(3), W:Math.round(W) }; },
+  lookLines(){ return LMARK.filter(m=>m.key).map(m=>({ id:m.id, before:m.say, after:m.aft||null })); },
   /* the beat table, and where the taped drawing actually lands on screen — both needed to
      assert on pacing and on whether that sheet still has a straight edge anywhere */
   beatList(){ return BEATS.map(b => ({ id:b.id, len:b.len, ch:b.ch })); },

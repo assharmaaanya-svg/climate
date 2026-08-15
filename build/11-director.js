@@ -567,14 +567,14 @@ function render(t, dt){
       setPop({ birds:0.05, butterflies:0, dragonflies:0, fireflies:0, seeds:0.1 });
       OUTSIDE = 1;
       lookoutInteract("rfind", dt);
-      drawLookout(t, dt, { air0:0.97, air1:0.52, fall:2.2, bed:0.34 });
+      drawLookout(t, dt, { air0:0.97, air1:0.52, fall:2.2, bed:0.34, after:1 });
       break;
     }
     case "r-drawing": {
       DRAW.bleach = sm(f, 0.08, 0.86);
       DRAW.greyCrayon = sm(f, 0.55, 0.95);
       grimeAdd(dt*0.06);
-      drawDrawing(t, {});
+      drawDrawing(t, { town:true });
       updLens(dt, true);
       if (LENS.a>0.02){
         // holding brings the pigment back under your hand
@@ -1303,6 +1303,14 @@ window.__bluer = {
               for (const s of all) if (s.id === nm && s._p) return { x:s._p.x, y:s._p.y };
               return null; },
   progress(g){ return gateProgress(g); },
+  lookState(){ return { after:PLOOK.after, z:+PLOOK.z.toFixed(3), focus:+PLOOK.focus.toFixed(3),
+                   n:PLOOK.n, found:Object.keys(PLOOK.found) }; },
+  /* the signed distance between the two inner edges. Negative is an overlap, which is what
+     shut has to mean; anything above zero is a gap the window could show through. */
+  curtainGap(){ if (!CGEO.built) return null;
+    return { gapPx:+(CGEO.R.edges[0].xIn - CGEO.L.edges[0].xIn).toFixed(2),
+             cL:+PROOM.cL.toFixed(3), cR:+PROOM.cR.toFixed(3), W:Math.round(W) }; },
+  lookLines(){ return LMARK.filter(m=>m.key).map(m=>({ id:m.id, before:m.say, after:m.aft||null })); },
   /* the beat table, and where the taped drawing actually lands on screen — both needed to
      assert on pacing and on whether that sheet still has a straight edge anywhere */
   beatList(){ return BEATS.map(b => ({ id:b.id, len:b.len, ch:b.ch })); },

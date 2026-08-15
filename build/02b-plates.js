@@ -272,7 +272,7 @@ function preloadPlates(){
     "eveningnskyforthekite.png","pollutedairnightskyforkire.png",
     "childkiteafterpollution.png","cloudhazetohidekite.png",
     /* and the same field at night, years later */
-    "afterpollutionstarscene.png"];
+    "afterpollutionstarscene.png","afterrpllutionhighquality.png"];
   /* the binocular overlay is not here any more: the lookout draws its field of
      view rather than loading it. See build/06g-lookout.js. */
   for (const n of order) loadImg(n);
