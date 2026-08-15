@@ -423,31 +423,11 @@ const BEATS = [
     line:"" },
   { id:"r-drawing", ch:3, len:1.3,
     line:"She kept it on the fridge for eleven years." },
-  /* ------------- chapter four: habits change before anyone names it ------------- */
-  { id:"indoors",   ch:4, len:1.4,
-    line:"Nobody announced it. The washing simply started coming in." },
-  /* ---------------- chapter five: recognition ---------------- */
-  { id:"return",    ch:5, len:1.2,  gate:"curtain2",ask:"Open the curtains",
-    line:"" },
-  { id:"stopped",   ch:5, len:1.35, gate:"latch",   ask:"Reach for the latch",
-    line:"" },
-  { id:"named",     ch:5, len:1.15,
-    line:"Air pollution. This is the first time the word appears." },
-  /* ---------------- the evidence ----------------
-     Four beats, not seven. Each is a memory from the work that turns into its
-     own evidence, and each is built to be felt before it is read. The physics
-     stays in the renderer where it belongs; here it only ever gets one line. */
-  { id:"e-dust",    ch:6, len:1.4, gate:"lift",  ask:"Lift the dust" },
-  { id:"e-hills",   ch:6, len:1.9, gate:"pull",  ask:"Pull the air clean" },
-  { id:"e-stars",   ch:6, len:1.6 },
-  { id:"e-ledger",  ch:6, len:1.6 },
-  /* ---------------- the ending ---------------- */
-  { id:"f-curtain", ch:7, len:1.2, gate:"fcurtain", ask:"Part them" },
-  { id:"f-both",    ch:7, len:1.6, gate:"fhold",    ask:"Hold the latch" },
-  { id:"f-open",    ch:7, len:1.3, gate:"fopen",    ask:"You can still open it" },
-  { id:"f-crayon",  ch:7, len:1.9, gate:"fdraw",    ask:"Draw on the glass" },
-  { id:"f-rest",    ch:7, len:1.5 },
-  { id:"f-end",     ch:7, len:1.7 }
+  /* ------------- WHERE IT ENDS, FOR NOW -------------
+     The piece finishes on the colouring and goes to black. The chapters that used to
+     follow are still in the source and still work; they are simply not on the
+     timeline while this ending is being built. */
+  { id:"fade",      ch:3, len:1.6, line:"" }
 ];
 const CH_NAME = { 1:"i · the world came inside", 2:"ii · life happened outdoors",
                   3:"iii · the change is almost invisible", 4:"iv · habits change first",

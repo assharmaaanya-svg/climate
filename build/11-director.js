@@ -35,20 +35,7 @@ const AIRPLAN = {
   "r-stars":   { pm:[72,84],    tod:[0.950,0.975], glow:[0.48,0.60] },
   "r-horizon": { pm:[88,102],   tod:[0.360,0.420], glow:[0,0] },
   "r-drawing": { pm:[104,116],  tod:[0.440,0.460], glow:[0,0] },
-  "indoors":   { pm:[120,136],  tod:[0.365,0.395], glow:[0,0] },
-  "return":    { pm:[142,158],  tod:[0.245,0.285], glow:[0,0] },
-  "stopped":   { pm:[164,168],  tod:[0.285,0.305], glow:[0,0] },
-  "named":     { pm:[168,168],  tod:[0.305,0.320], glow:[0,0] },
-  "e-dust":    { pm:[168,168],  tod:[0.03,0.03],   glow:[0.2,0.2] },
-  "e-hills":   { pm:[168,168],  tod:[0.42,0.42],   glow:[0,0] },
-  "e-stars":   { pm:[168,168],  tod:[0.97,0.97],   glow:[0.5,0.5] },
-  "e-ledger":  { pm:[168,168],  tod:[0.40,0.40],   glow:[0,0] },
-  "f-curtain": { pm:[160,158],  tod:[0.245,0.275], glow:[0,0] },
-  "f-both":    { pm:[158,156],  tod:[0.275,0.295], glow:[0,0] },
-  "f-open":    { pm:[156,154],  tod:[0.295,0.315], glow:[0,0] },
-  "f-crayon":  { pm:[154,152],  tod:[0.315,0.335], glow:[0,0] },
-  "f-rest":    { pm:[152,150],  tod:[0.335,0.350], glow:[0,0] },
-  "f-end":     { pm:[150,148],  tod:[0.350,0.365], glow:[0,0] }
+  "fade":      { pm:[104,116],  tod:[0.440,0.460], glow:[0,0] }
 };
 function setAir(bid, f){
   const a = AIRPLAN[bid];
@@ -567,7 +554,7 @@ function render(t, dt){
       setPop({ birds:0.05, butterflies:0, dragonflies:0, fireflies:0, seeds:0.1 });
       OUTSIDE = 1;
       lookoutInteract("rfind", dt);
-      drawLookout(t, dt, { air0:0.97, air1:0.52, fall:2.2, bed:0.34, after:1 });
+      drawLookout(t, dt, { air0:1.0, air1:0.88, fall:2.2, bed:0.34, after:1 });
       break;
     }
     case "r-drawing": {
@@ -588,31 +575,14 @@ function render(t, dt){
       }
       break;
     }
-    /* -------------------------------- chapter four */
-    case "indoors": {
-      indoorsInteract(t, dt);
-      drawIndoors(t, dt);
-      break;
-    }
-    /* -------------------------------- chapter five */
-    case "return": {
-      setPop({ birds:0.05, butterflies:0, dragonflies:0, fireflies:0, seeds:0.1 });
-      bedroomInteract("curtain2", t, dt);
-      grimeAdd(dt*0.02);
-      drawRoom(t, dt, { air:1 });
-      break;
-    }
-    case "stopped": {
-      setPop({ birds:0, butterflies:0, dragonflies:0, fireflies:0, seeds:0.05 });
-      drawRoom(t, dt, { air:1, forceOpen:true, noHint:true, quietCord:true });
-      updateStoppedPlate(t, dt);
-      break;
-    }
-    case "named": {
-      setPop({ birds:0, butterflies:0, dragonflies:0, fireflies:0, seeds:0.05 });
-      drawRoom(t, dt, { air:1, forceOpen:true, noHint:true, quietCord:true });
-      updateStoppedPlate(t, dt);
-      if (f>0.55) hideAQ();
+    /* -------------------------------- the end, for now
+       The colouring, going out. The scene keeps drawing underneath so the last thing
+       the visitor sees is the drawing itself dimming rather than a cut, and the black
+       arrives over the back half of the beat and then stays black. */
+    case "fade": {
+      drawDrawing(t, { town:true });
+      ctx.fillStyle = "rgba(0,0,0," + ease.io(cl01((f - 0.18)/0.55)).toFixed(3) + ")";
+      ctx.fillRect(0, 0, W, H);
       break;
     }
     /* -------------------------------- the evidence */
@@ -672,10 +642,7 @@ const capEl=document.getElementById("cap"), askEl=document.getElementById("ask")
       sdownEl=document.getElementById("sdown"),
       titleEl=document.getElementById("title"), ctlEl=document.querySelector(".ctl");
 
-const FIN_LINES = [
-  { at:"f-rest", f:0.34, text:"My mother used to open the window before I was awake." },
-  { at:"f-end",  f:0.30, text:"I check the air before I do." }
-];
+const FIN_LINES = [];
 let shownFin = -1, lastCap="", lastCh=-1;
 
 /* THERE IS NO GESTURE MARK ANY MORE.
@@ -735,7 +702,7 @@ function updText(now, dt){
   // the last line holds a long time, then goes out on its own, and only then does
   // the title come up. They must never share the frame.
   const titleFrom = 0.74;
-  const lineOut = bid==="f-end" && f>titleFrom-0.06;
+  const lineOut = bid==="fade";
   const show = line && !lineOut &&
     ((bid.startsWith("f-")) ? f>=0.28 : (f>0.06 && f<0.62));
   let want = show ? line : "";
@@ -825,7 +792,7 @@ function updText(now, dt){
 
   /* the scroll arrow: small, and there the whole way, because scrolling is the
      one thing the visitor has to know and the only thing the card tells them */
-  const moreToGo = T.p < TOTAL-0.35 && bid!=="f-end";
+  const moreToGo = T.p < TOTAL-0.35 && bid!=="fade";
   /* not while the scroll is waiting: one says carry on down and the other says you
      have something to do here first, and they were sitting on top of each other */
   const cue = moreToGo && !introOn && !(T.blocked && holding);
@@ -851,7 +818,10 @@ function updText(now, dt){
   }
 
   /* the title, only after the last line has been up a long while */
-  const endShow = bid==="f-end" && f>0.74;
+  /* NO TITLE CARD YET. The piece ends on black at the colouring, and a credit
+     panel over it would be the only thing in the frame. The card is still built
+     below and comes back when the ending after this one is built. */
+  const endShow = false;
   if (endShow && titleEl.getAttribute("aria-hidden")==="true"){
     titleEl.setAttribute("aria-hidden","false");
     titleEl.classList.add("on");
@@ -862,7 +832,7 @@ function updText(now, dt){
         "you found "+foundN+" small thing"+(foundN===1?"":"s")+" that nobody asked you to look for";
     }
   }
-  if (!endShow && bid!=="f-end"){
+  if (!endShow){
     titleEl.classList.remove("on"); titleEl.setAttribute("aria-hidden","true");
   }
 }

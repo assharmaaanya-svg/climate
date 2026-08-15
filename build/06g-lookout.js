@@ -234,80 +234,6 @@ const LMARK = [
    list is a chapter arguing with itself. What is left is a street, a tree, a pole,
    the clouds and the buttercups: none of them competes with the four. */
 
-/* the top wire, which is the one the birds sit on. Two measured points, and it
-   is straight enough between them that a line is honest. */
-const lookWireY = fx => 0.4755 + (fx - 0.220)*0.138;
-
-/* Birds of my own, on free stretches of wire away from the painted ones so
-   nothing doubles. They sit, they shuffle, and every so often one of them drops
-   off the wire, goes round, and comes back — which is the only thing in this
-   painting that moves on its own, and the eye finds it without being told to. */
-const LBIRD = [];
-function buildLookBirds(){
-  if (LBIRD.length) return;
-  for (const fx of [0.352, 0.487, 0.665]){
-    LBIRD.push({ home:fx, x:fx, y:lookWireY(fx), st:"sit", t:rnd(3,14),
-                 fx:0, fy:0, ph:rnd(0,TAU), flip: Math.random()<0.5 ? -1 : 1 });
-  }
-}
-function updLookBirds(dt, alive){
-  for (const b of LBIRD){
-    b.t -= dt;
-    if (b.st === "sit"){
-      b.x = b.home; b.y = lookWireY(b.home);
-      if (b.t <= 0 && alive > 0.4){
-        b.st = "fly"; b.t = rnd(3.4, 5.2); b.dur = b.t;
-        b.flip = Math.random()<0.5 ? -1 : 1;
-      }
-    } else {
-      // out and back along a shallow arc, so it always lands where it left
-      const u = 1 - cl01(b.t / b.dur);
-      const s = Math.sin(u*PI);
-      b.x = b.home + b.flip * s * 0.055;
-      b.y = lookWireY(b.home) - s*0.048 - Math.sin(u*PI*2)*0.010;
-      if (b.t <= 0){ b.st = "sit"; b.t = rnd(6, 22); }
-    }
-  }
-}
-
-/* one bird, in source-fraction space, drawn at whatever the view makes of it.
-   The painted birds on this wire are about 0.9% of the painting's width tall, so
-   these are matched to them: anything larger and a starling reads as a crow. */
-function drawLookBird(b, px, py, sc, t, dark){
-  const s = Math.max(1.0, sc*0.0042);          // body length, in screen px
-  ctx.save();
-  if (b.st === "fly"){
-    /* A bird in the air at this distance is not a body with wings attached to it,
-       it is two curves. Drawn as a filled ellipse plus two straight strokes it came
-       out as a black cartoon bat, which is what it looks like when you draw the
-       anatomy instead of the silhouette. Two arcs meeting at nothing, stroked thin,
-       is the whole bird. */
-    const beat = Math.sin(t*15 + b.ph);
-    const sp = s*0.95;
-    ctx.strokeStyle = rgba(dark, 0.85);
-    ctx.lineWidth = Math.max(0.7, sp*0.14);
-    ctx.lineCap = "round";
-    ctx.beginPath();
-    ctx.moveTo(px - sp, py + sp*0.34*beat);
-    ctx.quadraticCurveTo(px - sp*0.45, py - sp*0.30*beat, px, py);
-    ctx.quadraticCurveTo(px + sp*0.45, py - sp*0.30*beat, px + sp, py + sp*0.34*beat);
-    ctx.stroke();
-  } else {
-    // on the wire: a body, a head, and a tail hanging off the back of it
-    ctx.fillStyle = rgba(dark, 0.9);
-    ctx.beginPath();
-    ctx.ellipse(px, py - s*0.55, s*0.40, s*0.60, 0, 0, TAU);
-    ctx.fill();
-    ctx.beginPath();
-    ctx.ellipse(px + b.flip*s*0.28, py - s*1.02, s*0.23, s*0.23, 0, 0, TAU);
-    ctx.fill();
-    ctx.beginPath();
-    ctx.ellipse(px - b.flip*s*0.44, py - s*0.24, s*0.30, s*0.12, b.flip*0.5, 0, TAU);
-    ctx.fill();
-  }
-  ctx.restore();
-}
-
 /* ------------------------------------------------------------------ the frame */
 function resetLookout(bid){
   const im = loadImg("viewoftown.png");
@@ -322,7 +248,6 @@ function resetLookout(bid){
   PLOOK.aim = null;
   PLOOK.beat = bid || "";
   for (const k in PLOOK.dwell) PLOOK.dwell[k] = 0;
-  buildLookBirds();
   buildLookList();
 }
 
@@ -571,7 +496,7 @@ function drawLookout(t, dt, o){
      ridges behind it dissolve. Nothing happens here at all in the clean chapter. */
   if (PLOOK.after > 0.004){
     const zf = cl01((PLOOK.z - Z_BASE)/Math.max(0.001, Z_MAX - Z_BASE));
-    const k = PLOOK.after * (0.30 + 0.42*zf);
+    const k = PLOOK.after * (0.15 + 0.21*zf);
     /* the horizon in screen terms: the meadow's top edge is the near limit, and the top
        of the frame is as far as the valley goes */
     const hy = cl01(meadowY / Math.max(1, H));
@@ -801,42 +726,6 @@ function drawLookLife(t, dt, SCX, SCY, spanX, air, rec){
     ctx.restore();
   }
 
-  /* the birds on the wire */
-  updLookBirds(dt, alive);
-  /* Matched to the birds the painting already has on this wire, which are a lit
-     grey-brown rather than a silhouette — at near-black these read as a different
-     species sitting among them, and at 0.42 of the airlight they came out as mauve
-     smudges. Some of the sky, a little more of it as the air loads. */
-  const dark = mixL([46,48,50], airlight(), 0.22 + 0.30*air);
-  for (const b of LBIRD){
-    const px = SCX(b.x), py = SCY(b.y);
-    if (px < -40 || px > W+40 || py < -40 || py > H+40) continue;
-    if (b.st === "sit" && alive < 0.35) continue;      // later, most of them are not there
-    drawLookBird(b, px, py, spanX, t, dark);
-  }
-
-  /* two butterflies over the meadow, which only exist if the meadow is in the
-     frame at all — a thing to find by looking down, which nobody expects to be
-     worth doing with a pair of binoculars */
-  if (alive > 0.5){
-    for (let i=0;i<2;i++){
-      const ph = t*0.19 + i*2.7;
-      const fx = 0.20 + i*0.34 + Math.sin(ph)*0.055 + Math.sin(ph*2.3)*0.014;
-      const fy = 0.888 + Math.cos(ph*1.31)*0.016 + i*0.012;
-      const px = SCX(fx), py = SCY(fy);
-      if (px < 0 || px > W || py < 0 || py > H) continue;
-      const s = Math.max(1.4, spanX*0.0055);
-      const flap = Math.abs(Math.sin(t*7.5 + i));
-      ctx.save();
-      ctx.fillStyle = rgba([232,164,58], 0.82*alive);
-      ctx.translate(px, py);
-      ctx.beginPath();
-      ctx.ellipse(-s*0.5*flap, 0, s*0.55*flap+0.4, s*0.72, -0.3, 0, TAU);
-      ctx.ellipse( s*0.5*flap, 0, s*0.55*flap+0.4, s*0.72,  0.3, 0, TAU);
-      ctx.fill();
-      ctx.restore();
-    }
-  }
 }
 
 /* ------------------------------------------------------------------ the hints */
