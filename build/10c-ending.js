@@ -26,7 +26,15 @@
    finished. No message says so. The screen is black; there is nothing there to
    suggest scrolling would do anything.
 
-   THE PACING IS LONGER THAN THE BRIEF'S 20-25 SECONDS AND THE ARITHMETIC IS WHY.
+   THE PACING. Written out, the score is about forty-five seconds, and the arithmetic is
+   why: six text moments, each needing about a second to become legible, about two to be
+   read and about a second to leave, is twenty-four seconds of type before a single pause,
+   and the held black at the top, the beat between every thought, the sounds leaving one
+   at a time, the silence before the key line and the hold before the turn are the rest.
+   `E_RATE` is what makes it land where it actually lands; at 0.75 that is about
+   thirty-four seconds, with every interval in the proportion it was authored in.
+
+   THE OLD NOTE ON WHY IT COULD NOT BE 20-25 SECONDS, WHICH STILL HOLDS.
    Six text moments, each needing about a second to become legible, about two to be
    read, and about a second to leave, is already twenty-four seconds of type before
    a single pause. On top of that the brief asks for a two-second black at the top,
@@ -36,9 +44,16 @@
    mean cutting sentences or making them unreadable. `E_RATE` scales the whole
    score if it ever needs to be tightened; the shape survives.  */
 
-/* how fast the whole score runs. 1 is as written; 0.8 would take about eight
-   seconds out of it without changing a single relationship inside it */
-const E_RATE = 1.0;
+/* HOW LONG THE ENDING RUNS, AS A FRACTION OF THE SCORE AS WRITTEN.
+   Every number below this line is in SCORE seconds. `E_RATE` is the only place the
+   score meets the clock: at 1 a score second is a real second, and at 0.75 the whole
+   thing lands in three quarters of the time with every interval inside it in exactly
+   the proportion it was authored in. Nothing else in this file changes when it does.
+
+   It is a DURATION, not a speed, and the clock therefore divides rather than
+   multiplies — written the other way round, which is how it started, 0.75 made the
+   ending half a minute longer instead of eight seconds shorter. */
+const E_RATE = 0.75;
 
 const END = {
   on: 0, done: 0, t: 0,
@@ -64,6 +79,15 @@ const E_SERIF = '"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",G
    makes the first remembered sound arrive as a memory rather than as the next cue. */
 const E_FADE = 2.5;          // the drawing to black
 const E_HOLD = 2.0;          // and then nothing at all
+/* AND THEN SOMETHING, UNAMBIGUOUSLY.
+   The silence at the top is doing real work — the visitor is meant to wonder whether the
+   piece has finished — but there is a point a few seconds later where that doubt has to
+   be answered or it stops being doubt and becomes a visitor reaching for the reload
+   button. So the first fragment is not eased in over two seconds from nothing, which is
+   what it was: it starts the instant the held black is over, rises in about half the time
+   it used to, and sits a little higher than the rest. Still quiet, still a memory rather
+   than a cue, but never a sound you have to strain to be sure you heard. */
+const E_FIRST = E_FADE + E_HOLD;
 
 /* THE MEMORIES, AS SOUND.
    `at` when it starts, `off` when it begins to go, `up`/`down` how long each takes.
@@ -72,9 +96,9 @@ const E_HOLD = 2.0;          // and then nothing at all
    remembering and becomes a mix. Levels are all low. This is what something sounds
    like when you have not heard it for years, not what it sounded like at the time. */
 const EMEM = [
-  { key:"sheets", src:()=>RUS,          at: 3.9, up:2.2, off:10.6, down:1.5,
-    vol:0.30, lp:6200, cc:"sheets on the line" },
-  { key:"birds",  src:()=>LOOKA.birds,  at: 5.6, up:2.4, off:12.0, down:1.6,
+  { key:"sheets", src:()=>RUS,          at:E_FIRST, up:1.5, off:10.6, down:1.5,
+    vol:0.34, lp:6200, cc:"sheets on the line" },
+  { key:"birds",  src:()=>LOOKA.birds,  at: 6.6, up:2.4, off:12.4, down:1.6,
     vol:0.32, lp:8200, cc:"birds calling" },
   { key:"night",  src:()=>CRICK,        at:10.2, up:2.6, off:14.2, down:1.7,
     vol:0.26, lp:9000, cc:"insects, after dark" },
@@ -86,8 +110,19 @@ const EMEM = [
    and it is the one fragment allowed to hold the caption while it is sounding: it is
    the most recognisable thing in the ending and a bed coming up underneath should not
    take the words off it. */
-const ELAUGH = { at: 8.2, vol:0.26, cc:"a child laughing, far off", len:3.0 };
-const EOPEN = { at: 33.2, up:4.2, off:41.6, down:2.0, vol:0.17, lp:5200,
+/* `len` is how long the laugh holds the CAPTION, not how long it sounds — the recording
+   runs its own four seconds out underneath. Three seconds of priority pushed the insects'
+   caption late enough that the town's arrived less than a second behind it, and two
+   captions a second apart is a caption track flickering rather than naming things. */
+const ELAUGH = { at: 8.7, vol:0.26, cc:"a child laughing, far off", len:1.9 };
+/* AND IT MUST NOT SOUND LIKE RELIEF ARRIVING.
+   The temptation with a hopeful last line is to let the one clean sound under it swell,
+   and that would turn "now you noticed" into "everything is fine now", which is not what
+   the piece has earned and not what happened. So it is the quietest thing in the whole
+   ending — below every memory fragment — and it takes over five score seconds to get
+   there, which at any sensible rate is longer than it takes to stop noticing that it
+   started. It is set ONCE and never lifted: the final sentence does not raise it. */
+const EOPEN = { at: 33.2, up:5.4, off:42.6, down:2.0, vol:0.13, lp:5200,
                 cc:"wind through the grass" };
 
 /* THE SENTENCES.
@@ -101,16 +136,25 @@ const EOPEN = { at: 33.2, up:4.2, off:41.6, down:2.0, vol:0.17, lp:5200,
    and will only notice that a few words are still there.
 
    `red` is a word and the window over which it takes the piece's red. It emerges; it
-   does not flash, and the sentence around it never changes colour. */
+   does not flash, and the sentence around it never changes colour.
+
+   THE HOLDS ARE SET FROM A READING WINDOW, NOT BY FEEL. A word is readable from about
+   0.6 of its alpha, which for these envelopes means comprehension starts roughly 0.65 of
+   the way through `in` and ends roughly 0.4 of the way into `out` — so the window is
+   `hold` plus about half a second of score, and at the rate this runs at it wants to
+   clear three words a second. Measured against that, two of these sentences were being
+   read at nearly four, which is a sentence you have finished before you have taken it in.
+   Every `hold` here now buys its own word count and the gaps between them were moved to
+   match rather than absorbed. */
 const ESCORE = [
-  { t0: 4.6,  in:1.2, hold:1.4, out:0.9,
+  { t0: 4.6,  in:1.2, hold:1.9, out:0.9,
     text:"I thought I was remembering places." },
 
   /* THE REALIZATION. Only the last word turns, and it turns slowly enough that the
      change is over before it can be seen starting. It also outlives the sentence it
      is in by three quarters of a second, which is the first moment in the ending
      where the typography is saying something the words are not. */
-  { t0: 9.2,  in:1.2, hold:1.9, out:1.1,
+  { t0: 9.7,  in:1.2, hold:2.0, out:1.1,
     text:"I was remembering things that disappeared.",
     red:{ i:5, from:1.6, to:3.6 }, keepFrom:5, keepHold:0.75 },
 
@@ -124,28 +168,37 @@ const ESCORE = [
   /* and the line the whole interaction has been building to. No animation, no colour,
      no sound cue. "notice." is left alone in the dark for a second, because that is
      the word for what the visitor has spent the entire piece doing. */
-  { t0: 25.6, in:1.2, hold:1.8, out:0.9, keepFrom:4, keepHold:1.7,
+  { t0: 25.6, in:1.2, hold:2.0, out:0.9, keepFrom:4, keepHold:1.7,
     text:"That's why we didn't notice." },
 
   /* THE TURN. Not "everything is fine now" — nothing in the world outside has changed
      and the piece would be lying if it said so. Back to the ivory the memories were
      written in, because the direction has changed and the colour is how the piece says
      which way it is facing. */
-  { t0: 33.2, in:1.3, hold:1.3, out:0.8,
+  { t0: 33.4, in:1.3, hold:1.9, out:0.8,
     text:"But remembering what was there…" },
-  { t0: 37.4, in:1.3, hold:1.8, out:0.9, keepFrom:6, keepHold:1.5,
+  { t0: 38.4, in:1.3, hold:2.4, out:0.9, keepFrom:6, keepHold:1.5,
     text:"…is how we know what's worth saving." }
 ];
 
-/* when the whole thing is over: the last word gone, the last sound gone, and a breath
-   after it. Computed rather than typed so editing the score cannot leave it stale. */
+/* THE BLACK AFTER THE LAST WORD, WHICH IS PART OF THE ENDING AND NOT THE GAP AFTER IT.
+   "saving." going out is not the end of the sequence — releasing the scroll the frame it
+   disappears would put the interface back in the visitor's hands on the same breath as
+   the last word, and a piece that spends forty seconds asking somebody to sit still
+   should not then snap out of it. Two and a bit score seconds of nothing: the last word
+   gone, the one clean sound already gone under it, and no state change of any kind until
+   they are over. */
+const E_REST = 2.4;
+/* when the whole thing is over. Computed rather than typed so editing the score cannot
+   leave it stale, and taken from the LAST WORD rather than the last sound, because the
+   rest above is measured from the word. */
 const E_TOTAL = (()=>{
-  let last = EOPEN.off + EOPEN.down + 0.6;
+  let words = 0;
   for (const L of ESCORE){
     const end = L.t0 + L.in + L.hold + (L.keepHold||0) + (L.grade||0) + L.out;
-    if (end > last) last = end;
+    if (end > words) words = end;
   }
-  return last;
+  return Math.max(words + E_REST, EOPEN.off + EOPEN.down + 0.6);
 })();
 
 /* ------------------------------------------------------------ the memory bus
@@ -305,7 +358,7 @@ function resetEnding(){
 
 function drawEnding(dt){
   if (!END.on) resetEnding();
-  if (!END.done) END.t += dt * E_RATE;
+  if (!END.done) END.t += dt / Math.max(0.05, E_RATE);
   const t = END.t;
 
   /* ------------------------------------------------------- the picture leaving */

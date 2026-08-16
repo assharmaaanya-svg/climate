@@ -54,7 +54,10 @@ function updWind(dt){
   if (gustT<=0){
     gustT = rnd(4.5, 11);
     AIR.gustTarget = rnd(0.15, 0.55) * (1-AIR.h*0.4);
-    if (!REDUCE && Math.random()<0.55 && OUTSIDE>0.4 && SILENCE<0.02){ gustLeaves(ri(3,9)); sfx.gust(); }
+    /* and never in the ending, where the master is already down: the gust would be a
+       caption on a black screen naming a sound the visitor cannot hear, arriving in the
+       exact two seconds of silence the whole sequence is built on */
+    if (!REDUCE && Math.random()<0.55 && OUTSIDE>0.4 && SILENCE<0.02 && !END.on){ gustLeaves(ri(3,9)); sfx.gust(); }
   }
   AIR.gust = lerp(AIR.gust, AIR.gustTarget||0, 0.02);
   if (Math.random()<0.008) AIR.gustTarget = rnd(0, 0.3);
