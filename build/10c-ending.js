@@ -275,10 +275,21 @@ function eLaugh(vol){
    so this reads as the same voice that has been speaking the whole time. */
 let ELAY = null, elayKey = "";
 function eLayout(L){
-  /* THE SIZE IS LEFT ALONE. It was composed and approved at this scale and measurement
-     says the block is centred to within one pixel at every viewport, so the size and the
-     geometry were never what was wrong. */
-  const fs = Math.min(28, Math.max(17.6, W*0.035));
+  /* THE TYPE IS PROPORTIONAL TO THE FRAME, WHICH IT WAS NOT.
+     `min(28, max(17.6, W*0.035))` reaches its cap at 800 pixels wide, so a small window and
+     a two-thousand-pixel full-screen display got the SAME 28px sentence. Measured, the block
+     is centred to within one pixel at every size — it was never off-centre — but 28px of
+     type in a frame 1250 tall is 2.2 per cent of the height, and a line that small alone in
+     a field that large does not read as composed. It reads as adrift, which is what kept
+     being reported as a weird place.
+
+     Driven off the SHORTER side, not the width: this is a block of type in the middle of a
+     frame, and it is the height that decides how much room it has — a wide, short window
+     should not get enormous type. The constant is chosen so 1280x780, the size this was
+     composed at, still lands on 28.0px to the first decimal, and the cap is 44 so a very
+     large display gets type in proportion rather than a postage stamp. The wrap measure is
+     a multiple of the size, so the line breaks stay put relative to the type. */
+  const fs = Math.min(44, Math.max(17.6, Math.min(W, H)*0.0359));
   const key = L.text + "|" + Math.round(W) + "x" + Math.round(H);
   if (elayKey === key && ELAY) return ELAY;
   ctx.save();

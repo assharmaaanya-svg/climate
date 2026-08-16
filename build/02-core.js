@@ -882,7 +882,10 @@ window.addEventListener("touchmove", e=>{
   _tY = y;
 }, {passive:true});
 window.addEventListener("keydown", e=>{
-  if (e.key===" "||e.key==="PageDown"||e.key==="PageUp"||e.key==="ArrowDown"||e.key==="ArrowUp"){
+  /* only the keys that still scroll. Space and the page keys do nothing now, so counting
+     them as "the visitor is asking to move on" would dismiss the pace card on a press that
+     had no effect on anything else. */
+  if (e.key==="ArrowDown"||e.key==="ArrowUp"){
     stamp(); askPace(H*0.28);
   }
 }, {passive:true});
@@ -897,10 +900,31 @@ window.addEventListener("keydown", e=>{
      piece does not read it at all. */
   if (k==="Escape" && typeof escapeBelongsToFullscreen==="function" && escapeBelongsToFullscreen()) return;
   if (k==="Escape" && typeof onsSkip==="function" && onsSkip()){ e.preventDefault(); return; }
-  if (k===" "||k==="PageDown"){ window.scrollBy(0,H*0.85); e.preventDefault(); }
-  else if (k==="PageUp"){ window.scrollBy(0,-H*0.85); e.preventDefault(); }
-  else if (k==="ArrowDown"){ window.scrollBy(0,H*0.28); e.preventDefault(); }
-  else if (k==="ArrowUp"){ window.scrollBy(0,-H*0.28); e.preventDefault(); }
+  /* NOTHING MOVES A WHOLE SCREEN AT ONCE ANY MORE.
+     Space and the page keys scrolled 0.85 of the viewport, and a beat's whole extent is
+     only about 1.2 of it — so ONE accidental press was most of a memory, and two was all of
+     it. Space in particular is the key people hit without meaning to: it is the pause key
+     on everything else, and here it silently spent the scene they were in. That is not a
+     thing to make smaller; it is a thing to remove.
+
+     They are swallowed rather than merely un-handled, because the page is a real scrolling
+     document and the BROWSER's own space-scroll would do exactly the same jump if this
+     simply stopped listening. Home and End go too — they are the same accident with a
+     bigger stride.
+
+     WHAT SURVIVES IS THE ARROWS, at 0.28 of the viewport: less than a quarter of a beat,
+     so no single press and no plausible run of them can cross a memory, and somebody
+     working through this on a keyboard is not left with no way forward at all.
+
+     And never when the focus is on a control: Space on a focused button is how that button
+     is pressed, and a visitor who has tabbed to CC, Full, Skip or Begin must be able to use
+     it. That check is what keeps this from being an accessibility regression. */
+  const onCtl = e.target && e.target.closest && e.target.closest("button, a, input, select, textarea, [tabindex]");
+  if (!onCtl){
+    if (k===" " || k==="PageDown" || k==="PageUp" || k==="Home" || k==="End"){ e.preventDefault(); }
+    else if (k==="ArrowDown"){ window.scrollBy(0,H*0.28); e.preventDefault(); }
+    else if (k==="ArrowUp"){ window.scrollBy(0,-H*0.28); e.preventDefault(); }
+  }
   if (k==="ArrowLeft"||k==="ArrowRight"||k==="Enter"||k==="a"||k==="d"||k==="w"||k==="s"){ usedKeyboard=true; onKey(k); }
 }, {passive:false});
 window.addEventListener("keyup", e=>{ KEY[e.key]=false; KEY[e.key.toLowerCase()]=false; }, {passive:true});
