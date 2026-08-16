@@ -359,20 +359,29 @@ function eWordAlpha(L, i, t){
 }
 function eDrawLine(L, t){
   const lay = eLayout(L);
-  /* WHERE THE BLOCK SITS, AS ONE NUMBER.
-     Mathematically centred is `0.5`, and measured against the window the ink lands within
-     a pixel of it at every viewport. Optically that is not quite the middle: a single line
-     of type alone in a large field reads as slightly LOW at the exact half, because the
-     eye weights the empty space below more heavily than the space above it — which is why
-     a title on a page is set a little above centre and looks centred, and set at centre
-     looks dropped. On a short window the difference is a few pixels and nobody would say
-     either way; on a full-screen frame twelve hundred pixels tall it is thirty-six, which
-     is the size at which somebody says it is in a weird place.
+  /* THE BLOCK IS CENTRED ON THE WINDOW, NOT ON THE CANVAS, and that distinction is the
+     bug rather than a nicety.
 
-     It is one constant so it can be argued with: 0.5 is the geometric middle, lower
-     numbers lift it. */
-  const E_CENTRE = 0.47;
-  const y0 = H*E_CENTRE - (lay.rows.length-1)*lay.lh*0.5;
+     `fit()` sizes everything from `documentElement.clientWidth`, which EXCLUDES the
+     scrollbar, and this page always has one because the whole piece is driven by a tall
+     scrolling document. So the canvas is the width of the window MINUS the scrollbar, it
+     is anchored to the left, and a sentence centred inside it therefore sits half a
+     scrollbar to the LEFT of the middle of the screen — about eight pixels on a classic
+     scrollbar, and it never comes out in a measurement that compares the ink to the CANVAS
+     centre, which is every measurement I made. The same applies to the bottom on the rare
+     platform with a horizontal bar.
+
+     Measured off the real window each time, so it is exact rather than a fudge factor, and
+     it is zero on any machine with overlay scrollbars — where it was already right.
+
+     And vertically it is back on the true half. A single line in a large field is usually
+     set a little ABOVE centre because the eye weights the space below more heavily; it was
+     lifted three per cent for that reason and that reads as too high here, on a frame this
+     tall against type this quiet. Geometric centre it is. */
+  const sbx = Math.max(0, window.innerWidth  - (document.documentElement.clientWidth  || window.innerWidth));
+  const sby = Math.max(0, window.innerHeight - (document.documentElement.clientHeight || window.innerHeight));
+  const E_CENTRE = 0.5;
+  const y0 = H*E_CENTRE + sby*0.5 - (lay.rows.length-1)*lay.lh*0.5;
   ctx.save();
   ctx.font = lay.fs + "px " + E_SERIF;
   ctx.textBaseline = "middle";
@@ -384,7 +393,7 @@ function eDrawLine(L, t){
   ctx.shadowBlur = lay.fs*0.5;
   for (let r=0;r<lay.rows.length;r++){
     const row = lay.rows[r];
-    let x = (W - row.w)/2;
+    let x = (W - row.w)/2 + sbx*0.5;
     for (const it of row.items){
       const a = eWordAlpha(L, it.i, t);
       if (a > 0.002){
