@@ -1413,6 +1413,7 @@ window.__bluer = {
   curtainGap(){ if (!CGEO.built) return null;
     return { gapPx:+(CGEO.R.edges[0].xIn - CGEO.L.edges[0].xIn).toFixed(2),
              cL:+PROOM.cL.toFixed(3), cR:+PROOM.cR.toFixed(3), W:Math.round(W) }; },
+  lookAim(){ return LAIM_DBG.slice(0,5); },
   lookLines(){ return LMARK.filter(m=>m.key).map(m=>({ id:m.id, before:m.say, after:m.aft||null })); },
   /* the beat table, and where the taped drawing actually lands on screen — both needed to
      assert on pacing and on whether that sheet still has a straight edge anywhere */

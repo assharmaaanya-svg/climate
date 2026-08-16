@@ -226,11 +226,18 @@ const LMARK = [
     tick:"The birds on the wire",
     say:"The birds on the wire. There were always more than you could count.",
     aft:"They're gone." },
-  { id:"tower",  x:0.6752, y:0.6280, r:0.056, key:true, aud:"tower",
+  /* AND THIS ONE WAS WRONG IN THE CLEAN PAINTING TOO, by 0.014 of the width — measured
+     off a 1% grid, the tank spans 0.638 to 0.685 and its centre is 0.6615, not 0.6752.
+     Fourteen thousandths does not sound like much and it was enough: it put the aim
+     point closer to the big tree than to the tower it was supposed to be, and holding
+     the lenses on the water tower in the clean valley answered with the tree's line.
+     Exactly the same failure the polluted chapter had, and it had been there all along
+     in the chapter nobody thought to check. */
+  { id:"tower",  x:0.6615, y:0.6220, r:0.070, key:true, aud:"tower",
     tick:"The water tower",
     say:"The water tower. You could see it from anywhere in town.",
     aft:"The water used to be clean here.",
-    glint:{ x:0.6690, y:0.6130, w:0.013 } },              // sun on the tank
+    glint:{ x:0.6520, y:0.6120, w:0.013 } },              // sun on the tank
   { id:"hills",  x:0.4550, y:0.5620, r:0.140, key:true, aud:"hills",
     tick:"The far hills",
     say:"The far hills. On a clear day, every one of them.",
@@ -238,7 +245,10 @@ const LMARK = [
 
   { id:"lane",   x:0.2450, y:0.7130, r:0.082, aud:"town",
     say:"Your street. Fourth along, the one with the gate that stuck." },
-  { id:"tree",   x:0.7450, y:0.6940, r:0.055, aud:"birds",
+  /* and it no longer reaches as far. `r` is how forgiving the aim is, and at 0.055 this
+     one was wide enough to take a hit meant for the tower two hundredths away. A tree is
+     a small thing to be looking at; it can ask to be looked at properly. */
+  { id:"tree",   x:0.7520, y:0.7050, r:0.040, aud:"birds",
     say:"The big tree at the crossroads. Everybody met under that tree." },
   { id:"pole",   x:0.0970, y:0.5150, r:0.060,
     say:"The pole at the top of the field. It hummed if you leaned on it." },
@@ -247,6 +257,45 @@ const LMARK = [
   { id:"flowers",x:0.3050, y:0.9100, r:0.115,
     say:"Buttercups, the whole way down the hill." }
 ];
+/* WHERE THE SAME FOUR THINGS ARE IN THE OTHER PAINTING.
+   Every coordinate above was measured off `viewoftown.png`, and the polluted chapter draws
+   a DIFFERENT painting — 1470x1070 against 1537x1023, painted by hand and framed a little
+   differently. Drawing it to the clean one's bounds keeps it filling the frame; it does not
+   move the town back under the coordinates. The water tower is 0.039 of the width away from
+   where the clean painting puts it, which is sixty source pixels: enough that holding the
+   lenses on the tower put the crosshair nearer the big tree, and the chapter answered with
+   the tree's line. That is the bug that was reported, and no amount of tuning the aiming
+   tolerance fixes it — the numbers were simply for the wrong picture.
+
+   Measured the same way the originals were: the polluted painting rendered at 1500 px with
+   a 1% grid over it, and each landmark read off its own enlargement. Only the four that
+   are on the list, because only those four speak in this chapter. */
+const LMARK_AFT = {
+  school: { x:0.4520, y:0.6780, r:0.075, glint:{ x:0.4440, y:0.6450, w:0.010 } },
+  wires:  { x:0.2480, y:0.4810, r:0.062 },
+  tower:  { x:0.7145, y:0.6150, r:0.070, glint:{ x:0.7060, y:0.6000, w:0.013 } },
+  hills:  { x:0.4700, y:0.5560, r:0.130 }
+};
+/* and in that chapter the other five are not there at all.
+   They have no `aft` line, so a visitor who settled on the big tree in the polluted valley
+   was told "Everybody met under that tree" — a sentence from the clean world, in the scene
+   whose whole argument is that the clean world is gone. Rather than write five more lines
+   nobody asked for, the extras simply do not answer after the air changes. Four places,
+   four sentences, and silence everywhere else. */
+let LMARK_A = null;
+function lookMarks(){
+  if (PLOOK.after <= 0.5) return LMARK;
+  if (!LMARK_A){
+    LMARK_A = [];
+    for (const m of LMARK){
+      if (!m.key) continue;
+      const a = LMARK_AFT[m.id];
+      LMARK_A.push(a ? Object.assign({}, m, a) : m);
+    }
+  }
+  return LMARK_A;
+}
+
 /* There were two more and they were both buildings: the church spire and the town
    hall. A valley with four named landmarks in it does not need a fifth and a sixth
    thing that also look like landmarks — the visitor cannot tell which of them the
@@ -355,7 +404,7 @@ function drawLookout(t, dt, o){
     PLOOK.idle += dt;
     if (!PLOOK.taken && PLOOK.idle > 4.5 && lift > 0.9){
       let tgt = null;
-      for (const m of LMARK) if (m.key && !PLOOK.found[m.id]){ tgt = m; break; }
+      for (const m of lookMarks()) if (m.key && !PLOOK.found[m.id]){ tgt = m; break; }
       if (tgt){
         const gx = tgt.x*SW, gy = tgt.y*SH;
         PLOOK.cx += (gx - PLOOK.cx) * Math.min(1, dt*0.16);
@@ -572,20 +621,26 @@ function drawLookout(t, dt, o){
   const fax = fieldAx(), fay = fieldAy();
   const aimX = W*0.5 + aofX*fax, aimY = H*FIELD.cy + aofY*fay;
   let best = null, bestD = 1e9;
-  for (const m of LMARK){
+  /* `lookMarks()` and not `LMARK`: after the air changes this is the four places, at the
+     coordinates the polluted painting actually puts them, and nothing else. */
+  const MARKS = lookMarks();
+  for (const m of MARKS){
     const px = SCX(m.x), py = SCY(m.y);
     m._x = px; m._y = py;
     const q = Math.hypot((px-aimX)/fax, (py-aimY)/fay);
     const own = (spanX*m.r*0.5)/fax;              // how much of the field it fills
     const d = Math.max(0, q - own);
     m._on = d < 0.62;
+    m._d = d;
     if (m._on && d < bestD){ best = m; bestD = d; }
   }
+  LAIM_DBG = MARKS.map(m => ({ id:m.id, d:+m._d.toFixed(3), on:m._on }))
+                  .sort((a,b)=>a.d-b.d);
   PLOOK.aim = best;
 
   /* Long enough is a second and three quarters of holding a focused pair of
      lenses on the thing — not a touch, not a sweep past it. */
-  for (const m of LMARK){
+  for (const m of MARKS){
     const k = m.id;
     /* A place that is not on the list has to be settled on, not swept past: it
        needs more focus and more time than one that is, so that its line reads as
@@ -752,6 +807,7 @@ function drawLookLife(t, dt, SCX, SCY, spanX, air, rec){
 }
 
 /* ------------------------------------------------------------------ the hints */
+let LAIM_DBG = [];
 const LGLINT = { t: 2.4, on:null, life:0 };
 function drawLookHints(t, dt, SCX, SCY, spanX, rec){
   /* the bloom. Warm, wide, weak, and inversely proportional to focus: it is
@@ -761,7 +817,7 @@ function drawLookHints(t, dt, SCX, SCY, spanX, rec){
   if (amp > 0.02){
     ctx.save();
     ctx.globalCompositeOperation = "lighter";
-    for (const m of LMARK){
+    for (const m of lookMarks()){
       if (!m.key || PLOOK.found[m.id]) continue;
       const px = SCX(m.x), py = SCY(m.y);
       const R = spanX*m.r*0.85 + MIN*0.02;
@@ -784,8 +840,9 @@ function drawLookHints(t, dt, SCX, SCY, spanX, rec){
      that a glint never becomes a tell. */
   LGLINT.t -= dt;
   if (LGLINT.t <= 0){
-    const pool = LMARK.filter(m => m.glint && !PLOOK.found[m.id]);
-    const any  = LMARK.filter(m => m.glint);
+    const MK = lookMarks();
+    const pool = MK.filter(m => m.glint && !PLOOK.found[m.id]);
+    const any  = MK.filter(m => m.glint);
     LGLINT.on = pool.length ? pick(pool) : (any.length ? pick(any) : null);
     LGLINT.life = 1;
     LGLINT.t = pool.length ? rnd(2.6, 5.4) : rnd(7, 15);

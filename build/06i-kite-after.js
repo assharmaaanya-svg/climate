@@ -89,7 +89,14 @@ const KA_FLEW = 0.40;
 
    The kite goes first and the string goes with it, so there is never a line hanging off
    nothing. He starts a second later and takes longer, so the two are not one event. */
-const KA_GO = { settle:2.6, kiteDur:2.2, childAt:1.0, childDur:3.4, empty:2.0, lineHold:7.0 };
+/* HE GOES BEFORE THE KITE HAS FINISHED GOING.
+   He used to start a full second after the kite and take three and a half to fade, so the
+   kite was long gone and the field was already empty while he was still standing in it —
+   which reads as a sprite being turned off rather than as somebody who is not there any
+   more. He starts a third of a second in now and takes two and a half, so the two of them
+   overlap properly and he is the first to be missing. The empty field afterwards is
+   lengthened by exactly what he gave back, so the beat that follows lands where it did. */
+const KA_GO = { settle:2.6, kiteDur:2.2, childAt:0.35, childDur:2.5, empty:2.9, lineHold:7.0 };
 const KA_T1 = KA_GO.settle;                       // the kite starts to go
 const KA_T2 = KA_T1 + KA_GO.childAt;              // and then he does
 const KA_T3 = Math.max(KA_T1 + KA_GO.kiteDur, KA_T2 + KA_GO.childDur);   // nothing left

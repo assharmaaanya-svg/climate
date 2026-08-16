@@ -474,6 +474,20 @@
   #title.on{ opacity:1; pointer-events:auto; }
   #title .t{ font-size:clamp(2.3rem,7.4vw,4.4rem); line-height:1.05; margin:0 0 clamp(1.8rem,5vh,3.2rem);
     letter-spacing:-.012em; color:var(--ink); }
+  /* AND THE FIRST WORD OF IT LOSES ITS COLOUR WHILE YOU LOOK AT IT.
+     The same thing the narration does twice in the piece — an ivory sentence drifting into
+     the one red the work owns, slowly enough that nobody catches the moment it changed —
+     applied here to the word the whole piece is named for. Eighteen seconds, which is far
+     longer than either of the others and is the point: by the time "Remember" has gone the
+     visitor has been sitting with the signature for a while, and what changed is the word
+     rather than the frame. Nothing else on this screen moves.
+
+     The delay holds it at ivory until the credits have finished arriving, or the drift
+     would start behind a title that is still fading up and be half spent before it could
+     be seen. `will-change` keeps it off the main thread; `prefers-reduced-motion` below
+     turns the whole thing off along with the rest of the transitions. */
+  #title .t .rm{ color:var(--ink); transition:color 18s cubic-bezier(.5,0,.72,1) 4.2s; }
+  #title.settled .t .rm{ color:var(--memory-loss-red); }
   /* the descriptor is deliberately the smallest serif on the frame, and the name is
      larger and brighter than it — one reads as a caption and the other as a signature */
   #title .by{ margin:0; font-size:clamp(.8rem,2.1vw,.92rem); font-style:italic; opacity:.52;
@@ -628,7 +642,7 @@
 
   @media (prefers-reduced-motion: reduce){
     #aq .dot{ animation:none; }
-    #cap,#title,#ev,#ledger{ transition-duration:.4s; }
+    #cap,#title,#ev,#ledger,#title .t .rm{ transition-duration:.4s; transition-delay:0s; }
   }
 </style>
 </head>
@@ -640,7 +654,7 @@
 
 <div id="intro" role="dialog" aria-label="Remember When, by Aanya Sharma"><div class="in">
   <p class="prize">Earth Partner Prize</p>
-  <h1 class="t">Remember When</h1>
+  <h1 class="t"><span class="rm">Remember</span> When</h1>
   <p class="a">Aanya Sharma</p>
   <p class="lede">An interactive experience about air pollution.</p>
   <p class="how">Scroll to move through it.</p>
@@ -736,7 +750,7 @@
      tried to say it again would take that word off the visitor. So this says only who
      made what they have just been inside. -->
 <div id="title" aria-hidden="true">
-  <h1 class="t">Remember When</h1>
+  <h1 class="t"><span class="rm">Remember</span> When</h1>
   <p class="by">An interactive artwork by</p>
   <p class="a">Aanya Sharma</p>
   <p class="c">Earth Partner Prize</p>
@@ -9855,7 +9869,14 @@ const KA_FLEW = 0.40;
 
    The kite goes first and the string goes with it, so there is never a line hanging off
    nothing. He starts a second later and takes longer, so the two are not one event. */
-const KA_GO = { settle:2.6, kiteDur:2.2, childAt:1.0, childDur:3.4, empty:2.0, lineHold:7.0 };
+/* HE GOES BEFORE THE KITE HAS FINISHED GOING.
+   He used to start a full second after the kite and take three and a half to fade, so the
+   kite was long gone and the field was already empty while he was still standing in it —
+   which reads as a sprite being turned off rather than as somebody who is not there any
+   more. He starts a third of a second in now and takes two and a half, so the two of them
+   overlap properly and he is the first to be missing. The empty field afterwards is
+   lengthened by exactly what he gave back, so the beat that follows lands where it did. */
+const KA_GO = { settle:2.6, kiteDur:2.2, childAt:0.35, childDur:2.5, empty:2.9, lineHold:7.0 };
 const KA_T1 = KA_GO.settle;                       // the kite starts to go
 const KA_T2 = KA_T1 + KA_GO.childAt;              // and then he does
 const KA_T3 = Math.max(KA_T1 + KA_GO.kiteDur, KA_T2 + KA_GO.childDur);   // nothing left
@@ -11670,11 +11691,18 @@ const LMARK = [
     tick:"The birds on the wire",
     say:"The birds on the wire. There were always more than you could count.",
     aft:"They're gone." },
-  { id:"tower",  x:0.6752, y:0.6280, r:0.056, key:true, aud:"tower",
+  /* AND THIS ONE WAS WRONG IN THE CLEAN PAINTING TOO, by 0.014 of the width — measured
+     off a 1% grid, the tank spans 0.638 to 0.685 and its centre is 0.6615, not 0.6752.
+     Fourteen thousandths does not sound like much and it was enough: it put the aim
+     point closer to the big tree than to the tower it was supposed to be, and holding
+     the lenses on the water tower in the clean valley answered with the tree's line.
+     Exactly the same failure the polluted chapter had, and it had been there all along
+     in the chapter nobody thought to check. */
+  { id:"tower",  x:0.6615, y:0.6220, r:0.070, key:true, aud:"tower",
     tick:"The water tower",
     say:"The water tower. You could see it from anywhere in town.",
     aft:"The water used to be clean here.",
-    glint:{ x:0.6690, y:0.6130, w:0.013 } },              // sun on the tank
+    glint:{ x:0.6520, y:0.6120, w:0.013 } },              // sun on the tank
   { id:"hills",  x:0.4550, y:0.5620, r:0.140, key:true, aud:"hills",
     tick:"The far hills",
     say:"The far hills. On a clear day, every one of them.",
@@ -11682,7 +11710,10 @@ const LMARK = [
 
   { id:"lane",   x:0.2450, y:0.7130, r:0.082, aud:"town",
     say:"Your street. Fourth along, the one with the gate that stuck." },
-  { id:"tree",   x:0.7450, y:0.6940, r:0.055, aud:"birds",
+  /* and it no longer reaches as far. `r` is how forgiving the aim is, and at 0.055 this
+     one was wide enough to take a hit meant for the tower two hundredths away. A tree is
+     a small thing to be looking at; it can ask to be looked at properly. */
+  { id:"tree",   x:0.7520, y:0.7050, r:0.040, aud:"birds",
     say:"The big tree at the crossroads. Everybody met under that tree." },
   { id:"pole",   x:0.0970, y:0.5150, r:0.060,
     say:"The pole at the top of the field. It hummed if you leaned on it." },
@@ -11691,6 +11722,45 @@ const LMARK = [
   { id:"flowers",x:0.3050, y:0.9100, r:0.115,
     say:"Buttercups, the whole way down the hill." }
 ];
+/* WHERE THE SAME FOUR THINGS ARE IN THE OTHER PAINTING.
+   Every coordinate above was measured off `viewoftown.png`, and the polluted chapter draws
+   a DIFFERENT painting — 1470x1070 against 1537x1023, painted by hand and framed a little
+   differently. Drawing it to the clean one's bounds keeps it filling the frame; it does not
+   move the town back under the coordinates. The water tower is 0.039 of the width away from
+   where the clean painting puts it, which is sixty source pixels: enough that holding the
+   lenses on the tower put the crosshair nearer the big tree, and the chapter answered with
+   the tree's line. That is the bug that was reported, and no amount of tuning the aiming
+   tolerance fixes it — the numbers were simply for the wrong picture.
+
+   Measured the same way the originals were: the polluted painting rendered at 1500 px with
+   a 1% grid over it, and each landmark read off its own enlargement. Only the four that
+   are on the list, because only those four speak in this chapter. */
+const LMARK_AFT = {
+  school: { x:0.4520, y:0.6780, r:0.075, glint:{ x:0.4440, y:0.6450, w:0.010 } },
+  wires:  { x:0.2480, y:0.4810, r:0.062 },
+  tower:  { x:0.7145, y:0.6150, r:0.070, glint:{ x:0.7060, y:0.6000, w:0.013 } },
+  hills:  { x:0.4700, y:0.5560, r:0.130 }
+};
+/* and in that chapter the other five are not there at all.
+   They have no `aft` line, so a visitor who settled on the big tree in the polluted valley
+   was told "Everybody met under that tree" — a sentence from the clean world, in the scene
+   whose whole argument is that the clean world is gone. Rather than write five more lines
+   nobody asked for, the extras simply do not answer after the air changes. Four places,
+   four sentences, and silence everywhere else. */
+let LMARK_A = null;
+function lookMarks(){
+  if (PLOOK.after <= 0.5) return LMARK;
+  if (!LMARK_A){
+    LMARK_A = [];
+    for (const m of LMARK){
+      if (!m.key) continue;
+      const a = LMARK_AFT[m.id];
+      LMARK_A.push(a ? Object.assign({}, m, a) : m);
+    }
+  }
+  return LMARK_A;
+}
+
 /* There were two more and they were both buildings: the church spire and the town
    hall. A valley with four named landmarks in it does not need a fifth and a sixth
    thing that also look like landmarks — the visitor cannot tell which of them the
@@ -11799,7 +11869,7 @@ function drawLookout(t, dt, o){
     PLOOK.idle += dt;
     if (!PLOOK.taken && PLOOK.idle > 4.5 && lift > 0.9){
       let tgt = null;
-      for (const m of LMARK) if (m.key && !PLOOK.found[m.id]){ tgt = m; break; }
+      for (const m of lookMarks()) if (m.key && !PLOOK.found[m.id]){ tgt = m; break; }
       if (tgt){
         const gx = tgt.x*SW, gy = tgt.y*SH;
         PLOOK.cx += (gx - PLOOK.cx) * Math.min(1, dt*0.16);
@@ -12016,20 +12086,26 @@ function drawLookout(t, dt, o){
   const fax = fieldAx(), fay = fieldAy();
   const aimX = W*0.5 + aofX*fax, aimY = H*FIELD.cy + aofY*fay;
   let best = null, bestD = 1e9;
-  for (const m of LMARK){
+  /* `lookMarks()` and not `LMARK`: after the air changes this is the four places, at the
+     coordinates the polluted painting actually puts them, and nothing else. */
+  const MARKS = lookMarks();
+  for (const m of MARKS){
     const px = SCX(m.x), py = SCY(m.y);
     m._x = px; m._y = py;
     const q = Math.hypot((px-aimX)/fax, (py-aimY)/fay);
     const own = (spanX*m.r*0.5)/fax;              // how much of the field it fills
     const d = Math.max(0, q - own);
     m._on = d < 0.62;
+    m._d = d;
     if (m._on && d < bestD){ best = m; bestD = d; }
   }
+  LAIM_DBG = MARKS.map(m => ({ id:m.id, d:+m._d.toFixed(3), on:m._on }))
+                  .sort((a,b)=>a.d-b.d);
   PLOOK.aim = best;
 
   /* Long enough is a second and three quarters of holding a focused pair of
      lenses on the thing — not a touch, not a sweep past it. */
-  for (const m of LMARK){
+  for (const m of MARKS){
     const k = m.id;
     /* A place that is not on the list has to be settled on, not swept past: it
        needs more focus and more time than one that is, so that its line reads as
@@ -12196,6 +12272,7 @@ function drawLookLife(t, dt, SCX, SCY, spanX, air, rec){
 }
 
 /* ------------------------------------------------------------------ the hints */
+let LAIM_DBG = [];
 const LGLINT = { t: 2.4, on:null, life:0 };
 function drawLookHints(t, dt, SCX, SCY, spanX, rec){
   /* the bloom. Warm, wide, weak, and inversely proportional to focus: it is
@@ -12205,7 +12282,7 @@ function drawLookHints(t, dt, SCX, SCY, spanX, rec){
   if (amp > 0.02){
     ctx.save();
     ctx.globalCompositeOperation = "lighter";
-    for (const m of LMARK){
+    for (const m of lookMarks()){
       if (!m.key || PLOOK.found[m.id]) continue;
       const px = SCX(m.x), py = SCY(m.y);
       const R = spanX*m.r*0.85 + MIN*0.02;
@@ -12228,8 +12305,9 @@ function drawLookHints(t, dt, SCX, SCY, spanX, rec){
      that a glint never becomes a tell. */
   LGLINT.t -= dt;
   if (LGLINT.t <= 0){
-    const pool = LMARK.filter(m => m.glint && !PLOOK.found[m.id]);
-    const any  = LMARK.filter(m => m.glint);
+    const MK = lookMarks();
+    const pool = MK.filter(m => m.glint && !PLOOK.found[m.id]);
+    const any  = MK.filter(m => m.glint);
     LGLINT.on = pool.length ? pick(pool) : (any.length ? pick(any) : null);
     LGLINT.life = 1;
     LGLINT.t = pool.length ? rnd(2.6, 5.4) : rnd(7, 15);
@@ -15820,7 +15898,7 @@ const ELAUGH = { at: 8.7, vol:0.26, cc:"a child laughing, far off", len:1.9 };
    ending — below every memory fragment — and it takes over five score seconds to get
    there, which at any sensible rate is longer than it takes to stop noticing that it
    started. It is set ONCE and never lifted: the final sentence does not raise it. */
-const EOPEN = { at: 33.2, up:5.4, off:42.6, down:2.0, vol:0.13, lp:5200,
+const EOPEN = { at: 37.4, up:5.4, off:46.8, down:2.0, vol:0.13, lp:5200,
                 cc:"wind through the grass" };
 
 /* THE SENTENCES.
@@ -15845,41 +15923,47 @@ const EOPEN = { at: 33.2, up:5.4, off:42.6, down:2.0, vol:0.13, lp:5200,
    Every `hold` here now buys its own word count and the gaps between them were moved to
    match rather than absorbed. */
 const ESCORE = [
-  /* THE FIRST TWO RUN LONGER THAN THE REST, DELIBERATELY. They arrive on a black screen
+  /* THE FIRST FIVE RUN LONGER THAN THE LAST TWO, DELIBERATELY.
+     Read at three words a second, the five sentences that carry the argument were being
+     PERFORMED rather than thought — each one arriving on the heels of the last with no
+     room around it, which is the difference between somebody working something out and
+     somebody reciting it. They now clear about two and a quarter words a second, and the
+     gap between thoughts went with them. The turn at the end keeps its old pace: by then
+     the visitor is not working anything out, they are being told. They arrive on a black screen
      out of a silence, which is the one place in the piece where the visitor is not yet
      reading — they are still working out that there is something there to read, and the
      time that takes comes out of the sentence unless it is given to it. */
-  { t0: 4.6,  in:1.4, hold:2.5, out:1.0,
+  { t0: 4.6,  in:1.6, hold:3.1, out:1.1,
     text:"I thought I was remembering places." },
 
   /* THE REALIZATION. Only the last word turns, and it turns slowly enough that the
      change is over before it can be seen starting. It also outlives the sentence it
      is in by three quarters of a second, which is the first moment in the ending
      where the typography is saying something the words are not. */
-  { t0: 10.4, in:1.4, hold:2.6, out:1.2,
+  { t0: 11.7, in:1.6, hold:3.2, out:1.3,
     text:"I was remembering things that disappeared.",
-    red:{ i:5, from:1.8, to:4.0 }, keepFrom:5, keepHold:0.85 },
+    red:{ i:5, from:2.0, to:4.6 }, keepFrom:5, keepHold:0.95 },
 
   /* THE KEY LINE, and the one place the fading itself is the argument. The sentence
      must be READ first — the stagger begins only after two full seconds at strength —
      and then it comes apart from the left until "all at once." is alone. Nothing about
      it is difficult to read; the effect happens entirely after comprehension. */
-  { t0: 18.2, in:1.3, hold:2.0, out:1.0, grade:0.80, keepFrom:4, keepHold:1.9,
+  { t0: 20.6, in:1.6, hold:3.0, out:1.1, grade:0.85, keepFrom:4, keepHold:2.0,
     text:"None of it disappeared all at once." },
 
   /* and the line the whole interaction has been building to. No animation, no colour,
      no sound cue. "notice." is left alone in the dark for a second, because that is
      the word for what the visitor has spent the entire piece doing. */
-  { t0: 25.6, in:1.2, hold:2.0, out:0.9, keepFrom:4, keepHold:1.7,
+  { t0: 29.4, in:1.5, hold:2.9, out:1.0, keepFrom:4, keepHold:1.8,
     text:"That's why we didn't notice." },
 
   /* THE TURN. Not "everything is fine now" — nothing in the world outside has changed
      and the piece would be lying if it said so. Back to the ivory the memories were
      written in, because the direction has changed and the colour is how the piece says
      which way it is facing. */
-  { t0: 33.4, in:1.3, hold:1.9, out:0.8,
+  { t0: 37.6, in:1.3, hold:1.9, out:0.8,
     text:"But remembering what was there…" },
-  { t0: 38.4, in:1.3, hold:2.4, out:0.9, keepFrom:6, keepHold:1.5,
+  { t0: 42.6, in:1.3, hold:2.4, out:0.9, keepFrom:6, keepHold:1.5,
     text:"…is how we know what's worth saving." }
 ];
 
@@ -17561,6 +17645,7 @@ window.__bluer = {
   curtainGap(){ if (!CGEO.built) return null;
     return { gapPx:+(CGEO.R.edges[0].xIn - CGEO.L.edges[0].xIn).toFixed(2),
              cL:+PROOM.cL.toFixed(3), cR:+PROOM.cR.toFixed(3), W:Math.round(W) }; },
+  lookAim(){ return LAIM_DBG.slice(0,5); },
   lookLines(){ return LMARK.filter(m=>m.key).map(m=>({ id:m.id, before:m.say, after:m.aft||null })); },
   /* the beat table, and where the taped drawing actually lands on screen — both needed to
      assert on pacing and on whether that sheet still has a straight edge anywhere */

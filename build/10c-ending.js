@@ -122,7 +122,7 @@ const ELAUGH = { at: 8.7, vol:0.26, cc:"a child laughing, far off", len:1.9 };
    ending — below every memory fragment — and it takes over five score seconds to get
    there, which at any sensible rate is longer than it takes to stop noticing that it
    started. It is set ONCE and never lifted: the final sentence does not raise it. */
-const EOPEN = { at: 33.2, up:5.4, off:42.6, down:2.0, vol:0.13, lp:5200,
+const EOPEN = { at: 37.4, up:5.4, off:46.8, down:2.0, vol:0.13, lp:5200,
                 cc:"wind through the grass" };
 
 /* THE SENTENCES.
@@ -147,41 +147,47 @@ const EOPEN = { at: 33.2, up:5.4, off:42.6, down:2.0, vol:0.13, lp:5200,
    Every `hold` here now buys its own word count and the gaps between them were moved to
    match rather than absorbed. */
 const ESCORE = [
-  /* THE FIRST TWO RUN LONGER THAN THE REST, DELIBERATELY. They arrive on a black screen
+  /* THE FIRST FIVE RUN LONGER THAN THE LAST TWO, DELIBERATELY.
+     Read at three words a second, the five sentences that carry the argument were being
+     PERFORMED rather than thought — each one arriving on the heels of the last with no
+     room around it, which is the difference between somebody working something out and
+     somebody reciting it. They now clear about two and a quarter words a second, and the
+     gap between thoughts went with them. The turn at the end keeps its old pace: by then
+     the visitor is not working anything out, they are being told. They arrive on a black screen
      out of a silence, which is the one place in the piece where the visitor is not yet
      reading — they are still working out that there is something there to read, and the
      time that takes comes out of the sentence unless it is given to it. */
-  { t0: 4.6,  in:1.4, hold:2.5, out:1.0,
+  { t0: 4.6,  in:1.6, hold:3.1, out:1.1,
     text:"I thought I was remembering places." },
 
   /* THE REALIZATION. Only the last word turns, and it turns slowly enough that the
      change is over before it can be seen starting. It also outlives the sentence it
      is in by three quarters of a second, which is the first moment in the ending
      where the typography is saying something the words are not. */
-  { t0: 10.4, in:1.4, hold:2.6, out:1.2,
+  { t0: 11.7, in:1.6, hold:3.2, out:1.3,
     text:"I was remembering things that disappeared.",
-    red:{ i:5, from:1.8, to:4.0 }, keepFrom:5, keepHold:0.85 },
+    red:{ i:5, from:2.0, to:4.6 }, keepFrom:5, keepHold:0.95 },
 
   /* THE KEY LINE, and the one place the fading itself is the argument. The sentence
      must be READ first — the stagger begins only after two full seconds at strength —
      and then it comes apart from the left until "all at once." is alone. Nothing about
      it is difficult to read; the effect happens entirely after comprehension. */
-  { t0: 18.2, in:1.3, hold:2.0, out:1.0, grade:0.80, keepFrom:4, keepHold:1.9,
+  { t0: 20.6, in:1.6, hold:3.0, out:1.1, grade:0.85, keepFrom:4, keepHold:2.0,
     text:"None of it disappeared all at once." },
 
   /* and the line the whole interaction has been building to. No animation, no colour,
      no sound cue. "notice." is left alone in the dark for a second, because that is
      the word for what the visitor has spent the entire piece doing. */
-  { t0: 25.6, in:1.2, hold:2.0, out:0.9, keepFrom:4, keepHold:1.7,
+  { t0: 29.4, in:1.5, hold:2.9, out:1.0, keepFrom:4, keepHold:1.8,
     text:"That's why we didn't notice." },
 
   /* THE TURN. Not "everything is fine now" — nothing in the world outside has changed
      and the piece would be lying if it said so. Back to the ivory the memories were
      written in, because the direction has changed and the colour is how the piece says
      which way it is facing. */
-  { t0: 33.4, in:1.3, hold:1.9, out:0.8,
+  { t0: 37.6, in:1.3, hold:1.9, out:0.8,
     text:"But remembering what was there…" },
-  { t0: 38.4, in:1.3, hold:2.4, out:0.9, keepFrom:6, keepHold:1.5,
+  { t0: 42.6, in:1.3, hold:2.4, out:0.9, keepFrom:6, keepHold:1.5,
     text:"…is how we know what's worth saving." }
 ];
 

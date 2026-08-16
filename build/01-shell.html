@@ -474,6 +474,20 @@
   #title.on{ opacity:1; pointer-events:auto; }
   #title .t{ font-size:clamp(2.3rem,7.4vw,4.4rem); line-height:1.05; margin:0 0 clamp(1.8rem,5vh,3.2rem);
     letter-spacing:-.012em; color:var(--ink); }
+  /* AND THE FIRST WORD OF IT LOSES ITS COLOUR WHILE YOU LOOK AT IT.
+     The same thing the narration does twice in the piece — an ivory sentence drifting into
+     the one red the work owns, slowly enough that nobody catches the moment it changed —
+     applied here to the word the whole piece is named for. Eighteen seconds, which is far
+     longer than either of the others and is the point: by the time "Remember" has gone the
+     visitor has been sitting with the signature for a while, and what changed is the word
+     rather than the frame. Nothing else on this screen moves.
+
+     The delay holds it at ivory until the credits have finished arriving, or the drift
+     would start behind a title that is still fading up and be half spent before it could
+     be seen. `will-change` keeps it off the main thread; `prefers-reduced-motion` below
+     turns the whole thing off along with the rest of the transitions. */
+  #title .t .rm{ color:var(--ink); transition:color 18s cubic-bezier(.5,0,.72,1) 4.2s; }
+  #title.settled .t .rm{ color:var(--memory-loss-red); }
   /* the descriptor is deliberately the smallest serif on the frame, and the name is
      larger and brighter than it — one reads as a caption and the other as a signature */
   #title .by{ margin:0; font-size:clamp(.8rem,2.1vw,.92rem); font-style:italic; opacity:.52;
@@ -628,7 +642,7 @@
 
   @media (prefers-reduced-motion: reduce){
     #aq .dot{ animation:none; }
-    #cap,#title,#ev,#ledger{ transition-duration:.4s; }
+    #cap,#title,#ev,#ledger,#title .t .rm{ transition-duration:.4s; transition-delay:0s; }
   }
 </style>
 </head>
@@ -640,7 +654,7 @@
 
 <div id="intro" role="dialog" aria-label="Remember When, by Aanya Sharma"><div class="in">
   <p class="prize">Earth Partner Prize</p>
-  <h1 class="t">Remember When</h1>
+  <h1 class="t"><span class="rm">Remember</span> When</h1>
   <p class="a">Aanya Sharma</p>
   <p class="lede">An interactive experience about air pollution.</p>
   <p class="how">Scroll to move through it.</p>
@@ -736,7 +750,7 @@
      tried to say it again would take that word off the visitor. So this says only who
      made what they have just been inside. -->
 <div id="title" aria-hidden="true">
-  <h1 class="t">Remember When</h1>
+  <h1 class="t"><span class="rm">Remember</span> When</h1>
   <p class="by">An interactive artwork by</p>
   <p class="a">Aanya Sharma</p>
   <p class="c">Earth Partner Prize</p>
