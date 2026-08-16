@@ -317,6 +317,23 @@ function resetLookout(bid){
   PLOOK.aim = null;
   PLOOK.beat = bid || "";
   for (const k in PLOOK.dwell) PLOOK.dwell[k] = 0;
+  /* AND WHAT HAS BEEN FOUND IS PER CHAPTER, NOT PER VISITOR.
+     `found` and `said` were carried straight from the clean valley into the polluted one,
+     and the speaking test is `if (m.key && !PLOOK.found[k])`. So every place the visitor
+     had already found in chapter two was PERMANENTLY SILENT in chapter three: hold the
+     lenses on the school in the dead valley, wait out the dwell, and nothing is said,
+     because the school was found half an hour ago in a different world. The four lines
+     that are the entire point of that chapter could only ever be heard by somebody who
+     had skipped the chapter before it — which is the opposite of who they are written for.
+
+     They are cleared on entry, both ways. The ticked list belongs to the chapter it is in,
+     the polluted chapter starts owing all four of its sentences, and `FOUND` — the global
+     count of small things nobody asked you to look for — is untouched, because that one IS
+     a property of the visitor. */
+  PLOOK.found = Object.create(null);
+  PLOOK.said  = Object.create(null);
+  PLOOK.n = 0;
+  resetLookList();
   buildLookList();
 }
 

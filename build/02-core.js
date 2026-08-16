@@ -508,6 +508,18 @@ const CH_NAME = { 1:"i · the world came inside", 2:"ii · life happened outdoor
    HOLD_NEVER is empty and stays empty: a gate that carries an instruction is a gate the
    scroll waits at, with no exceptions to keep in step. */
 const HOLD_NEVER = {};
+/* THREE GATES THE BACKSTOP DOES NOT OPEN.
+   `HOLD_PATIENCE` exists so nobody can be permanently stuck: lean on the wheel for
+   twenty-five seconds and the wait gives up. That is right for an interaction somebody
+   might not manage. It is wrong for these three, because these three ARE the piece —
+   colouring the drawing, and picking up the binoculars in either valley — and each of
+   them asks for about a second of effort. Twenty-five seconds of scrolling let a visitor
+   past the colouring having never touched a crayon, which is the one thing that beat
+   exists to prevent.
+
+   Nobody is trapped: the Skip control meets the current beat's gate outright, so the way
+   through is a deliberate press rather than an accidental timeout. */
+const HOLD_KEEP = { colour:1, find:1, rfind:1 };
 const HOLD_AT = {};
 for (const _b of BEATS){
   if (!_b.gate || !_b.ask || HOLD_NEVER[_b.gate]) continue;
@@ -515,6 +527,7 @@ for (const _b of BEATS){
   HOLD_AT[_b.id] = {
     done: () => gateMet(g),
     prog: () => gateProgress(g),
+    noFree: !!HOLD_KEEP[g],
     pass: () => { done[g] = true; }
   };
 }
@@ -655,7 +668,7 @@ function readTimeline(dt){
        leant on the wheel for twenty-five seconds would drop the visitor into the next
        chapter with the sequence still playing behind them. Before the chain starts the
        backstop is exactly as it was — that is the case where being stuck is possible. */
-    if (T.wait > HOLD_PATIENCE && !(h.running && h.running())){ holdFreed[b.id] = 1; continue; }
+    if (T.wait > HOLD_PATIENCE && !h.noFree && !(h.running && h.running())){ holdFreed[b.id] = 1; continue; }
     T.ceil = ofs[i] + b.len*0.86; break;
   }
   /* And the onslaught, which is a different kind of wait: not a gate at all. It is a

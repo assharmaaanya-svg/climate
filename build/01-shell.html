@@ -259,20 +259,37 @@
 
   /* ---------- controls ---------- */
   .ctl{ position:fixed; top:max(13px,env(safe-area-inset-top)); right:14px; z-index:12; display:flex; gap:7px; align-items:center; }
+  /* `line-height` is explicit so all three buttons have a content box of a known height —
+     with `normal` it comes from the font's own metrics and the icon button, whose content
+     is an SVG and not a line of text, cannot be matched to it. */
   .ctl button{ font-family:var(--mono); font-size:.6rem; letter-spacing:.13em; text-transform:uppercase; color:var(--ink);
+    line-height:1.5;
     background:rgba(10,18,28,.34); border:1px solid rgba(251,250,245,.3); border-radius:999px; padding:.48em .8em; cursor:pointer;
     -webkit-backdrop-filter:blur(7px); backdrop-filter:blur(7px);
     transition:background .25s, border-color .25s, color .25s, opacity .4s; }
   .ctl button:hover{ background:rgba(10,18,28,.6); border-color:rgba(251,250,245,.72); }
   .ctl button[aria-pressed="true"]{ background:rgba(251,250,245,.92); color:#0e1824; border-color:rgba(251,250,245,.92); }
   .ctl button:focus-visible{ outline:2px solid #fff; outline-offset:3px; }
-  /* the icon control. Padded to the same optical width as the lettered ones rather than
-     the same numeric width — a square glyph in a pill sized for two characters reads as a
-     gap — and the stroke is `currentColor` so the pressed state inverts it with everything
-     else instead of needing a rule of its own. */
-  .ctl button.ic{ padding:.42em .62em; display:inline-flex; align-items:center; justify-content:center; }
-  .ctl button.ic svg{ width:.86em; height:.86em; display:block; fill:none; stroke:currentColor;
-    stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; }
+  /* THE ICON CONTROL, SIZED FROM THE OTHER TWO RATHER THAN BY EYE.
+     It was 22.1 x 18.3 next to CC's 31.4 x 23.7 — five and a half pixels shorter than the
+     buttons either side of it, so the row had a dent in the middle of it. Two causes, and
+     the second is the one that is easy to miss: the padding was smaller (.42em against
+     .48em), AND an inline-flex button whose only child is an 8px SVG gets a content box
+     8px tall, while a button containing text gets a LINE box — 1.5 x the font size. Equal
+     padding alone would not have equalised them.
+
+     So the glyph's box is set to exactly that line box, 1.5em, which makes the three
+     buttons the same height by construction rather than by coincidence. The mark inside it
+     is drawn at 80% of its viewBox, so it reads a little larger than the capitals beside it
+     without the pill growing, and the horizontal padding is chosen to land the width just
+     under CC's — an icon pill wider than a two-letter one looks like a mistake.
+
+     Stroke is `currentColor`, so the pressed state inverts with everything else instead of
+     needing a rule of its own, and 1.5 units of a 16-unit box lands at 1.35px against the
+     mono's ~1px stem: the same weight, not heavier. */
+  .ctl button.ic{ padding:.48em .72em; display:inline-flex; align-items:center; justify-content:center; }
+  .ctl button.ic svg{ width:1.5em; height:1.5em; display:block; fill:none; stroke:currentColor;
+    stroke-width:1.5; stroke-linecap:round; stroke-linejoin:round; }
   .ctl.dark button{ color:#1d2a36; background:rgba(255,255,255,.4); border-color:rgba(20,30,40,.3); }
   .ctl.dark button:hover{ background:rgba(255,255,255,.72); }
   #chapter{ position:fixed; top:max(15px,env(safe-area-inset-top)); left:16px; z-index:12; font-family:var(--mono);
@@ -654,9 +671,17 @@
 
 <div id="intro" role="dialog" aria-label="Remember When, by Aanya Sharma"><div class="in">
   <p class="prize">Earth Partner Prize</p>
-  <h1 class="t"><span class="rm">Remember</span> When</h1>
+  <h1 class="t">Remember When</h1>
   <p class="a">Aanya Sharma</p>
-  <p class="lede">An interactive experience about air pollution.</p>
+  <!-- THE FIRST SENTENCE ANYBODY READS, AND IT IS NOT A SUMMARY.
+       "An interactive experience about air pollution" described a subject rather than a
+       work, and described it the way a school resource would: it told the visitor the
+       thesis before the piece had a chance to make it, and everything after it became
+       illustration of a point already conceded. This names the two things the work is
+       made of and refuses to say what either does to the other. The connection is what
+       the visitor spends thirty minutes discovering — first that the place changed, and
+       only at the end that they changed with it. -->
+  <p class="lede">An interactive memory of a childhood, and the air it happened in.</p>
   <p class="how">Scroll to move through it.</p>
   <button id="begin" autofocus>Begin</button>
 </div></div>
