@@ -126,7 +126,7 @@ function resetReturn(){
      same follow on the far panel. By this point the piece cannot be scrolled back
      into the opening, so there is nothing to disturb. */
   PROOM.cL = 0; PROOM.cR = 0; PROOM.open = 0;
-  PROOM.grab = 0; PROOM.nudgeTo = 0; PROOM.idle = 0; PROOM.demo = 0;
+  PROOM.grab = 0; PROOM.nudgeTo = 0; PROOM.idle = 0; PROOM.demo = 0; PROOM.tug = 0;
   PROOM.everMoved = 0; PROOM.sash = 0; PROOM.breeze = 0;
   hideNote();
 }

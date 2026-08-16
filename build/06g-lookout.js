@@ -820,13 +820,21 @@ function drawLookHints(t, dt, SCX, SCY, spanX, rec){
 }
 
 /* ------------------------------------------------------------------ the gate */
+/* WHAT EITHER LOOKOUT WAITS FOR, IN ONE PLACE.
+   NOT "did you find something" — "did you look". Recall past this is a genuine press and
+   hold of roughly two seconds from cold, by which point the valley has sharpened and
+   coloured under their hand and the chapter has said the only thing it has to say. What
+   they aimed the lenses at while they held is entirely theirs, and the list of four places
+   is a thing to discover rather than a toll.
+
+   ONE NUMBER, READ BY BOTH GATES, and that is the actual fix. The clean chapter used to
+   want three named places found and the polluted one wanted a hold, so the same mechanic
+   was compulsory in one half of the piece and optional in the other, and a visitor could
+   reach the last time they are asked to look at anything having never once pressed. Two
+   conditions written in two places drift; one constant cannot. */
+const LOOK_HOLD = 0.55;
 function lookoutInteract(g, dt){
-  if (g === "find"  && PLOOK.n >= 3) meetQuiet(g);
-  /* NOT "did you find something" — "did you look". Recall past 0.55 is a genuine press and
-     hold of roughly two seconds from cold, by which point the valley has sharpened and
-     coloured under their hand and the chapter has said the only thing it has to say. What
-     they aimed the lenses at while they held is entirely theirs. */
-  if (g === "rfind" && PLOOK.recall > 0.55) meetQuiet(g);
+  if ((g === "find" || g === "rfind") && PLOOK.recall > LOOK_HOLD) meetQuiet(g);
 }
 
 /* ------------------------------------------------------------------ the list

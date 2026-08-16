@@ -20,7 +20,7 @@ originals are kept at the repository root; `assets/` holds only the loops built 
 | Built file | Where it plays |
 | --- | --- |
 | `assets/amb-garden.wav` | the bed under everything, muffled by whatever is in the way |
-| `assets/amb-tunnel-distant.wav` | the polluted washing line, in place of the garden |
+| `assets/amb-tunnel-distant.wav` | every outdoor scene after the air changed: the washing line, the field, the hill and the night sky. One recording through four layers, each with its own filter, its own level and its own random start point, so no two are ever in phase |
 | `assets/amb-open.wav` | what arrives when the window opens |
 | `assets/line-cloth.wav` | the washing, almost still |
 | `assets/line-gust.wav` | the washing in a gust, layered over the first, never crossfaded |
@@ -28,10 +28,8 @@ originals are kept at the repository root; `assets/` holds only the loops built 
 | `assets/cough-mother.wav` | her, on the same washing line, afterwards |
 | `assets/kite-wind.wav` | open wind off the water |
 | `assets/kite-laugh.wav` | him, played whole and occasionally, never looped |
-| `assets/city-outside.wav` | the same field afterwards, in place of the wind |
 | `assets/city-indoors.wav` | the same city again, heard from inside the bedroom with the window shut |
 | `assets/kite-child-cough.wav` | him, in that field, three separate fits played one at a time |
-| `assets/night-city-hum.wav` | the same field at night, years later, under the empty sky (rebuilt from the second night recording the artist supplied, 22 s from 71 s in, 4th-order high-pass at 90 Hz, 8 kHz) |
 | `assets/night-crickets.wav` | from dusk onward |
 | `assets/night-birds.wav` | once it is properly dark |
 | `assets/look-valley.wav` | the town from the hill, while nothing in particular is being looked at |

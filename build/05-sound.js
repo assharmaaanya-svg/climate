@@ -317,22 +317,29 @@ function loadAmbience(){
      badly through a pipeline that turns every filename into a URL, and the original
      filename is recorded with its attribution in CREDITS.md where it belongs. */
   loadOne(AMB3, "amb-tunnel-distant.wav");
-  /* THE CITY, TWICE, FROM ONE RECORDING — AND NOT THE SAME PART OF IT TWICE.
-     `city-outside` is 24 s from 79 s in: crest factor 1.64, so there is nothing in it that
-     could be recognised on a second pass, and a zero-crossing rate of 509 Hz, which is what
-     a city sounds like from a long way off rather than from inside one. `city-indoors` is
-     19 s from 265 s in — three minutes away in the same recording — and low-passed at 700 Hz
-     with 24 dB an octave when it was built, because what puts a sound outside a shut window
-     is the top of it missing.
+  /* THE CITY THROUGH A SHUT WINDOW, which is the one polluted bed that is still its own
+     recording: 19 s low-passed at 700 Hz with 24 dB an octave when it was built, because
+     what puts a sound outside a closed window is the top of it missing rather than the
+     level. Stored at 11.025 kHz, which is measured and not assumed — through a 36 dB/octave
+     high-pass there is 0.21% of its power above 6 kHz, so the upper half of a 22 kHz file
+     would have been empty. */
+  /* AND THE TWO POLLUTED OUTDOOR SCENES PLAY THE SHEETS' OWN AIR.
+     They were on a separate city recording and it did not belong to this world: the
+     polluted washing line established what the outside sounds like after the air changed,
+     and then the field and the sky went somewhere else for theirs, which is why they
+     sounded like a different piece. All three take the same recording now.
 
-     Both are stored at 11.025 kHz rather than the usual 22.05, and that is measured, not
-     assumed: through a 36 dB/octave high-pass, the outdoor one has 0.38% of its power above
-     4 kHz and 0.21% above 6 kHz, so the upper half of a 22 kHz file would have been empty.
-     Both are normalised (-26 outdoors, -29 in) and closed into loops whose seams measure
-     inside the noise floor. Their lengths differ so they can never fall into phase. */
-  loadOne(KAMB, "city-outside.wav");
+     Playing one buffer through three layers is not playing the same thing three times.
+     Each has its own lowpass — the field open at 5 kHz, the hill two kilometres up and
+     shut down to 2.4, the sky at 4.2 — its own level, and `startOne` begins every layer at
+     a random point in the file, so no two are ever in phase and none of them starts where
+     it started last time. What they share is the character, which is the point.
+
+     It also takes two files out of the bundle, which is the only free thing in this
+     project. */
+  loadOne(KAMB, "amb-tunnel-distant.wav");
   loadOne(KROOM, "city-indoors.wav");
-  loadOne(KNIGHT, "night-city-hum.wav");
+  loadOne(KNIGHT, "amb-tunnel-distant.wav");
   loadOne(KCOUGH, "kite-child-cough.wav");
   loadOne(CRICK, "night-crickets.wav");
   loadOne(NBIRD, "night-birds.wav");
@@ -723,10 +730,9 @@ function lookSound(dt, v, place, focus, open, after){
   if (!after){ ambience(bedV, 1); return; }
 
   /* AND AFTER THE AIR CHANGED, THE HILL HAS A CITY UNDER IT.
-     Not a new recording — this is `city-outside.wav`, the same twenty-four seconds the
-     polluted field uses, which is already the right thing: crest factor 1.64 so nothing in
-     it can be picked out twice, and a zero-crossing rate of 509 Hz, which is a city heard
-     from a long way off rather than from inside one. That is exactly what this is: an open
+     Not a new recording — this is the same air the polluted washing line and the polluted
+     field are under, which is already the right thing: it is the sound of an outside with
+     nothing living in it, heard from a distance. That is exactly what this is, an open
      hillside with a town a couple of kilometres below it.
 
      What is different here is the distance. It runs through a lower filter than the field

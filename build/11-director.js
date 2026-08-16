@@ -871,8 +871,8 @@ function gateProgress(g){
     case "rkite": return kiteAfterProgress();
     /* the sequence's own clock, and it is the only feedback there is while it runs */
     case "rstars":  return starsAfterProgress();
-    case "find":    return PLOOK.n/3;
-    case "rfind":   return PLOOK.recall/0.55;
+    case "find":    return PLOOK.recall/LOOK_HOLD;
+    case "rfind":   return PLOOK.recall/LOOK_HOLD;
     /* binary on purpose: they have put the crayon on the paper or they have not */
     case "colour":  return DRAW.marks ? 1 : 0;
     /* touching her is the whole of it; the rest is the scene answering */

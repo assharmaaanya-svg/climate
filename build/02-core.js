@@ -446,7 +446,7 @@ const BEATS = [
   { id:"r-horizon", ch:3, len:1.3,  gate:"rfind",   ask:"Press and hold to zoom in with the binoculars",
     line:"" },
   { id:"r-drawing", ch:3, len:1.3,
-    line:"She kept it on the fridge for eleven years." },
+    line:"She put it up in my room." },
   /* ------------- THE ENDING -------------
      One beat, and the only one in the piece that does not care where the scroll is.
      It pins the playhead when it is entered and runs on its own clock: the colouring
@@ -495,17 +495,19 @@ const CH_NAME = { 1:"i · the world came inside", 2:"ii · life happened outdoor
    list you have to clear, which is the opposite of what the chapter is for. The checklist,
    the ticks, the per-place memories and the guidance all stay exactly as they are, and a
    visitor who finds none of them carries on unimpeded. */
-/* THE CLEAN LOOKOUT ASKS AND DOES NOT INSIST. Finding three named places in a painting
-   is a thing to do, not a toll, and a visitor who would rather look at the valley than
-   tick a list should be able to carry on down.
+/* BOTH LOOKOUTS WAIT, AND THEY WAIT FOR THE SAME THING.
+   This was the asymmetry: the polluted chapter held the scroll until the lenses had been
+   pressed and the clean one did not, so the same interaction was compulsory in one half of
+   the piece and optional in the other. The binoculars are the one mechanic the work
+   teaches, and a visitor who scrolled through the clean valley without ever pressing
+   arrives at the polluted one being asked for something they have never done.
 
-   THE POLLUTED ONE IS DIFFERENT, and the difference is the chapter. It is the last time
-   the visitor is asked to look at anything, and the whole point of it is what holding
-   still does NOT bring back — which cannot land on somebody who scrolled past without
-   ever pressing. So `rfind` waits. It does not ask them to find anything: the lenses
-   only have to be held long enough to come into focus, once, and then the scroll is
-   theirs again. */
-const HOLD_NEVER = { find:1 };
+   Neither of them asks for anything to be FOUND. The list of four places is a thing to
+   discover, not a toll. All either chapter waits for is that the lenses were held long
+   enough to come into focus once — see `LOOK_HOLD` in the lookout, which both gates read.
+   HOLD_NEVER is empty and stays empty: a gate that carries an instruction is a gate the
+   scroll waits at, with no exceptions to keep in step. */
+const HOLD_NEVER = {};
 const HOLD_AT = {};
 for (const _b of BEATS){
   if (!_b.gate || !_b.ask || HOLD_NEVER[_b.gate]) continue;

@@ -84,6 +84,7 @@ const PROOM = {
   cL:0, cR:0, grab:0, open:0, breeze:0, dust:0,
   latchReach:0, blocked:0,
   nudge:0, nudgeTo:0,          // a tap gives a little, so a tap is never nothing
+  tug:0,                       // ...and in the polluted room it gives it back
   idle:0, everMoved:0, demo:0, // how much help to offer, and how loudly
   sash:0, sashGrab:0, pullSwing:0
 };
@@ -99,7 +100,10 @@ function panelGeom(side, t, rev, W_, H_){
   const outF = side ? CG.rOut : CG.lOut;
   const inOpenF = side ? CG.rIn : CG.lIn;
   const dirn = side ? -1 : 1;               // which way the inner edge lies
-  const pull = ease.io(cl01(side ? PROOM.cR : PROOM.cL));
+  /* `tug` is added here rather than to cL/cR so the cloth can answer a touch without any
+     of it being recorded: the panels lean apart and close again, and the gate is no nearer
+     being met than it was. */
+  const pull = ease.io(cl01((side ? PROOM.cR : PROOM.cL) + (PROOM.tug||0)));
 
   const CC = CGEO.cam || {x:0,y:0};
   const xOut = outF*W_ + CC.x;
@@ -464,13 +468,33 @@ function bedroomInteract(g, t, dt){
   } else {
     if (PROOM.grab) cv.className = "grabbable";
     PROOM.grab = 0;
-    // a tap is a small pull, so poking at them is never nothing
+    /* A TAP IS A SMALL PULL — EXCEPT IN THE ROOM WHOSE WHOLE SUBJECT IS THAT IT IS SHUT.
+       Poking at the cloth used to open it by thirty per cent, and because progress here is
+       never taken back that thirty per cent STAYED. So a single stray click anywhere on the
+       canvas of the polluted bedroom left the curtains permanently ajar with the window
+       showing through, in the one scene built on their being closed — which is exactly what
+       kept being reported as "the curtains are not fully closed", and it was never the
+       geometry: measured at three viewports the two panels overlap by 41 to 64 pixels when
+       `cL` and `cR` are zero, and they were zero.
+
+       In there a tap gives and takes it back instead: `tug` is a transient the cloth
+       answers with and then loses, so the panels move under the finger and close again
+       behind it. Nothing about the state changes, so nothing accumulates. Everywhere else
+       a tap still pulls, because everywhere else opening the curtains is the thing the
+       visitor came to do. */
     if (P.tapped){
       P.tapped = false;
-      PROOM.nudgeTo = Math.min(1, Math.max(PROOM.cL, PROOM.cR) + 0.30);
-      PROOM.everMoved = 1; sfx.cloth(0.5);
+      if (g === "pcurtain"){
+        PROOM.tug = 0.20;
+        sfx.cloth(0.34);
+      } else {
+        PROOM.nudgeTo = Math.min(1, Math.max(PROOM.cL, PROOM.cR) + 0.30);
+        PROOM.everMoved = 1; sfx.cloth(0.5);
+      }
     }
   }
+  // and the give comes straight back out again
+  if (PROOM.tug > 0) PROOM.tug = Math.max(0, PROOM.tug - dt*0.62);
   // the tap's pull, eased in
   if (PROOM.nudgeTo > 0){
     const k = Math.min(1, dt*3.2);

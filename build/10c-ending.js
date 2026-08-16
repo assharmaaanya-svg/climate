@@ -147,16 +147,20 @@ const EOPEN = { at: 33.2, up:5.4, off:42.6, down:2.0, vol:0.13, lp:5200,
    Every `hold` here now buys its own word count and the gaps between them were moved to
    match rather than absorbed. */
 const ESCORE = [
-  { t0: 4.6,  in:1.2, hold:1.9, out:0.9,
+  /* THE FIRST TWO RUN LONGER THAN THE REST, DELIBERATELY. They arrive on a black screen
+     out of a silence, which is the one place in the piece where the visitor is not yet
+     reading — they are still working out that there is something there to read, and the
+     time that takes comes out of the sentence unless it is given to it. */
+  { t0: 4.6,  in:1.4, hold:2.5, out:1.0,
     text:"I thought I was remembering places." },
 
   /* THE REALIZATION. Only the last word turns, and it turns slowly enough that the
      change is over before it can be seen starting. It also outlives the sentence it
      is in by three quarters of a second, which is the first moment in the ending
      where the typography is saying something the words are not. */
-  { t0: 9.7,  in:1.2, hold:2.0, out:1.1,
+  { t0: 10.4, in:1.4, hold:2.6, out:1.2,
     text:"I was remembering things that disappeared.",
-    red:{ i:5, from:1.6, to:3.6 }, keepFrom:5, keepHold:0.75 },
+    red:{ i:5, from:1.8, to:4.0 }, keepFrom:5, keepHold:0.85 },
 
   /* THE KEY LINE, and the one place the fading itself is the argument. The sentence
      must be READ first — the stagger begins only after two full seconds at strength —
