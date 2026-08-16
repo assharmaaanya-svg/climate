@@ -59,8 +59,19 @@ const WIN = {
    toy inside it. Sprites get their own buffer, cached per size and per light
    level, and the room only ever receives the finished thing. */
 const TINTED = Object.create(null);
-function litSprite(img, key, w, h, dark, warm){
-  const q = Math.round(dark*24) + "|" + (w|0) + "x" + (h|0) + "|" + Math.round((warm||0)*12);
+/* THE PIGMENT THE DRAWING SCENE TAKES OUT OF IT, taken out here too.
+   The colouring memory ends with the crayon giving up: the saturation lifted out and what
+   is left washed toward the colour of the sky outside. That happens at draw time in that
+   scene and was never carried anywhere, so the drawing taped to the wall of the polluted
+   bedroom was still the bright one — the same paper the visitor saw the morning it was
+   made, hanging in a room years after the morning it stopped being that. The three
+   operations are the drawing scene's own, in the same order, against a fixed pale target
+   rather than the live airlight so this stays a cached sprite and not a per-frame rebuild. */
+const PAPER_PALE = [214,212,202];
+function litSprite(img, key, w, h, dark, warm, fade){
+  const fd = Math.max(0, Math.min(1, fade||0));
+  const q = Math.round(dark*24) + "|" + (w|0) + "x" + (h|0) + "|" + Math.round((warm||0)*12)
+          + "|" + Math.round(fd*12);
   let e = TINTED[key];
   if (e && e.q === q) return e.cv;
   const cv2 = (e && e.cv) || document.createElement("canvas");
@@ -79,6 +90,18 @@ function litSprite(img, key, w, h, dark, warm){
     // destination-in puts its own alpha back and takes the box away with it.
     g.globalCompositeOperation = "destination-in";
     g.drawImage(img, 0, 0, cw, ch);
+  }
+  if (fd > 0.004){
+    g.globalCompositeOperation = "saturation";
+    g.fillStyle = rgba([128,128,128], fd*0.62);
+    g.fillRect(0,0,cw,ch);
+    /* source-atop, so the wash lands on the sheet and not on the transparent margin
+       around it — the same trap the warm tint above had to be taught */
+    g.globalCompositeOperation = "source-atop";
+    g.fillStyle = rgba(PAPER_PALE, fd*0.46);
+    g.fillRect(0,0,cw,ch);
+    g.fillStyle = rgba([210,206,196], fd*0.14);
+    g.fillRect(0,0,cw,ch);
   }
   if (dark > 0.002){
     g.globalCompositeOperation = "source-atop";   // here it means what it says
@@ -581,7 +604,9 @@ function drawTapedDrawing(t, rev, air){
      it reads as a sticker rather than a piece of paper on a wall. One draw, at the size
      worked out above: the irregular boundary belongs to the wall painting, and nothing
      here competes with it any more. */
-  ctx.drawImage(litSprite(PAPER, "paper", w, h, 1-lit, 0.52), -w/2, -h/2, w, h);
+  /* and in the polluted bedroom it is the faded one, because that is the state the visitor
+     last saw it in and years have passed since */
+  ctx.drawImage(litSprite(PAPER, "paper", w, h, 1-lit, 0.52, air), -w/2, -h/2, w, h);
   ctx.restore();
 }
 

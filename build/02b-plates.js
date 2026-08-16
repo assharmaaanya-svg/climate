@@ -284,7 +284,23 @@ function preloadPlates(){
    material to slide, with feathered top and bottom edges so seams never show.
    ========================================================================= */
 const PLATE_CACHE = { key:"", plates:Object.create(null) };
-const OVERSCAN = 0.22;                 // extra width, as a fraction of the frame
+/* HOW MUCH PAINTING THERE IS OUTSIDE THE FRAME, and it is arithmetic rather than taste.
+   A band slides by `cam*p*W*0.36 + drift*p*6` where the pointer camera saturates around
+   0.247 and the drift adds 0.006 of the frame. At p=1 that is 0.089 of the width from the
+   pointer plus 0.036 from the drift: 0.125 in total, against the 0.11 per side that a 22%
+   overscan actually buys. So the camera COULD walk one and a half per cent of the frame
+   off the edge of the painting, and did — a pale streak down the outside of the room where
+   the two smeared columns had been stretched to fill the gap.
+
+   AND VERTICALLY THERE WAS NOTHING AT ALL. Bands were cut at exactly 0 and exactly H while
+   the same camera slides them by `cam*p*H*0.22 + drift*p*6` — up to 0.058 of the height —
+   so the whole stack moved up or down inside a frame it only just filled and left bare
+   canvas along the top or the bottom. It was always there; full screen only made it fifty
+   pixels instead of thirty, which is the size at which somebody notices it. Both numbers
+   below are the measured maximum with a margin, and neither is a fraction of the viewport
+   the visitor picked. */
+const OVERSCAN = 0.30;                 // extra width, as a fraction of the frame
+const VOVER    = 0.075;                // and extra height, on the top and bottom bands only
 
 function sliceBands(def, which){
   const src = which==="hazed" ? def.hazed : def.clean;
@@ -315,28 +331,37 @@ function sliceBands(def, which){
     const y0 = Math.max(0, yTop - (i>0?fe:0));
     const y1 = Math.min(H, yBot + (i<def.bands.length-1?fe:0));
     const bh2 = Math.max(2, (y1-y0)|0);
+    /* only the top of the first band and the bottom of the last one need it: every join in
+       between is covered by its neighbour's feather */
+    const vp = Math.round(H*VOVER);
+    const padT = (i===0) ? vp : 0;
+    const padB = (i===def.bands.length-1) ? vp : 0;
 
     const c = document.createElement("canvas");
-    c.width = cw; c.height = bh2;
+    c.width = cw; c.height = bh2 + padT + padB;
     const g = c.getContext("2d");
 
     // the slice of source that corresponds to these rows
     const ssy = sy0 + (y0/H)*sh;
     const ssh = ((y1-y0)/H)*sh;
     const dx = (cw - W)/2;
-    g.drawImage(im, sx0, ssy, sw, ssh, dx, 0, W, bh2);
+    g.drawImage(im, sx0, ssy, sw, ssh, dx, padT, W, bh2);
 
     // extend the outer columns so sliding never reveals emptiness
     if (dx>0){
-      g.drawImage(c, dx, 0, 2, bh2, 0, 0, dx, bh2);
-      g.drawImage(c, dx+W-2, 0, 2, bh2, dx+W, 0, dx, bh2);
+      g.drawImage(c, dx, padT, 2, bh2, 0, padT, dx, bh2);
+      g.drawImage(c, dx+W-2, padT, 2, bh2, dx+W, padT, dx, bh2);
     }
+    /* and the outer ROWS, the same way and for the same reason. Taken after the columns so
+       the corners come out filled rather than left as four empty squares. */
+    if (padT) g.drawImage(c, 0, padT, cw, 2, 0, 0, cw, padT);
+    if (padB) g.drawImage(c, 0, padT+bh2-2, cw, 2, 0, padT+bh2, cw, padB);
 
     // painted elements the code has to take over — the brass window pull has to
     // be draggable, so the painted one is stretched out of the sky first
     if (def.repair){
       for (const r of def.repair){
-        const rx = dx + (r.x-r.w*0.5)*W, ry = (r.y-r.h*0.5)*H - y0;
+        const rx = dx + (r.x-r.w*0.5)*W, ry = (r.y-r.h*0.5)*H - y0 + padT;
         const rw = r.w*W, rh = r.h*H;
         if (ry+rh > 0 && ry < bh2) patchOut(c, rx, ry, rw, rh);
       }
@@ -344,21 +369,21 @@ function sliceBands(def, which){
 
     // feather the joins with a destination-out ramp
     if (i>0){
-      const gr = g.createLinearGradient(0,0,0,fe);
+      const gr = g.createLinearGradient(0,padT,0,padT+fe);
       gr.addColorStop(0,"rgba(0,0,0,1)"); gr.addColorStop(1,"rgba(0,0,0,0)");
       g.globalCompositeOperation="destination-out";
-      g.fillStyle=gr; g.fillRect(0,0,cw,fe);
+      g.fillStyle=gr; g.fillRect(0,padT,cw,fe);
       g.globalCompositeOperation="source-over";
     }
     if (i<def.bands.length-1){
-      const gr = g.createLinearGradient(0,bh2-fe,0,bh2);
+      const gr = g.createLinearGradient(0,padT+bh2-fe,0,padT+bh2);
       gr.addColorStop(0,"rgba(0,0,0,0)"); gr.addColorStop(1,"rgba(0,0,0,1)");
       g.globalCompositeOperation="destination-out";
-      g.fillStyle=gr; g.fillRect(0,bh2-fe,cw,fe);
+      g.fillStyle=gr; g.fillRect(0,padT+bh2-fe,cw,fe);
       g.globalCompositeOperation="source-over";
     }
 
-    out.push({ cv:c, y:y0, h:bh2, p:b.p, dx });
+    out.push({ cv:c, y:y0 - padT, h:bh2, p:b.p, dx });
     prev = b.to;
   }
   return out;

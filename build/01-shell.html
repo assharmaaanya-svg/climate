@@ -266,6 +266,13 @@
   .ctl button:hover{ background:rgba(10,18,28,.6); border-color:rgba(251,250,245,.72); }
   .ctl button[aria-pressed="true"]{ background:rgba(251,250,245,.92); color:#0e1824; border-color:rgba(251,250,245,.92); }
   .ctl button:focus-visible{ outline:2px solid #fff; outline-offset:3px; }
+  /* the icon control. Padded to the same optical width as the lettered ones rather than
+     the same numeric width — a square glyph in a pill sized for two characters reads as a
+     gap — and the stroke is `currentColor` so the pressed state inverts it with everything
+     else instead of needing a rule of its own. */
+  .ctl button.ic{ padding:.42em .62em; display:inline-flex; align-items:center; justify-content:center; }
+  .ctl button.ic svg{ width:.86em; height:.86em; display:block; fill:none; stroke:currentColor;
+    stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; }
   .ctl.dark button{ color:#1d2a36; background:rgba(255,255,255,.4); border-color:rgba(20,30,40,.3); }
   .ctl.dark button:hover{ background:rgba(255,255,255,.72); }
   #chapter{ position:fixed; top:max(15px,env(safe-area-inset-top)); left:16px; z-index:12; font-family:var(--mono);
@@ -654,7 +661,16 @@
 
 <div class="ctl">
   <button id="bCC" aria-pressed="false" aria-label="Turn captions for sound on">CC</button>
-  <button id="bFull" aria-pressed="false" aria-label="Enter full screen">Full</button>
+  <!-- THE ONE CONTROL IN THE PIECE THAT IS A MARK RATHER THAN A WORD, and it is the only
+       one that can be: the four corners are what every player, reader and browser already
+       uses for this, so it needs no reading. CC and Skip stay words because "captions" and
+       "skip this and go on" have no mark anybody would agree on. Drawn as an inline SVG at
+       the cap height of the type beside it so the row still measures as one row. -->
+  <button id="bFull" class="ic" aria-pressed="false" aria-label="Enter full screen">
+    <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+      <path d="M1.6 5.6V1.6h4M10.4 1.6h4v4M14.4 10.4v4h-4M5.6 14.4h-4v-4"/>
+    </svg>
+  </button>
   <button id="bSkip" aria-label="Skip this interaction and continue">Skip&nbsp;▸</button>
 </div>
 
@@ -724,7 +740,6 @@
   <p class="by">An interactive artwork by</p>
   <p class="a">Aanya Sharma</p>
   <p class="c">Earth Partner Prize</p>
-  <button id="restart">Open the window again</button>
 </div>
 
 <main id="spine" aria-hidden="true"></main>

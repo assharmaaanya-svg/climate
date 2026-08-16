@@ -872,7 +872,7 @@ function gateProgress(g){
     /* the sequence's own clock, and it is the only feedback there is while it runs */
     case "rstars":  return starsAfterProgress();
     case "find":    return PLOOK.n/3;
-    case "rfind":   return PLOOK.recall/0.75;
+    case "rfind":   return PLOOK.recall/0.55;
     /* binary on purpose: they have put the crayon on the paper or they have not */
     case "colour":  return DRAW.marks ? 1 : 0;
     /* touching her is the whole of it; the rest is the scene answering */
@@ -1262,9 +1262,14 @@ let fsLeftAt = -1e9;
 function onFsChange(){
   if (!fsEl()) fsLeftAt = performance.now();
   syncFull();
-  fit();
-  setTimeout(fit, 60);
-  setTimeout(fit, 260);
+  /* through `refit`, not `fit`. The viewport is a different height now and the scroll
+     height moves with it, so laying out without putting the scroll fraction back is what
+     threw the visitor into the next memory every time they pressed this. Three times,
+     because the reported viewport is not settled on the frame the event arrives on and a
+     fraction restored against a stale height is the same bug one frame later. */
+  refit();
+  setTimeout(refit, 60);
+  setTimeout(refit, 260);
 }
 document.addEventListener("fullscreenchange", onFsChange);
 document.addEventListener("webkitfullscreenchange", onFsChange);
@@ -1279,11 +1284,18 @@ syncFull();
 function escapeBelongsToFullscreen(){
   return !!fsEl() || (performance.now() - fsLeftAt) < 500;
 }
-window.addEventListener("resize", ()=>{ fit(); }, {passive:true});
-window.addEventListener("orientationchange", ()=>setTimeout(fit,240), {passive:true});
+window.addEventListener("resize", ()=>{ refit(); }, {passive:true});
+window.addEventListener("orientationchange", ()=>setTimeout(refit,240), {passive:true});
 RM.addEventListener ? RM.addEventListener("change", e=>{ REDUCE=e.matches; })
                     : RM.addListener && RM.addListener(e=>{ REDUCE=e.matches; });
-document.getElementById("restart").addEventListener("click", ()=>{
+/* THE REPLAY CONTROL IS OFF THE LAST FRAME.
+   The signature is the resting state of the work and a button under it was the one thing
+   there that asked for something. The reset itself is kept whole and named, because it is
+   the only place that knows how to put every gate, every found thing, every camera, every
+   sequence clock and the whole audio graph back to nothing — and the day the control comes
+   back, or a key or a gesture wants it, it must be this and not a second copy that has
+   drifted. It is attached only if the element exists. */
+function restartPiece(){
   window.scrollTo(0,0);
   // keep what they found; reset what they did
   ROOM.cL=ROOM.cR=ROOM.sash=ROOM.latch=0; ROOM.latchDone=false;
@@ -1329,7 +1341,9 @@ document.getElementById("restart").addEventListener("click", ()=>{
   titleEl.classList.remove("on", "settled"); titleEl.setAttribute("aria-hidden","true");
   /* AND THEIR SCREEN IS THEIR OWN. Restarting the artwork is not a reason to throw somebody
      out of full screen, or to put them into it — whatever they chose, they keep. */
-});
+}
+const restartEl = document.getElementById("restart");
+if (restartEl) restartEl.addEventListener("click", restartPiece);
 
 /* a small window onto the running piece, for driving it under test */
 window.__bluer = {
@@ -1644,6 +1658,9 @@ window.__bluer = {
      has already started stays exactly as it is, which is why jumping backwards through
      it is not meaningful and jumping forwards past a memory's cue skips that memory. */
   endAt(sec){ END.on = 1; END.done = 0; END.t = sec; return sec; },
+  cam(){ return { x:+PCAM.x.toFixed(3), y:+PCAM.y.toFixed(3), W:W, H:H,
+                  slideMax:+(Math.abs(PCAM.x)*0.36*W).toFixed(1),
+                  overscan:+(W*0.11).toFixed(1) }; },
   /* the statistics from outside, so "did Escape leave" can be answered rather than guessed */
   onsState(){ return { running:ONS.running, played:ONS.played, t:+ONS.t.toFixed(2),
                        cls:document.body.classList.contains("onslaught"),

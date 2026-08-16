@@ -115,6 +115,30 @@ function offscreen2(fn){
   ctx = keep;
 }
 
+/* RESIZING MUST NOT MOVE THE STORY, AND IT DID.
+   The scroll height is `TOTAL*H*0.92 + H`, so it is a function of the viewport, and the
+   playhead is read as `scrollY / (scrollHeight - innerHeight)`. Change the viewport and
+   the denominator changes while `scrollY` — an absolute pixel count the browser keeps —
+   does not, so the same scroll position becomes a different point in the piece. Entering
+   full screen makes the page taller and threw the visitor backwards; leaving it made the
+   page shorter and threw them forwards. It was never a full-screen bug: it was every
+   resize, and full screen is simply the one that happens mid-sentence.
+
+   So the fraction is the thing that survives, not the pixel. It is read before the layout
+   changes and written back after, which makes `T.target` come out of the next frame
+   exactly as it went into this one. Nothing else has to be told: `T.p` eases toward a
+   target that has not moved, and the ceiling and the floor are in playhead units already. */
+function refit(){
+  const before = TOTAL > 0 ? T.target / TOTAL : 0;
+  const ok = fit();
+  if (spine && TOTAL > 0){
+    const max = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
+    const y = Math.round(cl01(before) * max);
+    if (Math.abs(window.scrollY - y) > 1) window.scrollTo(0, y);
+  }
+  return ok;
+}
+
 function fit(){
   /* clientWidth first, innerWidth only as a fallback: innerWidth counts the
      scrollbar and this canvas has to match the box the centred UI is measured
@@ -471,7 +495,17 @@ const CH_NAME = { 1:"i · the world came inside", 2:"ii · life happened outdoor
    list you have to clear, which is the opposite of what the chapter is for. The checklist,
    the ticks, the per-place memories and the guidance all stay exactly as they are, and a
    visitor who finds none of them carries on unimpeded. */
-const HOLD_NEVER = { find:1, rfind:1 };
+/* THE CLEAN LOOKOUT ASKS AND DOES NOT INSIST. Finding three named places in a painting
+   is a thing to do, not a toll, and a visitor who would rather look at the valley than
+   tick a list should be able to carry on down.
+
+   THE POLLUTED ONE IS DIFFERENT, and the difference is the chapter. It is the last time
+   the visitor is asked to look at anything, and the whole point of it is what holding
+   still does NOT bring back — which cannot land on somebody who scrolled past without
+   ever pressing. So `rfind` waits. It does not ask them to find anything: the lenses
+   only have to be held long enough to come into focus, once, and then the scroll is
+   theirs again. */
+const HOLD_NEVER = { find:1 };
 const HOLD_AT = {};
 for (const _b of BEATS){
   if (!_b.gate || !_b.ask || HOLD_NEVER[_b.gate]) continue;

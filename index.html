@@ -266,6 +266,13 @@
   .ctl button:hover{ background:rgba(10,18,28,.6); border-color:rgba(251,250,245,.72); }
   .ctl button[aria-pressed="true"]{ background:rgba(251,250,245,.92); color:#0e1824; border-color:rgba(251,250,245,.92); }
   .ctl button:focus-visible{ outline:2px solid #fff; outline-offset:3px; }
+  /* the icon control. Padded to the same optical width as the lettered ones rather than
+     the same numeric width — a square glyph in a pill sized for two characters reads as a
+     gap — and the stroke is `currentColor` so the pressed state inverts it with everything
+     else instead of needing a rule of its own. */
+  .ctl button.ic{ padding:.42em .62em; display:inline-flex; align-items:center; justify-content:center; }
+  .ctl button.ic svg{ width:.86em; height:.86em; display:block; fill:none; stroke:currentColor;
+    stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; }
   .ctl.dark button{ color:#1d2a36; background:rgba(255,255,255,.4); border-color:rgba(20,30,40,.3); }
   .ctl.dark button:hover{ background:rgba(255,255,255,.72); }
   #chapter{ position:fixed; top:max(15px,env(safe-area-inset-top)); left:16px; z-index:12; font-family:var(--mono);
@@ -654,7 +661,16 @@
 
 <div class="ctl">
   <button id="bCC" aria-pressed="false" aria-label="Turn captions for sound on">CC</button>
-  <button id="bFull" aria-pressed="false" aria-label="Enter full screen">Full</button>
+  <!-- THE ONE CONTROL IN THE PIECE THAT IS A MARK RATHER THAN A WORD, and it is the only
+       one that can be: the four corners are what every player, reader and browser already
+       uses for this, so it needs no reading. CC and Skip stay words because "captions" and
+       "skip this and go on" have no mark anybody would agree on. Drawn as an inline SVG at
+       the cap height of the type beside it so the row still measures as one row. -->
+  <button id="bFull" class="ic" aria-pressed="false" aria-label="Enter full screen">
+    <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+      <path d="M1.6 5.6V1.6h4M10.4 1.6h4v4M14.4 10.4v4h-4M5.6 14.4h-4v-4"/>
+    </svg>
+  </button>
   <button id="bSkip" aria-label="Skip this interaction and continue">Skip&nbsp;▸</button>
 </div>
 
@@ -724,7 +740,6 @@
   <p class="by">An interactive artwork by</p>
   <p class="a">Aanya Sharma</p>
   <p class="c">Earth Partner Prize</p>
-  <button id="restart">Open the window again</button>
 </div>
 
 <main id="spine" aria-hidden="true"></main>
@@ -901,6 +916,30 @@ function offscreen2(fn){
   tc2.lineJoin="round";
   fn();
   ctx = keep;
+}
+
+/* RESIZING MUST NOT MOVE THE STORY, AND IT DID.
+   The scroll height is `TOTAL*H*0.92 + H`, so it is a function of the viewport, and the
+   playhead is read as `scrollY / (scrollHeight - innerHeight)`. Change the viewport and
+   the denominator changes while `scrollY` — an absolute pixel count the browser keeps —
+   does not, so the same scroll position becomes a different point in the piece. Entering
+   full screen makes the page taller and threw the visitor backwards; leaving it made the
+   page shorter and threw them forwards. It was never a full-screen bug: it was every
+   resize, and full screen is simply the one that happens mid-sentence.
+
+   So the fraction is the thing that survives, not the pixel. It is read before the layout
+   changes and written back after, which makes `T.target` come out of the next frame
+   exactly as it went into this one. Nothing else has to be told: `T.p` eases toward a
+   target that has not moved, and the ceiling and the floor are in playhead units already. */
+function refit(){
+  const before = TOTAL > 0 ? T.target / TOTAL : 0;
+  const ok = fit();
+  if (spine && TOTAL > 0){
+    const max = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
+    const y = Math.round(cl01(before) * max);
+    if (Math.abs(window.scrollY - y) > 1) window.scrollTo(0, y);
+  }
+  return ok;
 }
 
 function fit(){
@@ -1259,7 +1298,17 @@ const CH_NAME = { 1:"i · the world came inside", 2:"ii · life happened outdoor
    list you have to clear, which is the opposite of what the chapter is for. The checklist,
    the ticks, the per-place memories and the guidance all stay exactly as they are, and a
    visitor who finds none of them carries on unimpeded. */
-const HOLD_NEVER = { find:1, rfind:1 };
+/* THE CLEAN LOOKOUT ASKS AND DOES NOT INSIST. Finding three named places in a painting
+   is a thing to do, not a toll, and a visitor who would rather look at the valley than
+   tick a list should be able to carry on down.
+
+   THE POLLUTED ONE IS DIFFERENT, and the difference is the chapter. It is the last time
+   the visitor is asked to look at anything, and the whole point of it is what holding
+   still does NOT bring back — which cannot land on somebody who scrolled past without
+   ever pressing. So `rfind` waits. It does not ask them to find anything: the lenses
+   only have to be held long enough to come into focus, once, and then the scroll is
+   theirs again. */
+const HOLD_NEVER = { find:1 };
 const HOLD_AT = {};
 for (const _b of BEATS){
   if (!_b.gate || !_b.ask || HOLD_NEVER[_b.gate]) continue;
@@ -1955,7 +2004,23 @@ function preloadPlates(){
    material to slide, with feathered top and bottom edges so seams never show.
    ========================================================================= */
 const PLATE_CACHE = { key:"", plates:Object.create(null) };
-const OVERSCAN = 0.22;                 // extra width, as a fraction of the frame
+/* HOW MUCH PAINTING THERE IS OUTSIDE THE FRAME, and it is arithmetic rather than taste.
+   A band slides by `cam*p*W*0.36 + drift*p*6` where the pointer camera saturates around
+   0.247 and the drift adds 0.006 of the frame. At p=1 that is 0.089 of the width from the
+   pointer plus 0.036 from the drift: 0.125 in total, against the 0.11 per side that a 22%
+   overscan actually buys. So the camera COULD walk one and a half per cent of the frame
+   off the edge of the painting, and did — a pale streak down the outside of the room where
+   the two smeared columns had been stretched to fill the gap.
+
+   AND VERTICALLY THERE WAS NOTHING AT ALL. Bands were cut at exactly 0 and exactly H while
+   the same camera slides them by `cam*p*H*0.22 + drift*p*6` — up to 0.058 of the height —
+   so the whole stack moved up or down inside a frame it only just filled and left bare
+   canvas along the top or the bottom. It was always there; full screen only made it fifty
+   pixels instead of thirty, which is the size at which somebody notices it. Both numbers
+   below are the measured maximum with a margin, and neither is a fraction of the viewport
+   the visitor picked. */
+const OVERSCAN = 0.30;                 // extra width, as a fraction of the frame
+const VOVER    = 0.075;                // and extra height, on the top and bottom bands only
 
 function sliceBands(def, which){
   const src = which==="hazed" ? def.hazed : def.clean;
@@ -1986,28 +2051,37 @@ function sliceBands(def, which){
     const y0 = Math.max(0, yTop - (i>0?fe:0));
     const y1 = Math.min(H, yBot + (i<def.bands.length-1?fe:0));
     const bh2 = Math.max(2, (y1-y0)|0);
+    /* only the top of the first band and the bottom of the last one need it: every join in
+       between is covered by its neighbour's feather */
+    const vp = Math.round(H*VOVER);
+    const padT = (i===0) ? vp : 0;
+    const padB = (i===def.bands.length-1) ? vp : 0;
 
     const c = document.createElement("canvas");
-    c.width = cw; c.height = bh2;
+    c.width = cw; c.height = bh2 + padT + padB;
     const g = c.getContext("2d");
 
     // the slice of source that corresponds to these rows
     const ssy = sy0 + (y0/H)*sh;
     const ssh = ((y1-y0)/H)*sh;
     const dx = (cw - W)/2;
-    g.drawImage(im, sx0, ssy, sw, ssh, dx, 0, W, bh2);
+    g.drawImage(im, sx0, ssy, sw, ssh, dx, padT, W, bh2);
 
     // extend the outer columns so sliding never reveals emptiness
     if (dx>0){
-      g.drawImage(c, dx, 0, 2, bh2, 0, 0, dx, bh2);
-      g.drawImage(c, dx+W-2, 0, 2, bh2, dx+W, 0, dx, bh2);
+      g.drawImage(c, dx, padT, 2, bh2, 0, padT, dx, bh2);
+      g.drawImage(c, dx+W-2, padT, 2, bh2, dx+W, padT, dx, bh2);
     }
+    /* and the outer ROWS, the same way and for the same reason. Taken after the columns so
+       the corners come out filled rather than left as four empty squares. */
+    if (padT) g.drawImage(c, 0, padT, cw, 2, 0, 0, cw, padT);
+    if (padB) g.drawImage(c, 0, padT+bh2-2, cw, 2, 0, padT+bh2, cw, padB);
 
     // painted elements the code has to take over — the brass window pull has to
     // be draggable, so the painted one is stretched out of the sky first
     if (def.repair){
       for (const r of def.repair){
-        const rx = dx + (r.x-r.w*0.5)*W, ry = (r.y-r.h*0.5)*H - y0;
+        const rx = dx + (r.x-r.w*0.5)*W, ry = (r.y-r.h*0.5)*H - y0 + padT;
         const rw = r.w*W, rh = r.h*H;
         if (ry+rh > 0 && ry < bh2) patchOut(c, rx, ry, rw, rh);
       }
@@ -2015,21 +2089,21 @@ function sliceBands(def, which){
 
     // feather the joins with a destination-out ramp
     if (i>0){
-      const gr = g.createLinearGradient(0,0,0,fe);
+      const gr = g.createLinearGradient(0,padT,0,padT+fe);
       gr.addColorStop(0,"rgba(0,0,0,1)"); gr.addColorStop(1,"rgba(0,0,0,0)");
       g.globalCompositeOperation="destination-out";
-      g.fillStyle=gr; g.fillRect(0,0,cw,fe);
+      g.fillStyle=gr; g.fillRect(0,padT,cw,fe);
       g.globalCompositeOperation="source-over";
     }
     if (i<def.bands.length-1){
-      const gr = g.createLinearGradient(0,bh2-fe,0,bh2);
+      const gr = g.createLinearGradient(0,padT+bh2-fe,0,padT+bh2);
       gr.addColorStop(0,"rgba(0,0,0,0)"); gr.addColorStop(1,"rgba(0,0,0,1)");
       g.globalCompositeOperation="destination-out";
-      g.fillStyle=gr; g.fillRect(0,bh2-fe,cw,fe);
+      g.fillStyle=gr; g.fillRect(0,padT+bh2-fe,cw,fe);
       g.globalCompositeOperation="source-over";
     }
 
-    out.push({ cv:c, y:y0, h:bh2, p:b.p, dx });
+    out.push({ cv:c, y:y0 - padT, h:bh2, p:b.p, dx });
     prev = b.to;
   }
   return out;
@@ -7487,8 +7561,19 @@ const WIN = {
    toy inside it. Sprites get their own buffer, cached per size and per light
    level, and the room only ever receives the finished thing. */
 const TINTED = Object.create(null);
-function litSprite(img, key, w, h, dark, warm){
-  const q = Math.round(dark*24) + "|" + (w|0) + "x" + (h|0) + "|" + Math.round((warm||0)*12);
+/* THE PIGMENT THE DRAWING SCENE TAKES OUT OF IT, taken out here too.
+   The colouring memory ends with the crayon giving up: the saturation lifted out and what
+   is left washed toward the colour of the sky outside. That happens at draw time in that
+   scene and was never carried anywhere, so the drawing taped to the wall of the polluted
+   bedroom was still the bright one — the same paper the visitor saw the morning it was
+   made, hanging in a room years after the morning it stopped being that. The three
+   operations are the drawing scene's own, in the same order, against a fixed pale target
+   rather than the live airlight so this stays a cached sprite and not a per-frame rebuild. */
+const PAPER_PALE = [214,212,202];
+function litSprite(img, key, w, h, dark, warm, fade){
+  const fd = Math.max(0, Math.min(1, fade||0));
+  const q = Math.round(dark*24) + "|" + (w|0) + "x" + (h|0) + "|" + Math.round((warm||0)*12)
+          + "|" + Math.round(fd*12);
   let e = TINTED[key];
   if (e && e.q === q) return e.cv;
   const cv2 = (e && e.cv) || document.createElement("canvas");
@@ -7507,6 +7592,18 @@ function litSprite(img, key, w, h, dark, warm){
     // destination-in puts its own alpha back and takes the box away with it.
     g.globalCompositeOperation = "destination-in";
     g.drawImage(img, 0, 0, cw, ch);
+  }
+  if (fd > 0.004){
+    g.globalCompositeOperation = "saturation";
+    g.fillStyle = rgba([128,128,128], fd*0.62);
+    g.fillRect(0,0,cw,ch);
+    /* source-atop, so the wash lands on the sheet and not on the transparent margin
+       around it — the same trap the warm tint above had to be taught */
+    g.globalCompositeOperation = "source-atop";
+    g.fillStyle = rgba(PAPER_PALE, fd*0.46);
+    g.fillRect(0,0,cw,ch);
+    g.fillStyle = rgba([210,206,196], fd*0.14);
+    g.fillRect(0,0,cw,ch);
   }
   if (dark > 0.002){
     g.globalCompositeOperation = "source-atop";   // here it means what it says
@@ -8009,7 +8106,9 @@ function drawTapedDrawing(t, rev, air){
      it reads as a sticker rather than a piece of paper on a wall. One draw, at the size
      worked out above: the irregular boundary belongs to the wall painting, and nothing
      here competes with it any more. */
-  ctx.drawImage(litSprite(PAPER, "paper", w, h, 1-lit, 0.52), -w/2, -h/2, w, h);
+  /* and in the polluted bedroom it is the faded one, because that is the state the visitor
+     last saw it in and years have passed since */
+  ctx.drawImage(litSprite(PAPER, "paper", w, h, 1-lit, 0.52, air), -w/2, -h/2, w, h);
   ctx.restore();
 }
 
@@ -12135,7 +12234,11 @@ function drawLookHints(t, dt, SCX, SCY, spanX, rec){
 /* ------------------------------------------------------------------ the gate */
 function lookoutInteract(g, dt){
   if (g === "find"  && PLOOK.n >= 3) meetQuiet(g);
-  if (g === "rfind" && PLOOK.recall > 0.75) meetQuiet(g);
+  /* NOT "did you find something" — "did you look". Recall past 0.55 is a genuine press and
+     hold of roughly two seconds from cold, by which point the valley has sharpened and
+     coloured under their hand and the chapter has said the only thing it has to say. What
+     they aimed the lenses at while they held is entirely theirs. */
+  if (g === "rfind" && PLOOK.recall > 0.55) meetQuiet(g);
 }
 
 /* ------------------------------------------------------------------ the list
@@ -16873,7 +16976,7 @@ function gateProgress(g){
     /* the sequence's own clock, and it is the only feedback there is while it runs */
     case "rstars":  return starsAfterProgress();
     case "find":    return PLOOK.n/3;
-    case "rfind":   return PLOOK.recall/0.75;
+    case "rfind":   return PLOOK.recall/0.55;
     /* binary on purpose: they have put the crayon on the paper or they have not */
     case "colour":  return DRAW.marks ? 1 : 0;
     /* touching her is the whole of it; the rest is the scene answering */
@@ -17263,9 +17366,14 @@ let fsLeftAt = -1e9;
 function onFsChange(){
   if (!fsEl()) fsLeftAt = performance.now();
   syncFull();
-  fit();
-  setTimeout(fit, 60);
-  setTimeout(fit, 260);
+  /* through `refit`, not `fit`. The viewport is a different height now and the scroll
+     height moves with it, so laying out without putting the scroll fraction back is what
+     threw the visitor into the next memory every time they pressed this. Three times,
+     because the reported viewport is not settled on the frame the event arrives on and a
+     fraction restored against a stale height is the same bug one frame later. */
+  refit();
+  setTimeout(refit, 60);
+  setTimeout(refit, 260);
 }
 document.addEventListener("fullscreenchange", onFsChange);
 document.addEventListener("webkitfullscreenchange", onFsChange);
@@ -17280,11 +17388,18 @@ syncFull();
 function escapeBelongsToFullscreen(){
   return !!fsEl() || (performance.now() - fsLeftAt) < 500;
 }
-window.addEventListener("resize", ()=>{ fit(); }, {passive:true});
-window.addEventListener("orientationchange", ()=>setTimeout(fit,240), {passive:true});
+window.addEventListener("resize", ()=>{ refit(); }, {passive:true});
+window.addEventListener("orientationchange", ()=>setTimeout(refit,240), {passive:true});
 RM.addEventListener ? RM.addEventListener("change", e=>{ REDUCE=e.matches; })
                     : RM.addListener && RM.addListener(e=>{ REDUCE=e.matches; });
-document.getElementById("restart").addEventListener("click", ()=>{
+/* THE REPLAY CONTROL IS OFF THE LAST FRAME.
+   The signature is the resting state of the work and a button under it was the one thing
+   there that asked for something. The reset itself is kept whole and named, because it is
+   the only place that knows how to put every gate, every found thing, every camera, every
+   sequence clock and the whole audio graph back to nothing — and the day the control comes
+   back, or a key or a gesture wants it, it must be this and not a second copy that has
+   drifted. It is attached only if the element exists. */
+function restartPiece(){
   window.scrollTo(0,0);
   // keep what they found; reset what they did
   ROOM.cL=ROOM.cR=ROOM.sash=ROOM.latch=0; ROOM.latchDone=false;
@@ -17330,7 +17445,9 @@ document.getElementById("restart").addEventListener("click", ()=>{
   titleEl.classList.remove("on", "settled"); titleEl.setAttribute("aria-hidden","true");
   /* AND THEIR SCREEN IS THEIR OWN. Restarting the artwork is not a reason to throw somebody
      out of full screen, or to put them into it — whatever they chose, they keep. */
-});
+}
+const restartEl = document.getElementById("restart");
+if (restartEl) restartEl.addEventListener("click", restartPiece);
 
 /* a small window onto the running piece, for driving it under test */
 window.__bluer = {
@@ -17645,6 +17762,9 @@ window.__bluer = {
      has already started stays exactly as it is, which is why jumping backwards through
      it is not meaningful and jumping forwards past a memory's cue skips that memory. */
   endAt(sec){ END.on = 1; END.done = 0; END.t = sec; return sec; },
+  cam(){ return { x:+PCAM.x.toFixed(3), y:+PCAM.y.toFixed(3), W:W, H:H,
+                  slideMax:+(Math.abs(PCAM.x)*0.36*W).toFixed(1),
+                  overscan:+(W*0.11).toFixed(1) }; },
   /* the statistics from outside, so "did Escape leave" can be answered rather than guessed */
   onsState(){ return { running:ONS.running, played:ONS.played, t:+ONS.t.toFixed(2),
                        cls:document.body.classList.contains("onslaught"),
