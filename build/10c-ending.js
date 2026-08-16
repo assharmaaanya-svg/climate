@@ -275,23 +275,56 @@ function eLaugh(vol){
    so this reads as the same voice that has been speaking the whole time. */
 let ELAY = null, elayKey = "";
 function eLayout(L){
+  /* THE SIZE IS LEFT ALONE. It was composed and approved at this scale and measurement
+     says the block is centred to within one pixel at every viewport, so the size and the
+     geometry were never what was wrong. */
   const fs = Math.min(28, Math.max(17.6, W*0.035));
   const key = L.text + "|" + Math.round(W) + "x" + Math.round(H);
   if (elayKey === key && ELAY) return ELAY;
   ctx.save();
   ctx.font = fs + "px " + E_SERIF;
-  const maxW = Math.min(W*0.86, fs*18.5);
+  /* THE COLUMN WAS TWELVE PIXELS TOO NARROW, and that was the whole complaint.
+     At 18.5 ems the wrap width is 518px and "I was remembering things that disappeared."
+     sets at about 530 — so on a viewport near a thousand pixels the sentence broke with
+     ONE WORD alone on the second line, a wide line above a short one. That is a badly set
+     sentence, and a badly set sentence in the middle of a black screen reads as a badly
+     PLACED one, which is what it was being reported as. At 21 ems every sentence in the
+     ending fits on a single line at any ordinary window, and the measure is still well
+     inside what is comfortable to read. */
+  const maxW = Math.min(W*0.86, fs*21);
   const words = L.text.split(" ");
   const sp = ctx.measureText(" ").width;
-  const rows = []; let row = [], rw = 0;
-  for (let i=0;i<words.length;i++){
-    const w = ctx.measureText(words[i]).width;
-    if (row.length && rw + sp + w > maxW){ rows.push({ items:row, w:rw }); row = []; rw = 0; }
-    if (row.length) rw += sp;
-    row.push({ i, text:words[i], w });
-    rw += w;
+  const wid = words.map(w => ctx.measureText(w).width);
+  /* AND WHEN IT MUST WRAP, THE LINES ARE EVENED UP.
+     A greedy fill packs the first line to the brim and leaves the remainder short, which
+     is the same lopsided shape one step down. On a narrow phone these sentences do have to
+     break, so the break is chosen to make the two halves as close in width as they can be
+     — the widest row as narrow as possible — rather than wherever the measure runs out. */
+  let rows = [];
+  const greedy = (limit) => {
+    const out = []; let row = [], rw = 0;
+    for (let i=0;i<words.length;i++){
+      if (row.length && rw + sp + wid[i] > limit){ out.push({ items:row, w:rw }); row = []; rw = 0; }
+      if (row.length) rw += sp;
+      row.push({ i, text:words[i], w:wid[i] });
+      rw += wid[i];
+    }
+    if (row.length) out.push({ items:row, w:rw });
+    return out;
+  };
+  rows = greedy(maxW);
+  if (rows.length > 1){
+    const n = rows.length;
+    let best = rows, bestW = Math.max.apply(null, rows.map(r=>r.w));
+    // narrow the measure a step at a time; keep the tightest fit that still uses n lines
+    for (let k=1;k<=14;k++){
+      const cand = greedy(maxW * (1 - k*0.035));
+      if (cand.length !== n) break;
+      const wMax = Math.max.apply(null, cand.map(r=>r.w));
+      if (wMax < bestW){ best = cand; bestW = wMax; }
+    }
+    rows = best;
   }
-  if (row.length) rows.push({ items:row, w:rw });
   ctx.restore();
   elayKey = key;
   return (ELAY = { fs, rows, sp, lh: fs*1.4 });

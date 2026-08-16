@@ -494,16 +494,17 @@
   /* AND THE FIRST WORD OF IT LOSES ITS COLOUR WHILE YOU LOOK AT IT.
      The same thing the narration does twice in the piece — an ivory sentence drifting into
      the one red the work owns, slowly enough that nobody catches the moment it changed —
-     applied here to the word the whole piece is named for. Eighteen seconds, which is far
-     longer than either of the others and is the point: by the time "Remember" has gone the
-     visitor has been sitting with the signature for a while, and what changed is the word
-     rather than the frame. Nothing else on this screen moves.
+     applied here to the word the whole piece is named for. It was eighteen seconds behind a
+     four-second delay, which on top of the five the credits take to settle meant the drift
+     had barely started before most people had stopped looking — slow enough to be invisible
+     is not slow, it is nothing. Seven seconds after a short beat instead: still far too slow
+     to catch the moment it changes, fast enough that it has plainly changed.
 
      The delay holds it at ivory until the credits have finished arriving, or the drift
      would start behind a title that is still fading up and be half spent before it could
      be seen. `will-change` keeps it off the main thread; `prefers-reduced-motion` below
      turns the whole thing off along with the rest of the transitions. */
-  #title .t .rm{ color:var(--ink); transition:color 18s cubic-bezier(.5,0,.72,1) 4.2s; }
+  #title .t .rm{ color:var(--ink); transition:color 7s cubic-bezier(.45,0,.7,1) 1.2s; }
   #title.settled .t .rm{ color:var(--memory-loss-red); }
   /* the descriptor is deliberately the smallest serif on the frame, and the name is
      larger and brighter than it — one reads as a caption and the other as a signature */
