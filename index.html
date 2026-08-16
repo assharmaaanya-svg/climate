@@ -991,7 +991,21 @@ function fit(){
   W=w; H=h; MIN=Math.min(W,H);
   DPR = Math.min(window.devicePixelRatio||1, LOW?1.6:2);
   cv.width = Math.max(1,(W*DPR)|0); cv.height = Math.max(1,(H*DPR)|0);
-  cv.style.width=W+"px"; cv.style.height=H+"px";
+  /* THE CANVAS IS NOT GIVEN A SIZE IN PIXELS ANY MORE, and this is the centring fix.
+     It used to be set to exactly W and H, which is correct only for as long as W and H are
+     correct. `#scene` is `position:fixed; inset:0`, and an element with `inset:0` AND an
+     explicit width is anchored to the TOP-LEFT — so the single frame in which the viewport
+     had changed and `fit()` had not yet run put a smaller canvas in the corner of a bigger
+     window, with everything drawn in it, including the ending's centred sentence, up and to
+     the left of where it belonged. Entering full screen is precisely the moment a viewport
+     changes without a resize event necessarily arriving first, and it is the one place this
+     was ever reported.
+
+     The stylesheet already says `width:100%; height:100%`, so leaving the size alone lets
+     the element fill the viewport at all times. The bitmap is then stretched to whatever
+     the viewport is — and a stretch preserves the CENTRE, so a stale frame is at worst
+     very slightly scaled and can never be off-centre. `pos()` below divides the stretch
+     back out so the pointer still lands where it is pointing. */
   ctx.setTransform(DPR,0,0,DPR,0,0);
   ctx.lineJoin="round";
   if (GLASS.width!==W || GLASS.height!==H){ GLASS.width=Math.max(1,W); GLASS.height=Math.max(1,H); }
@@ -1671,8 +1685,12 @@ const KEY = Object.create(null);
 let usedKeyboard = false;
 
 function pos(e){
+  /* in the canvas's own drawing units, which are only the same as CSS pixels while the
+     layout is current — see the note in `fit()` about why it may briefly not be */
   const r = cv.getBoundingClientRect();
-  return { x: e.clientX - r.left, y: e.clientY - r.top };
+  const sx = r.width  ? W / r.width  : 1;
+  const sy = r.height ? H / r.height : 1;
+  return { x: (e.clientX - r.left) * sx, y: (e.clientY - r.top) * sy };
 }
 cv.addEventListener("pointerdown", e=>{
   const p = pos(e);
@@ -16215,7 +16233,20 @@ function eWordAlpha(L, i, t){
 }
 function eDrawLine(L, t){
   const lay = eLayout(L);
-  const y0 = H*0.5 - (lay.rows.length-1)*lay.lh*0.5;
+  /* WHERE THE BLOCK SITS, AS ONE NUMBER.
+     Mathematically centred is `0.5`, and measured against the window the ink lands within
+     a pixel of it at every viewport. Optically that is not quite the middle: a single line
+     of type alone in a large field reads as slightly LOW at the exact half, because the
+     eye weights the empty space below more heavily than the space above it — which is why
+     a title on a page is set a little above centre and looks centred, and set at centre
+     looks dropped. On a short window the difference is a few pixels and nobody would say
+     either way; on a full-screen frame twelve hundred pixels tall it is thirty-six, which
+     is the size at which somebody says it is in a weird place.
+
+     It is one constant so it can be argued with: 0.5 is the geometric middle, lower
+     numbers lift it. */
+  const E_CENTRE = 0.47;
+  const y0 = H*E_CENTRE - (lay.rows.length-1)*lay.lh*0.5;
   ctx.save();
   ctx.font = lay.fs + "px " + E_SERIF;
   ctx.textBaseline = "middle";
@@ -16757,6 +16788,7 @@ function morphAirToWindow(t, q){
    DISPATCH
    ========================================================================== */
 let lastId = "";
+let frameN = 0;
 function render(t, dt){
   const bid = id(), f = T.f, q = TQ();
   setAir(bid, f);
@@ -17442,6 +17474,18 @@ function frameBody(now){
   else if (autoLow && ftAvg < 19) { autoLow = false; }
   window.__fps = 1000/ftAvg;
   if (W<2||H<2){ fit(); if (W<2||H<2){ requestAnimationFrame(frame); return; } }
+  /* AND THE LAYOUT IS CHECKED AGAINST THE ACTUAL VIEWPORT, a few times a second.
+     Every path that changes the viewport is supposed to call `refit` — the resize event,
+     the orientation event, the fullscreen event three times over. "Supposed to" is the
+     problem: full screen on a real machine can settle after the last of those has fired,
+     and if it does, nothing else ever corrects it. This is the backstop that does not care
+     which event was missed. Two integer reads every sixth frame, and it re-fits only when
+     the numbers actually disagree. */
+  if ((frameN = (frameN + 1) % 6) === 0){
+    const vw = document.documentElement.clientWidth || window.innerWidth;
+    const vh = document.documentElement.clientHeight || window.innerHeight;
+    if (vw > 1 && vh > 1 && (vw !== W || vh !== H)) refit();
+  }
 
   /* ONBOARDING IS A STATE, AND WHILE IT LASTS THE STORY DOES NOT MOVE.
      This was the whole bug. The card after Begin says "scroll slowly", and the timeline

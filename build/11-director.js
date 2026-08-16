@@ -401,6 +401,7 @@ function morphAirToWindow(t, q){
    DISPATCH
    ========================================================================== */
 let lastId = "";
+let frameN = 0;
 function render(t, dt){
   const bid = id(), f = T.f, q = TQ();
   setAir(bid, f);
@@ -1086,6 +1087,18 @@ function frameBody(now){
   else if (autoLow && ftAvg < 19) { autoLow = false; }
   window.__fps = 1000/ftAvg;
   if (W<2||H<2){ fit(); if (W<2||H<2){ requestAnimationFrame(frame); return; } }
+  /* AND THE LAYOUT IS CHECKED AGAINST THE ACTUAL VIEWPORT, a few times a second.
+     Every path that changes the viewport is supposed to call `refit` — the resize event,
+     the orientation event, the fullscreen event three times over. "Supposed to" is the
+     problem: full screen on a real machine can settle after the last of those has fired,
+     and if it does, nothing else ever corrects it. This is the backstop that does not care
+     which event was missed. Two integer reads every sixth frame, and it re-fits only when
+     the numbers actually disagree. */
+  if ((frameN = (frameN + 1) % 6) === 0){
+    const vw = document.documentElement.clientWidth || window.innerWidth;
+    const vh = document.documentElement.clientHeight || window.innerHeight;
+    if (vw > 1 && vh > 1 && (vw !== W || vh !== H)) refit();
+  }
 
   /* ONBOARDING IS A STATE, AND WHILE IT LASTS THE STORY DOES NOT MOVE.
      This was the whole bug. The card after Begin says "scroll slowly", and the timeline

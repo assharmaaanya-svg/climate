@@ -359,7 +359,20 @@ function eWordAlpha(L, i, t){
 }
 function eDrawLine(L, t){
   const lay = eLayout(L);
-  const y0 = H*0.5 - (lay.rows.length-1)*lay.lh*0.5;
+  /* WHERE THE BLOCK SITS, AS ONE NUMBER.
+     Mathematically centred is `0.5`, and measured against the window the ink lands within
+     a pixel of it at every viewport. Optically that is not quite the middle: a single line
+     of type alone in a large field reads as slightly LOW at the exact half, because the
+     eye weights the empty space below more heavily than the space above it — which is why
+     a title on a page is set a little above centre and looks centred, and set at centre
+     looks dropped. On a short window the difference is a few pixels and nobody would say
+     either way; on a full-screen frame twelve hundred pixels tall it is thirty-six, which
+     is the size at which somebody says it is in a weird place.
+
+     It is one constant so it can be argued with: 0.5 is the geometric middle, lower
+     numbers lift it. */
+  const E_CENTRE = 0.47;
+  const y0 = H*E_CENTRE - (lay.rows.length-1)*lay.lh*0.5;
   ctx.save();
   ctx.font = lay.fs + "px " + E_SERIF;
   ctx.textBaseline = "middle";

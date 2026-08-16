@@ -148,7 +148,21 @@ function fit(){
   W=w; H=h; MIN=Math.min(W,H);
   DPR = Math.min(window.devicePixelRatio||1, LOW?1.6:2);
   cv.width = Math.max(1,(W*DPR)|0); cv.height = Math.max(1,(H*DPR)|0);
-  cv.style.width=W+"px"; cv.style.height=H+"px";
+  /* THE CANVAS IS NOT GIVEN A SIZE IN PIXELS ANY MORE, and this is the centring fix.
+     It used to be set to exactly W and H, which is correct only for as long as W and H are
+     correct. `#scene` is `position:fixed; inset:0`, and an element with `inset:0` AND an
+     explicit width is anchored to the TOP-LEFT — so the single frame in which the viewport
+     had changed and `fit()` had not yet run put a smaller canvas in the corner of a bigger
+     window, with everything drawn in it, including the ending's centred sentence, up and to
+     the left of where it belonged. Entering full screen is precisely the moment a viewport
+     changes without a resize event necessarily arriving first, and it is the one place this
+     was ever reported.
+
+     The stylesheet already says `width:100%; height:100%`, so leaving the size alone lets
+     the element fill the viewport at all times. The bitmap is then stretched to whatever
+     the viewport is — and a stretch preserves the CENTRE, so a stale frame is at worst
+     very slightly scaled and can never be off-centre. `pos()` below divides the stretch
+     back out so the pointer still lands where it is pointing. */
   ctx.setTransform(DPR,0,0,DPR,0,0);
   ctx.lineJoin="round";
   if (GLASS.width!==W || GLASS.height!==H){ GLASS.width=Math.max(1,W); GLASS.height=Math.max(1,H); }
@@ -828,8 +842,12 @@ const KEY = Object.create(null);
 let usedKeyboard = false;
 
 function pos(e){
+  /* in the canvas's own drawing units, which are only the same as CSS pixels while the
+     layout is current — see the note in `fit()` about why it may briefly not be */
   const r = cv.getBoundingClientRect();
-  return { x: e.clientX - r.left, y: e.clientY - r.top };
+  const sx = r.width  ? W / r.width  : 1;
+  const sy = r.height ? H / r.height : 1;
+  return { x: (e.clientX - r.left) * sx, y: (e.clientY - r.top) * sy };
 }
 cv.addEventListener("pointerdown", e=>{
   const p = pos(e);
