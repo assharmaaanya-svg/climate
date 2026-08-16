@@ -31,7 +31,7 @@ originals are kept at the repository root; `assets/` holds only the loops built 
 | `assets/city-outside.wav` | the same field afterwards, in place of the wind |
 | `assets/city-indoors.wav` | the same city again, heard from inside the bedroom with the window shut |
 | `assets/kite-child-cough.wav` | him, in that field, three separate fits played one at a time |
-| `assets/night-city-hum.wav` | the same field at night, years later, under the empty sky |
+| `assets/night-city-hum.wav` | the same field at night, years later, under the empty sky (rebuilt from the second night recording the artist supplied, 22 s from 71 s in, 4th-order high-pass at 90 Hz, 8 kHz) |
 | `assets/night-crickets.wav` | from dusk onward |
 | `assets/night-birds.wav` | once it is properly dark |
 | `assets/look-valley.wav` | the town from the hill, while nothing in particular is being looked at |

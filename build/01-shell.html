@@ -449,19 +449,44 @@
   @media (max-width:520px){ #ledger dl{ grid-template-columns:1fr; gap:.15rem .0rem; } #ledger dd{ margin-bottom:.7rem; } }
 
   /* ---------- title, only at the very end ---------- */
+  /* THE SIGNATURE.
+     A flat near-black rather than the radial wash that was here: the ending has already
+     left the screen black, and a gradient over black is a shape appearing for no reason
+     at the one moment nothing should. Three sizes and nothing else — the work's name in
+     the story voice, the artist under it, and the prize in the interface voice, quiet,
+     because that is the only line here that is a fact about the submission rather than
+     about the work. Everything is spaced by the flex gap so the vertical rhythm is one
+     number and not five margins arguing.
+
+     The title was clamped to 8rem, which on a laptop is a splash screen. It is a
+     signature. Two thirds of that, and the space around it is what makes it land. */
   #title{ position:fixed; inset:0; z-index:8; display:flex; flex-direction:column; align-items:center; justify-content:center;
-    text-align:center; padding:8vw; opacity:0; pointer-events:none; transition:opacity 3.4s ease;
-    background:radial-gradient(ellipse at 50% 46%, rgba(8,12,18,.80) 0%, rgba(8,12,18,.66) 42%, rgba(8,12,18,.34) 78%, rgba(8,12,18,0) 100%); }
+    text-align:center; padding:8vw; opacity:0; pointer-events:none;
+    transition:opacity 3.4s ease;
+    background:#04060a; }
   #title.on{ opacity:1; pointer-events:auto; }
-  #title .t{ font-size:clamp(3rem,15vw,8rem); line-height:.9; margin:0; letter-spacing:-.015em;
-    color:#e9f1f8; text-shadow:0 3px 40px rgba(0,0,0,.4); }
-  #title .a{ font-style:italic; opacity:.8; margin:.5rem 0 0; font-size:clamp(.95rem,3vw,1.15rem); }
-  #title .c{ font-family:var(--mono); font-size:.6rem; letter-spacing:.2em; text-transform:uppercase; opacity:.5; margin-top:2.6rem; line-height:2; }
-  #title .c a{ color:inherit; }
-  #restart{ margin-top:1.6rem; font-family:var(--mono); font-size:.62rem; letter-spacing:.16em; text-transform:uppercase;
-    color:var(--ink); background:none; border:1px solid rgba(251,250,245,.34); border-radius:999px;
-    padding:.6em 1.15em; cursor:pointer; transition:background .25s,border-color .25s; }
-  #restart:hover{ background:rgba(251,250,245,.13); border-color:rgba(251,250,245,.7); }
+  #title .t{ font-size:clamp(2.3rem,7.4vw,4.4rem); line-height:1.05; margin:0 0 clamp(1.8rem,5vh,3.2rem);
+    letter-spacing:-.012em; color:var(--ink); }
+  /* the descriptor is deliberately the smallest serif on the frame, and the name is
+     larger and brighter than it — one reads as a caption and the other as a signature */
+  #title .by{ margin:0; font-size:clamp(.8rem,2.1vw,.92rem); font-style:italic; opacity:.52;
+    color:var(--ink); letter-spacing:.01em; }
+  #title .a{ margin:.34em 0 0; font-size:clamp(1.15rem,3.4vw,1.62rem); opacity:.94;
+    color:var(--ink); letter-spacing:.004em; }
+  #title .c{ font-family:var(--mono); font-size:clamp(.56rem,1.5vw,.66rem); letter-spacing:.34em;
+    text-transform:uppercase; opacity:.38; margin:clamp(2.2rem,6vh,3.6rem) 0 0; color:var(--ink); }
+  /* AND THE WAY BACK IN, AFTER THE CREDITS HAVE SETTLED.
+     It is the same restrained pill the interface uses everywhere else, and it arrives on
+     its own delay rather than with the type — a control appearing in the same breath as
+     the artist's name reads as "click here", which is not what this frame is for. */
+  #restart{ margin-top:clamp(2.6rem,7vh,4.2rem); font-family:var(--mono); font-size:.62rem;
+    letter-spacing:.16em; text-transform:uppercase;
+    color:var(--ink); background:none; border:1px solid rgba(251,250,245,.22); border-radius:999px;
+    padding:.6em 1.15em; cursor:pointer;
+    opacity:0; transition:opacity 2.2s ease, background .25s, border-color .25s; }
+  #title.settled #restart{ opacity:.72; }
+  #restart:hover{ opacity:1; background:rgba(251,250,245,.10); border-color:rgba(251,250,245,.55); }
+  #restart:focus-visible{ opacity:1; outline:2px solid #fff; outline-offset:3px; }
 
 
   /* ---------- the way in: shown once, before the piece begins ---------- */
@@ -629,6 +654,7 @@
 
 <div class="ctl">
   <button id="bCC" aria-pressed="false" aria-label="Turn captions for sound on">CC</button>
+  <button id="bFull" aria-pressed="false" aria-label="Enter full screen">Full</button>
   <button id="bSkip" aria-label="Skip this interaction and continue">Skip&nbsp;▸</button>
 </div>
 
@@ -687,13 +713,17 @@
     <dd>The mother. The kite. The blue crayon. The small yellow shirt. Those are invented, and they belong to
         everyone who recognises them.</dd>
   </dl>
-  <p class="fine">Every painting, recording and word in this work is by Aanya Sharma.</p>
 </div></div>
 
+<!-- THE LAST FRAME OF THE ARTWORK, NOT A FOOTER.
+     The argument finished one screen ago on the word "saving.", and anything here that
+     tried to say it again would take that word off the visitor. So this says only who
+     made what they have just been inside. -->
 <div id="title" aria-hidden="true">
   <h1 class="t">Remember When</h1>
+  <p class="by">An interactive artwork by</p>
   <p class="a">Aanya Sharma</p>
-  <p class="c">Earth Partner Prize · drawn live in your browser<br>every figure is linked to its source</p>
+  <p class="c">Earth Partner Prize</p>
   <button id="restart">Open the window again</button>
 </div>
 

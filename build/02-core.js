@@ -843,6 +843,10 @@ window.addEventListener("keydown", e=>{
   const k=e.key;
   /* the way out of the statistics, for anyone who needs one. It is the only key
      that does anything there, so nothing ends it by accident. */
+  /* Escape leaves full screen in every browser, and it is also the one key that leaves the
+     statistics. One press must never do both, so if this press belongs to full screen the
+     piece does not read it at all. */
+  if (k==="Escape" && typeof escapeBelongsToFullscreen==="function" && escapeBelongsToFullscreen()) return;
   if (k==="Escape" && typeof onsSkip==="function" && onsSkip()){ e.preventDefault(); return; }
   if (k===" "||k==="PageDown"){ window.scrollBy(0,H*0.85); e.preventDefault(); }
   else if (k==="PageUp"){ window.scrollBy(0,-H*0.85); e.preventDefault(); }

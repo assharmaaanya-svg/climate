@@ -449,19 +449,44 @@
   @media (max-width:520px){ #ledger dl{ grid-template-columns:1fr; gap:.15rem .0rem; } #ledger dd{ margin-bottom:.7rem; } }
 
   /* ---------- title, only at the very end ---------- */
+  /* THE SIGNATURE.
+     A flat near-black rather than the radial wash that was here: the ending has already
+     left the screen black, and a gradient over black is a shape appearing for no reason
+     at the one moment nothing should. Three sizes and nothing else — the work's name in
+     the story voice, the artist under it, and the prize in the interface voice, quiet,
+     because that is the only line here that is a fact about the submission rather than
+     about the work. Everything is spaced by the flex gap so the vertical rhythm is one
+     number and not five margins arguing.
+
+     The title was clamped to 8rem, which on a laptop is a splash screen. It is a
+     signature. Two thirds of that, and the space around it is what makes it land. */
   #title{ position:fixed; inset:0; z-index:8; display:flex; flex-direction:column; align-items:center; justify-content:center;
-    text-align:center; padding:8vw; opacity:0; pointer-events:none; transition:opacity 3.4s ease;
-    background:radial-gradient(ellipse at 50% 46%, rgba(8,12,18,.80) 0%, rgba(8,12,18,.66) 42%, rgba(8,12,18,.34) 78%, rgba(8,12,18,0) 100%); }
+    text-align:center; padding:8vw; opacity:0; pointer-events:none;
+    transition:opacity 3.4s ease;
+    background:#04060a; }
   #title.on{ opacity:1; pointer-events:auto; }
-  #title .t{ font-size:clamp(3rem,15vw,8rem); line-height:.9; margin:0; letter-spacing:-.015em;
-    color:#e9f1f8; text-shadow:0 3px 40px rgba(0,0,0,.4); }
-  #title .a{ font-style:italic; opacity:.8; margin:.5rem 0 0; font-size:clamp(.95rem,3vw,1.15rem); }
-  #title .c{ font-family:var(--mono); font-size:.6rem; letter-spacing:.2em; text-transform:uppercase; opacity:.5; margin-top:2.6rem; line-height:2; }
-  #title .c a{ color:inherit; }
-  #restart{ margin-top:1.6rem; font-family:var(--mono); font-size:.62rem; letter-spacing:.16em; text-transform:uppercase;
-    color:var(--ink); background:none; border:1px solid rgba(251,250,245,.34); border-radius:999px;
-    padding:.6em 1.15em; cursor:pointer; transition:background .25s,border-color .25s; }
-  #restart:hover{ background:rgba(251,250,245,.13); border-color:rgba(251,250,245,.7); }
+  #title .t{ font-size:clamp(2.3rem,7.4vw,4.4rem); line-height:1.05; margin:0 0 clamp(1.8rem,5vh,3.2rem);
+    letter-spacing:-.012em; color:var(--ink); }
+  /* the descriptor is deliberately the smallest serif on the frame, and the name is
+     larger and brighter than it — one reads as a caption and the other as a signature */
+  #title .by{ margin:0; font-size:clamp(.8rem,2.1vw,.92rem); font-style:italic; opacity:.52;
+    color:var(--ink); letter-spacing:.01em; }
+  #title .a{ margin:.34em 0 0; font-size:clamp(1.15rem,3.4vw,1.62rem); opacity:.94;
+    color:var(--ink); letter-spacing:.004em; }
+  #title .c{ font-family:var(--mono); font-size:clamp(.56rem,1.5vw,.66rem); letter-spacing:.34em;
+    text-transform:uppercase; opacity:.38; margin:clamp(2.2rem,6vh,3.6rem) 0 0; color:var(--ink); }
+  /* AND THE WAY BACK IN, AFTER THE CREDITS HAVE SETTLED.
+     It is the same restrained pill the interface uses everywhere else, and it arrives on
+     its own delay rather than with the type — a control appearing in the same breath as
+     the artist's name reads as "click here", which is not what this frame is for. */
+  #restart{ margin-top:clamp(2.6rem,7vh,4.2rem); font-family:var(--mono); font-size:.62rem;
+    letter-spacing:.16em; text-transform:uppercase;
+    color:var(--ink); background:none; border:1px solid rgba(251,250,245,.22); border-radius:999px;
+    padding:.6em 1.15em; cursor:pointer;
+    opacity:0; transition:opacity 2.2s ease, background .25s, border-color .25s; }
+  #title.settled #restart{ opacity:.72; }
+  #restart:hover{ opacity:1; background:rgba(251,250,245,.10); border-color:rgba(251,250,245,.55); }
+  #restart:focus-visible{ opacity:1; outline:2px solid #fff; outline-offset:3px; }
 
 
   /* ---------- the way in: shown once, before the piece begins ---------- */
@@ -629,6 +654,7 @@
 
 <div class="ctl">
   <button id="bCC" aria-pressed="false" aria-label="Turn captions for sound on">CC</button>
+  <button id="bFull" aria-pressed="false" aria-label="Enter full screen">Full</button>
   <button id="bSkip" aria-label="Skip this interaction and continue">Skip&nbsp;▸</button>
 </div>
 
@@ -687,13 +713,17 @@
     <dd>The mother. The kite. The blue crayon. The small yellow shirt. Those are invented, and they belong to
         everyone who recognises them.</dd>
   </dl>
-  <p class="fine">Every painting, recording and word in this work is by Aanya Sharma.</p>
 </div></div>
 
+<!-- THE LAST FRAME OF THE ARTWORK, NOT A FOOTER.
+     The argument finished one screen ago on the word "saving.", and anything here that
+     tried to say it again would take that word off the visitor. So this says only who
+     made what they have just been inside. -->
 <div id="title" aria-hidden="true">
   <h1 class="t">Remember When</h1>
+  <p class="by">An interactive artwork by</p>
   <p class="a">Aanya Sharma</p>
-  <p class="c">Earth Partner Prize · drawn live in your browser<br>every figure is linked to its source</p>
+  <p class="c">Earth Partner Prize</p>
   <button id="restart">Open the window again</button>
 </div>
 
@@ -1601,6 +1631,10 @@ window.addEventListener("keydown", e=>{
   const k=e.key;
   /* the way out of the statistics, for anyone who needs one. It is the only key
      that does anything there, so nothing ends it by accident. */
+  /* Escape leaves full screen in every browser, and it is also the one key that leaves the
+     statistics. One press must never do both, so if this press belongs to full screen the
+     piece does not read it at all. */
+  if (k==="Escape" && typeof escapeBelongsToFullscreen==="function" && escapeBelongsToFullscreen()) return;
   if (k==="Escape" && typeof onsSkip==="function" && onsSkip()){ e.preventDefault(); return; }
   if (k===" "||k==="PageDown"){ window.scrollBy(0,H*0.85); e.preventDefault(); }
   else if (k==="PageUp"){ window.scrollBy(0,-H*0.85); e.preventDefault(); }
@@ -11438,19 +11472,39 @@ const LBLUR = document.createElement("canvas"), lbc = LBLUR.getContext("2d");
    of that. While the visitor is looking around with the focus steady — which is
    most of this chapter — it is one resample instead of two, and the rebuild only
    happens a few dozen times over the couple of seconds of a focus pull. */
+/* AND IN THE CHAPTER AFTER THE AIR CHANGED THERE IS NO BLEND AT ALL.
+   The dissolve above is right for chapter two, where both states are the SAME painting
+   with different weather in it. It is wrong here, and the reason is physical rather than
+   artistic: the two paintings are not the same size. The clean valley is 1537x1023 and the
+   polluted one is 1470x1070, framed a little differently by hand, and drawing the second
+   to the first's bounds stretches it — which is fine when it is the only thing on screen
+   and a genuine fault the moment anything else is underneath it. At even a tenth of the
+   clean painting showing through, every hard edge in the valley — the ridge line, the wires,
+   the school roof — appears TWICE, a few pixels apart. That is not a memory surfacing. That
+   is two pictures overlapping, and it is what was on screen.
+
+   So the polluted chapter draws one painting and nothing else, at any focus. Holding still
+   does everything it did — it sharpens the lenses, brings the colour back, and finds the
+   places — but it does not bring the old valley back, because it cannot, which was always
+   what this chapter was for. */
 const LCOMP = document.createElement("canvas"), lcc = LCOMP.getContext("2d");
-let lcompAir = -1;
-function lookComposite(im, imh, air){
+let lcompAir = -1, lcompOnly = -1;
+function lookComposite(im, imh, air, only){
   if (LCOMP.width !== im.naturalWidth || LCOMP.height !== im.naturalHeight){
     LCOMP.width = im.naturalWidth; LCOMP.height = im.naturalHeight;
     lcompAir = -1;
   }
-  const q = Math.round(cl01(air)*50)/50;
-  if (q === lcompAir) return LCOMP;
-  lcompAir = q;
+  const solo = (only && imgReady(imh)) ? 1 : 0;
+  const q = solo ? 1 : Math.round(cl01(air)*50)/50;
+  if (q === lcompAir && solo === lcompOnly) return LCOMP;
+  lcompAir = q; lcompOnly = solo;
   lcc.setTransform(1,0,0,1,0,0);
   lcc.globalAlpha = 1;
   lcc.globalCompositeOperation = "source-over";
+  if (solo){
+    lcc.drawImage(imh, 0, 0, LCOMP.width, LCOMP.height);
+    return LCOMP;
+  }
   lcc.drawImage(im, 0, 0);
   if (q > 0.004 && imgReady(imh)){
     lcc.globalAlpha = q;
@@ -11673,7 +11727,10 @@ function drawLookout(t, dt, o){
      dissolve between two states of the same place rather than between two
      pictures. */
   const airNow = lerp(air0, air1, rec);
-  const world = lookComposite(im, imh, airNow);
+  /* `airNow` still drives the haze, the particles and the emptiness of the valley in both
+     chapters. What it no longer does, once `after` is set, is decide how much of the clean
+     painting is showing, because the answer there is none. */
+  const world = lookComposite(im, imh, airNow, PLOOK.after > 0.5);
   const OV = 10;                                   // overscan: see the blur note
   lookSharp(()=>{
     ctx.drawImage(world, sx, sy, wsrc, hsrc, -OV, -OV, W+OV*2, H+OV*2);
@@ -16593,6 +16650,8 @@ const capEl=document.getElementById("cap"), askEl=document.getElementById("ask")
 
 const FIN_LINES = [];
 let shownFin = -1, lastCap="", lastCh=-1;
+/* when the ending finished, which is what the credits are timed from */
+let creditsAt = 0;
 
 /* THERE IS NO GESTURE MARK ANY MORE.
    A small drawn glyph sat at the head of every instruction saying what kind of gesture it
@@ -16767,19 +16826,25 @@ function updText(now, dt){
   }
 
   /* the title, only after the last line has been up a long while */
-  /* NO TITLE CARD YET. The piece ends on black at the colouring, and a credit
-     panel over it would be the only thing in the frame. The card is still built
-     below and comes back when the ending after this one is built. */
-  const endShow = false;
+  /* THE SIGNATURE, AFTER THE ENDING HAS FINISHED BEING THE ENDING.
+     `END.done` is already the far side of the ending's own final black hold — the last
+     word gone, the last sound gone, and the rest after it — so the credits wait a further
+     beat on top of that and then take three and a half seconds to become legible. The
+     delay is measured from the moment the ending finished rather than from the beat's
+     progress, because the ending runs on its own clock and the scroll does not move.
+
+     The restart control is held back again on its own transition so it settles in after
+     the type rather than with it. */
+  /* and once it is up it stays up. This is the resting state of the work: turning the
+     screen black again the moment somebody nudges the wheel, and making them hunt for
+     what to do, is the opposite of a signature. It is cleared in two places only — a
+     restart, and the ending genuinely re-arming itself on a fresh entry. */
+  if (bid === "end" && END.done && !creditsAt) creditsAt = performance.now();
+  const endShow = !!creditsAt && (performance.now() - creditsAt) > 1200;
+  titleEl.classList.toggle("settled", !!creditsAt && (performance.now() - creditsAt) > 5200);
   if (endShow && titleEl.getAttribute("aria-hidden")==="true"){
     titleEl.setAttribute("aria-hidden","false");
     titleEl.classList.add("on");
-    const c=titleEl.querySelector(".c");
-    if (foundN>0){
-      c.innerHTML = "Earth Partner Prize · drawn live in your browser<br>"+
-        "every figure is linked to its source<br><br>"+
-        "you found "+foundN+" small thing"+(foundN===1?"":"s")+" that nobody asked you to look for";
-    }
   }
   if (!endShow){
     titleEl.classList.remove("on"); titleEl.setAttribute("aria-hidden","true");
@@ -16971,6 +17036,7 @@ function onEnter(bid){
      should play, not show you a black screen it thinks you have already seen. */
   if (bid==="end"){
     resetEnding();
+    creditsAt = 0;
     setAsk(""); hideAQ(); hideNote(); showCard(null);
     evLine = ""; evLineT = 0;
     capEl.classList.remove("on", "redshift", "redset");
@@ -17097,6 +17163,12 @@ function boot(){
     introOn = true;
     const go = ()=>{
       if (!introOn) return;
+      /* FIRST, WHILE THE GESTURE IS STILL WORTH SOMETHING. Before the flags, before the
+         sound, before the timeouts — a fullscreen request made after any of those has run
+         is made outside the user activation and is refused. Begin is already the visitor
+         saying they want to be inside this; it is not worth a second card asking them
+         whether they would also like the screen. If it fails, nothing below notices. */
+      fsEnter();
       introOn = false;
       /* THE PROTECTED STATE IS CONTINUOUS FROM HERE.
          It has to be set now and not when the card appears. The way-in card takes 1.6s
@@ -17130,6 +17202,83 @@ function boot(){
   }
   // a little grime is already on the sill when the piece starts. It always was.
   requestAnimationFrame(n=>{ last=n; frame(n); });
+}
+/* ============================================================================
+   FULL SCREEN
+   ==========================================================================
+   An enhancement and never a requirement. Every path through here is written so that a
+   browser which does not support it, refuses it, or throws lands in exactly the same
+   place as one that grants it: the artwork begins, the sound starts, the onboarding runs.
+   Nothing is ever said to the visitor about it having failed.
+
+   THERE IS NO BOOLEAN FOR "ARE WE FULL SCREEN". The document already knows, and any
+   second copy of that answer is a copy that goes wrong the first time somebody leaves
+   with F11 or the system chrome. The control is painted from `document.fullscreenElement`
+   every time it could have changed, and from nothing else. */
+const fullEl = document.getElementById("bFull");
+function fsEl(){ return document.fullscreenElement || document.webkitFullscreenElement || null; }
+function fsCan(){
+  return !!(document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen);
+}
+/* THE REQUEST MUST BE THE FIRST THING THE GESTURE DOES.
+   Browsers only grant this inside a user activation, and activation is spent by the time
+   an await or a setTimeout has run. So this is called synchronously from the click, before
+   the sound, before the onboarding, before anything. The promise it returns is caught and
+   dropped: a refusal is a refusal and there is nothing useful to say about it. */
+function fsEnter(){
+  if (!fsCan()) return;
+  const el = document.documentElement;
+  try {
+    const p = el.requestFullscreen ? el.requestFullscreen({ navigationUI:"hide" })
+                                   : el.webkitRequestFullscreen();
+    if (p && p.catch) p.catch(()=>{});
+  } catch(_){}
+}
+function fsExit(){
+  try {
+    const p = document.exitFullscreen ? document.exitFullscreen()
+            : document.webkitExitFullscreen ? document.webkitExitFullscreen() : null;
+    if (p && p.catch) p.catch(()=>{});
+  } catch(_){}
+}
+function syncFull(){
+  if (!fullEl) return;
+  const on = !!fsEl();
+  fullEl.setAttribute("aria-pressed", String(on));
+  fullEl.setAttribute("aria-label", on ? "Leave full screen" : "Enter full screen");
+}
+if (fullEl){
+  if (!fsCan()) fullEl.hidden = true;      // a control that cannot do anything is not a control
+  fullEl.addEventListener("click", ()=>{
+    if (fsEl()) fsExit(); else fsEnter();
+    fullEl.blur();
+  });
+}
+/* WHEN IT ACTUALLY CHANGES, whoever changed it — the button, F11, the system, Escape.
+   The viewport is a different size now, so the canvas is re-fitted through the piece's own
+   `fit()` rather than through any second layout path, and re-fitted again a beat later
+   because the reported viewport is not always settled on the frame the event arrives on.
+   Nothing about where the visitor is in the story is touched. */
+let fsLeftAt = -1e9;
+function onFsChange(){
+  if (!fsEl()) fsLeftAt = performance.now();
+  syncFull();
+  fit();
+  setTimeout(fit, 60);
+  setTimeout(fit, 260);
+}
+document.addEventListener("fullscreenchange", onFsChange);
+document.addEventListener("webkitfullscreenchange", onFsChange);
+syncFull();
+/* AND ESCAPE MUST NOT COST A MEMORY.
+   Escape is the piece's way out of the statistics, and it is also every browser's way out
+   of full screen, and one press must never do both. Two guards, because the order of the
+   two events is not the same in every browser: if we are still full screen when the key
+   arrives, the browser is about to leave and the press belongs to it; and if we left full
+   screen a moment ago, that press was the one that did it. `onsSkip` is spared either way
+   and the visitor stays exactly where they were. */
+function escapeBelongsToFullscreen(){
+  return !!fsEl() || (performance.now() - fsLeftAt) < 500;
 }
 window.addEventListener("resize", ()=>{ fit(); }, {passive:true});
 window.addEventListener("orientationchange", ()=>setTimeout(fit,240), {passive:true});
@@ -17172,7 +17321,15 @@ document.getElementById("restart").addEventListener("click", ()=>{
   gc.clearRect(0,0,GLASS.width,GLASS.height);
   paperBuilt=false; buildPaper();
   buildWash(); buildIndoors(); resetKite();
-  titleEl.classList.remove("on"); titleEl.setAttribute("aria-hidden","true");
+  /* the ending is armed again from nothing: its clock, its memory voices, and the mute it
+     leaves on the master, or a second run would start with the world already silent */
+  END.on = 0; END.done = 0; END.t = 0; END.black = 0;
+  END.started = {}; END.stopped = {};
+  endingSoundOff();
+  creditsAt = 0;
+  titleEl.classList.remove("on", "settled"); titleEl.setAttribute("aria-hidden","true");
+  /* AND THEIR SCREEN IS THEIR OWN. Restarting the artwork is not a reason to throw somebody
+     out of full screen, or to put them into it — whatever they chose, they keep. */
 });
 
 /* a small window onto the running piece, for driving it under test */
@@ -17488,6 +17645,19 @@ window.__bluer = {
      has already started stays exactly as it is, which is why jumping backwards through
      it is not meaningful and jumping forwards past a memory's cue skips that memory. */
   endAt(sec){ END.on = 1; END.done = 0; END.t = sec; return sec; },
+  /* the statistics from outside, so "did Escape leave" can be answered rather than guessed */
+  onsState(){ return { running:ONS.running, played:ONS.played, t:+ONS.t.toFixed(2),
+                       cls:document.body.classList.contains("onslaught"),
+                       fs:!!fsEl(), leftAgo:Math.round(performance.now()-fsLeftAt) }; },
+  /* what the lookout is actually compositing: whether the polluted painting is the only
+     thing in the buffer, and three pixels out of it, so "is the old painting showing
+     through" can be answered with numbers instead of by looking hard at a screenshot */
+  lookPix(){
+    const d = (x,y) => { const p = lcc.getImageData(Math.round(LCOMP.width*x), Math.round(LCOMP.height*y), 1, 1).data;
+                         return [p[0],p[1],p[2]]; };
+    return { only:lcompOnly, air:lcompAir, after:PLOOK.after,
+             sky:d(0.55,0.12), hill:d(0.45,0.45), town:d(0.42,0.70) };
+  },
   /* the ending, from outside: where it is in its own score, what the black and the
      master fader are doing, and which memories are currently sounding */
   ending(){

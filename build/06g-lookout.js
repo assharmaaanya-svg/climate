@@ -159,19 +159,39 @@ const LBLUR = document.createElement("canvas"), lbc = LBLUR.getContext("2d");
    of that. While the visitor is looking around with the focus steady — which is
    most of this chapter — it is one resample instead of two, and the rebuild only
    happens a few dozen times over the couple of seconds of a focus pull. */
+/* AND IN THE CHAPTER AFTER THE AIR CHANGED THERE IS NO BLEND AT ALL.
+   The dissolve above is right for chapter two, where both states are the SAME painting
+   with different weather in it. It is wrong here, and the reason is physical rather than
+   artistic: the two paintings are not the same size. The clean valley is 1537x1023 and the
+   polluted one is 1470x1070, framed a little differently by hand, and drawing the second
+   to the first's bounds stretches it — which is fine when it is the only thing on screen
+   and a genuine fault the moment anything else is underneath it. At even a tenth of the
+   clean painting showing through, every hard edge in the valley — the ridge line, the wires,
+   the school roof — appears TWICE, a few pixels apart. That is not a memory surfacing. That
+   is two pictures overlapping, and it is what was on screen.
+
+   So the polluted chapter draws one painting and nothing else, at any focus. Holding still
+   does everything it did — it sharpens the lenses, brings the colour back, and finds the
+   places — but it does not bring the old valley back, because it cannot, which was always
+   what this chapter was for. */
 const LCOMP = document.createElement("canvas"), lcc = LCOMP.getContext("2d");
-let lcompAir = -1;
-function lookComposite(im, imh, air){
+let lcompAir = -1, lcompOnly = -1;
+function lookComposite(im, imh, air, only){
   if (LCOMP.width !== im.naturalWidth || LCOMP.height !== im.naturalHeight){
     LCOMP.width = im.naturalWidth; LCOMP.height = im.naturalHeight;
     lcompAir = -1;
   }
-  const q = Math.round(cl01(air)*50)/50;
-  if (q === lcompAir) return LCOMP;
-  lcompAir = q;
+  const solo = (only && imgReady(imh)) ? 1 : 0;
+  const q = solo ? 1 : Math.round(cl01(air)*50)/50;
+  if (q === lcompAir && solo === lcompOnly) return LCOMP;
+  lcompAir = q; lcompOnly = solo;
   lcc.setTransform(1,0,0,1,0,0);
   lcc.globalAlpha = 1;
   lcc.globalCompositeOperation = "source-over";
+  if (solo){
+    lcc.drawImage(imh, 0, 0, LCOMP.width, LCOMP.height);
+    return LCOMP;
+  }
   lcc.drawImage(im, 0, 0);
   if (q > 0.004 && imgReady(imh)){
     lcc.globalAlpha = q;
@@ -394,7 +414,10 @@ function drawLookout(t, dt, o){
      dissolve between two states of the same place rather than between two
      pictures. */
   const airNow = lerp(air0, air1, rec);
-  const world = lookComposite(im, imh, airNow);
+  /* `airNow` still drives the haze, the particles and the emptiness of the valley in both
+     chapters. What it no longer does, once `after` is set, is decide how much of the clean
+     painting is showing, because the answer there is none. */
+  const world = lookComposite(im, imh, airNow, PLOOK.after > 0.5);
   const OV = 10;                                   // overscan: see the blur note
   lookSharp(()=>{
     ctx.drawImage(world, sx, sy, wsrc, hsrc, -OV, -OV, W+OV*2, H+OV*2);
