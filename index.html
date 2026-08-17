@@ -1302,7 +1302,12 @@ const BEATS = [
     line:"" },
   { id:"r-horizon", ch:3, len:1.3,  gate:"rfind",   ask:"Press and hold to zoom in with the binoculars",
     line:"" },
-  { id:"r-drawing", ch:3, len:1.3,
+  /* AND THIS ONE WAITS FOR THE CRAYON TOO.
+     Its own gate rather than the clean chapter's, because they are two separate askings:
+     colouring the sky in the morning it was drawn does not stand in for going back over a
+     faded sheet years later, and a shared counter would have let the first one satisfy the
+     second before the visitor had arrived. */
+  { id:"r-drawing", ch:3, len:1.3,  gate:"colour2", ask:"Colour it in again",
     line:"She put it up in my room." },
   /* ------------- THE ENDING -------------
      One beat, and the only one in the piece that does not care where the scroll is.
@@ -1369,14 +1374,15 @@ const HOLD_NEVER = {};
    `HOLD_PATIENCE` exists so nobody can be permanently stuck: lean on the wheel for
    twenty-five seconds and the wait gives up. That is right for an interaction somebody
    might not manage. It is wrong for these three, because these three ARE the piece —
-   colouring the drawing, and picking up the binoculars in either valley — and each of
+   colouring the drawing in either chapter, and picking up the binoculars in either
+   valley — and each of
    them asks for about a second of effort. Twenty-five seconds of scrolling let a visitor
    past the colouring having never touched a crayon, which is the one thing that beat
    exists to prevent.
 
    Nobody is trapped: the Skip control meets the current beat's gate outright, so the way
    through is a deliberate press rather than an accidental timeout. */
-const HOLD_KEEP = { colour:1, find:1, rfind:1 };
+const HOLD_KEEP = { colour:1, colour2:1, find:1, rfind:1 };
 const HOLD_AT = {};
 for (const _b of BEATS){
   if (!_b.gate || !_b.ask || HOLD_NEVER[_b.gate]) continue;
@@ -13415,7 +13421,11 @@ function buildPaper(){
    `strokes`, which is how FAR it has travelled. The scroll waits on the first of those
    and not the second: what this beat asks for is that the visitor picked the crayon up,
    not that they filled anything in. See the gate. */
-const DRAW = { bleach:0, strokes:0, marks:0, sunTouched:0, lastX:0, lastY:0, on:false, greyCrayon:0 };
+/* `marks` is wax laid down in the clean chapter and `marks2` in the polluted one. Two
+   counters and not one, because each chapter's scroll waits for its OWN crayon: sharing the
+   tally would mean colouring the sky in chapter two had already answered the question
+   chapter three has not asked yet. */
+const DRAW = { bleach:0, strokes:0, marks:0, marks2:0, sunTouched:0, lastX:0, lastY:0, on:false, greyCrayon:0 };
 function paperRect(){
   const m = MIN*0.055;
   let w = W-m*2, h = w*(PH/PW);
@@ -13568,7 +13578,8 @@ function crayonTo(x,y){
      must not count as having coloured it in. Past this line the crayon has definitely put
      something down — even a tap, where the segment has no length, still lays a jittered
      dab of it under a round cap. */
-  DRAW.marks++;
+  if (typeof id === "function" && id() === "r-drawing") DRAW.marks2++;
+  else DRAW.marks++;
   if (Math.random()<0.35) sfx.crayon();
 }
 /* ONE MARK IS THE WHOLE REQUIREMENT.
@@ -13579,7 +13590,8 @@ function crayonTo(x,y){
    quota of it. So: any wax on the paper at all, including a single tap, and the scroll
    opens. `strokes` still exists and is still what the bleach and the dust read from. */
 function drawingInteract(g){
-  if (g==="colour" && DRAW.marks>0) meet("colour");
+  if (g==="colour"  && DRAW.marks  > 0) meet("colour");
+  if (g==="colour2" && DRAW.marks2 > 0) meet("colour2");
 }
 /* ============================================================================
    CHAPTER THREE — THE CHANGE IS ALMOST INVISIBLE
@@ -16958,6 +16970,7 @@ function render(t, dt){
       break;
     }
     case "r-drawing": {
+      drawingInteract("colour2");
       DRAW.bleach = sm(f, 0.08, 0.86);
       DRAW.greyCrayon = sm(f, 0.55, 0.95);
       grimeAdd(dt*0.06);
@@ -17271,7 +17284,8 @@ function gateProgress(g){
     case "find":    return PLOOK.recall/LOOK_HOLD;
     case "rfind":   return PLOOK.recall/LOOK_HOLD;
     /* binary on purpose: they have put the crayon on the paper or they have not */
-    case "colour":  return DRAW.marks ? 1 : 0;
+    case "colour":  return DRAW.marks  ? 1 : 0;
+    case "colour2": return DRAW.marks2 ? 1 : 0;
     /* touching her is the whole of it; the rest is the scene answering */
     /* touching her, hearing her, and then the whole line emptying itself. The bar carries the
        disappearance too, because that is what the scroll is actually waiting for. */
@@ -17716,7 +17730,7 @@ function restartPiece(){
   WASH.passed=0; WASH.shirtFound=false; WASH.walk=0; WASH.brushed=0;
   for (const st of CONST) st.lit=false;
   LOOK.found={}; LOOK.nFound=0; LOOK.remember=0; LOOK.hold=0;
-  DRAW.strokes=0; DRAW.bleach=0;
+  DRAW.strokes=0; DRAW.bleach=0; DRAW.marks=0; DRAW.marks2=0;
   EV.lifted=0; EV.lift=0; EV.mag=0; EV.pull=0; EV.revealed=0; EV.gather=0;
   FIN.cL=FIN.cR=0; FIN.latchHold=0; FIN.memory=0; FIN.memPeak=0;
   FIN.opened=0; FIN.sash=0; FIN.sashPulls=0; FIN.crayon=false; FIN.patch=0; FIN.seen=0;
@@ -17822,6 +17836,8 @@ window.__bluer = {
   curtainGap(){ if (!CGEO.built) return null;
     return { gapPx:+(CGEO.R.edges[0].xIn - CGEO.L.edges[0].xIn).toFixed(2),
              cL:+PROOM.cL.toFixed(3), cR:+PROOM.cR.toFixed(3), W:Math.round(W) }; },
+  get draw(){ return DRAW; },
+  get ptr(){ return P; },
   lookAim(){ return LAIM_DBG.slice(0,5); },
   lookLines(){ return LMARK.filter(m=>m.key).map(m=>({ id:m.id, before:m.say, after:m.aft||null })); },
   /* the beat table, and where the taped drawing actually lands on screen — both needed to

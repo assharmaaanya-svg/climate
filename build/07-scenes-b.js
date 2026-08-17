@@ -912,7 +912,11 @@ function buildPaper(){
    `strokes`, which is how FAR it has travelled. The scroll waits on the first of those
    and not the second: what this beat asks for is that the visitor picked the crayon up,
    not that they filled anything in. See the gate. */
-const DRAW = { bleach:0, strokes:0, marks:0, sunTouched:0, lastX:0, lastY:0, on:false, greyCrayon:0 };
+/* `marks` is wax laid down in the clean chapter and `marks2` in the polluted one. Two
+   counters and not one, because each chapter's scroll waits for its OWN crayon: sharing the
+   tally would mean colouring the sky in chapter two had already answered the question
+   chapter three has not asked yet. */
+const DRAW = { bleach:0, strokes:0, marks:0, marks2:0, sunTouched:0, lastX:0, lastY:0, on:false, greyCrayon:0 };
 function paperRect(){
   const m = MIN*0.055;
   let w = W-m*2, h = w*(PH/PW);
@@ -1065,7 +1069,8 @@ function crayonTo(x,y){
      must not count as having coloured it in. Past this line the crayon has definitely put
      something down — even a tap, where the segment has no length, still lays a jittered
      dab of it under a round cap. */
-  DRAW.marks++;
+  if (typeof id === "function" && id() === "r-drawing") DRAW.marks2++;
+  else DRAW.marks++;
   if (Math.random()<0.35) sfx.crayon();
 }
 /* ONE MARK IS THE WHOLE REQUIREMENT.
@@ -1076,5 +1081,6 @@ function crayonTo(x,y){
    quota of it. So: any wax on the paper at all, including a single tap, and the scroll
    opens. `strokes` still exists and is still what the bleach and the dust read from. */
 function drawingInteract(g){
-  if (g==="colour" && DRAW.marks>0) meet("colour");
+  if (g==="colour"  && DRAW.marks  > 0) meet("colour");
+  if (g==="colour2" && DRAW.marks2 > 0) meet("colour2");
 }

@@ -562,6 +562,7 @@ function render(t, dt){
       break;
     }
     case "r-drawing": {
+      drawingInteract("colour2");
       DRAW.bleach = sm(f, 0.08, 0.86);
       DRAW.greyCrayon = sm(f, 0.55, 0.95);
       grimeAdd(dt*0.06);
@@ -875,7 +876,8 @@ function gateProgress(g){
     case "find":    return PLOOK.recall/LOOK_HOLD;
     case "rfind":   return PLOOK.recall/LOOK_HOLD;
     /* binary on purpose: they have put the crayon on the paper or they have not */
-    case "colour":  return DRAW.marks ? 1 : 0;
+    case "colour":  return DRAW.marks  ? 1 : 0;
+    case "colour2": return DRAW.marks2 ? 1 : 0;
     /* touching her is the whole of it; the rest is the scene answering */
     /* touching her, hearing her, and then the whole line emptying itself. The bar carries the
        disappearance too, because that is what the scroll is actually waiting for. */
@@ -1320,7 +1322,7 @@ function restartPiece(){
   WASH.passed=0; WASH.shirtFound=false; WASH.walk=0; WASH.brushed=0;
   for (const st of CONST) st.lit=false;
   LOOK.found={}; LOOK.nFound=0; LOOK.remember=0; LOOK.hold=0;
-  DRAW.strokes=0; DRAW.bleach=0;
+  DRAW.strokes=0; DRAW.bleach=0; DRAW.marks=0; DRAW.marks2=0;
   EV.lifted=0; EV.lift=0; EV.mag=0; EV.pull=0; EV.revealed=0; EV.gather=0;
   FIN.cL=FIN.cR=0; FIN.latchHold=0; FIN.memory=0; FIN.memPeak=0;
   FIN.opened=0; FIN.sash=0; FIN.sashPulls=0; FIN.crayon=false; FIN.patch=0; FIN.seen=0;
@@ -1426,6 +1428,8 @@ window.__bluer = {
   curtainGap(){ if (!CGEO.built) return null;
     return { gapPx:+(CGEO.R.edges[0].xIn - CGEO.L.edges[0].xIn).toFixed(2),
              cL:+PROOM.cL.toFixed(3), cR:+PROOM.cR.toFixed(3), W:Math.round(W) }; },
+  get draw(){ return DRAW; },
+  get ptr(){ return P; },
   lookAim(){ return LAIM_DBG.slice(0,5); },
   lookLines(){ return LMARK.filter(m=>m.key).map(m=>({ id:m.id, before:m.say, after:m.aft||null })); },
   /* the beat table, and where the taped drawing actually lands on screen — both needed to

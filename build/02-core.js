@@ -459,7 +459,12 @@ const BEATS = [
     line:"" },
   { id:"r-horizon", ch:3, len:1.3,  gate:"rfind",   ask:"Press and hold to zoom in with the binoculars",
     line:"" },
-  { id:"r-drawing", ch:3, len:1.3,
+  /* AND THIS ONE WAITS FOR THE CRAYON TOO.
+     Its own gate rather than the clean chapter's, because they are two separate askings:
+     colouring the sky in the morning it was drawn does not stand in for going back over a
+     faded sheet years later, and a shared counter would have let the first one satisfy the
+     second before the visitor had arrived. */
+  { id:"r-drawing", ch:3, len:1.3,  gate:"colour2", ask:"Colour it in again",
     line:"She put it up in my room." },
   /* ------------- THE ENDING -------------
      One beat, and the only one in the piece that does not care where the scroll is.
@@ -526,14 +531,15 @@ const HOLD_NEVER = {};
    `HOLD_PATIENCE` exists so nobody can be permanently stuck: lean on the wheel for
    twenty-five seconds and the wait gives up. That is right for an interaction somebody
    might not manage. It is wrong for these three, because these three ARE the piece —
-   colouring the drawing, and picking up the binoculars in either valley — and each of
+   colouring the drawing in either chapter, and picking up the binoculars in either
+   valley — and each of
    them asks for about a second of effort. Twenty-five seconds of scrolling let a visitor
    past the colouring having never touched a crayon, which is the one thing that beat
    exists to prevent.
 
    Nobody is trapped: the Skip control meets the current beat's gate outright, so the way
    through is a deliberate press rather than an accidental timeout. */
-const HOLD_KEEP = { colour:1, find:1, rfind:1 };
+const HOLD_KEEP = { colour:1, colour2:1, find:1, rfind:1 };
 const HOLD_AT = {};
 for (const _b of BEATS){
   if (!_b.gate || !_b.ask || HOLD_NEVER[_b.gate]) continue;
