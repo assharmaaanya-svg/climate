@@ -239,6 +239,8 @@ const PLATES = {
 };
 
 /* preload everything the piece will need, in rough order of appearance */
+/* what chapter one is waiting for, so the way-in card can wait for the same thing */
+const PRELOAD = { first:0, done:0, total:0 };
 function preloadPlates(){
   const order = ["updatedbedroomwithnotoys.jpg",
     "updatedbedroomwithwindowslightlyopenwithnotoys.jpg",
@@ -275,7 +277,41 @@ function preloadPlates(){
     "afterpollutionstarscene.png","afterrpllutionhighquality.png"];
   /* the binocular overlay is not here any more: the lookout draws its field of
      view rather than loading it. See build/06g-lookout.js. */
-  for (const n of order) loadImg(n);
+  /* TWO PHASES, AND THIS IS THE DIFFERENCE BETWEEN A LOCAL FILE AND A WEB SERVER.
+     Every one of these used to be requested at once. Opened from disk that is free and the
+     paintings are simply there; served over a network it is thirty-five megabytes racing
+     for the six connections a browser gives one host, and the four files chapter one
+     actually needs — 480 KB of them — sit in that queue behind everything the piece will
+     not want for another twenty minutes. So the visitor pressed Begin and got an empty
+     brown room, because the bedroom had not arrived yet. It was invisible in every test
+     because every test opened the file locally.
+
+     The first four are fetched alone. Everything else starts the moment they land, which
+     is a second or so, and streams in behind the visitor while they are reading the title
+     card and opening the curtains. `PRELOAD.first` is what the way-in card waits on.
+
+     The timeout is not a nicety: if one of those four 404s or a connection stalls, nobody
+     is left staring at a button that never becomes pressable. Twelve seconds and the piece
+     opens regardless, exactly as it did before any of this. */
+  const FIRST = 4;
+  const first = order.slice(0, FIRST), rest = order.slice(FIRST);
+  PRELOAD.total = first.length;
+  let released = 0;
+  const release = ()=>{
+    if (released) return;
+    released = 1; PRELOAD.first = 1;
+    for (const n of rest) loadImg(n);
+  };
+  const tick = ()=>{ PRELOAD.done++; if (PRELOAD.done >= PRELOAD.total) release(); };
+  for (const n of first){
+    const im = loadImg(n);
+    /* `addEventListener` and not `onload`: `loadImg` has already put its own handler there
+       and it is the one that clears `imgPending` and invalidates the plate cache. */
+    if (im.complete) tick();
+    else { im.addEventListener("load", tick, {once:true});
+           im.addEventListener("error", tick, {once:true}); }
+  }
+  setTimeout(release, 12000);
 }
 
 /* =========================================================================

@@ -1177,6 +1177,9 @@ function boot(){
     introOn = true;
     const go = ()=>{
       if (!introOn) return;
+      /* and not before there is a room to walk into. Every way in goes through here — the
+         button, a click on the card, Enter, Space — so one guard covers all of them. */
+      if (!PRELOAD.first) return;
       /* FIRST, WHILE THE GESTURE IS STILL WORTH SOMETHING. Before the flags, before the
          sound, before the timeouts — a fullscreen request made after any of those has run
          is made outside the user activation and is refused. Begin is already the visitor
@@ -1207,6 +1210,25 @@ function boot(){
          is already up behind it. */
       setTimeout(showPace, 1750);
     };
+    /* THE BUTTON WAITS FOR THE FIRST FOUR PAINTINGS.
+       Under a second on any ordinary connection, and it is the difference between opening
+       the curtains on a bedroom and opening them on an empty brown rectangle. It says so
+       plainly rather than sitting there inert, and it goes back to saying "Begin" the
+       moment the room is there. Polled rather than driven by a callback because the
+       release can also come from the loader's own timeout. */
+    const beginWord = beginEl.textContent;
+    (function waitForRoom(){
+      if (PRELOAD.first){
+        beginEl.disabled = false;
+        beginEl.textContent = beginWord;
+        beginEl.removeAttribute("aria-disabled");
+        return;
+      }
+      beginEl.disabled = true;
+      beginEl.setAttribute("aria-disabled", "true");
+      beginEl.textContent = "Loading";
+      setTimeout(waitForRoom, 120);
+    })();
     beginEl.addEventListener("click", go);
 
     introEl.addEventListener("click", e=>{ if (e.target===introEl) go(); });
@@ -1428,6 +1450,7 @@ window.__bluer = {
   curtainGap(){ if (!CGEO.built) return null;
     return { gapPx:+(CGEO.R.edges[0].xIn - CGEO.L.edges[0].xIn).toFixed(2),
              cL:+PROOM.cL.toFixed(3), cR:+PROOM.cR.toFixed(3), W:Math.round(W) }; },
+  get preload(){ return PRELOAD; },
   get draw(){ return DRAW; },
   get ptr(){ return P; },
   lookAim(){ return LAIM_DBG.slice(0,5); },

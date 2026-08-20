@@ -552,6 +552,10 @@
     padding:1em 2.2em; cursor:pointer; transition:transform .25s, background .25s;
     box-shadow:0 14px 40px rgba(0,0,0,.45); }
   #begin:hover{ background:#fff; transform:translateY(-2px); }
+  /* while the first paintings are still arriving. Quiet rather than broken: the same pill,
+     dimmed, not offering a hover it cannot honour. */
+  #begin:disabled{ opacity:.42; cursor:default; transform:none; box-shadow:none; }
+  #begin:disabled:hover{ background:#f0dfc4; transform:none; }
   #begin:focus-visible{ outline:2px solid #fff; outline-offset:4px; }
   #intro .fine{ margin-top:clamp(.9rem,2vh,1.4rem); font-family:var(--mono); font-size:.6rem; letter-spacing:.14em;
     text-transform:uppercase; opacity:.42; }
@@ -2062,6 +2066,8 @@ const PLATES = {
 };
 
 /* preload everything the piece will need, in rough order of appearance */
+/* what chapter one is waiting for, so the way-in card can wait for the same thing */
+const PRELOAD = { first:0, done:0, total:0 };
 function preloadPlates(){
   const order = ["updatedbedroomwithnotoys.jpg",
     "updatedbedroomwithwindowslightlyopenwithnotoys.jpg",
@@ -2098,7 +2104,41 @@ function preloadPlates(){
     "afterpollutionstarscene.png","afterrpllutionhighquality.png"];
   /* the binocular overlay is not here any more: the lookout draws its field of
      view rather than loading it. See build/06g-lookout.js. */
-  for (const n of order) loadImg(n);
+  /* TWO PHASES, AND THIS IS THE DIFFERENCE BETWEEN A LOCAL FILE AND A WEB SERVER.
+     Every one of these used to be requested at once. Opened from disk that is free and the
+     paintings are simply there; served over a network it is thirty-five megabytes racing
+     for the six connections a browser gives one host, and the four files chapter one
+     actually needs — 480 KB of them — sit in that queue behind everything the piece will
+     not want for another twenty minutes. So the visitor pressed Begin and got an empty
+     brown room, because the bedroom had not arrived yet. It was invisible in every test
+     because every test opened the file locally.
+
+     The first four are fetched alone. Everything else starts the moment they land, which
+     is a second or so, and streams in behind the visitor while they are reading the title
+     card and opening the curtains. `PRELOAD.first` is what the way-in card waits on.
+
+     The timeout is not a nicety: if one of those four 404s or a connection stalls, nobody
+     is left staring at a button that never becomes pressable. Twelve seconds and the piece
+     opens regardless, exactly as it did before any of this. */
+  const FIRST = 4;
+  const first = order.slice(0, FIRST), rest = order.slice(FIRST);
+  PRELOAD.total = first.length;
+  let released = 0;
+  const release = ()=>{
+    if (released) return;
+    released = 1; PRELOAD.first = 1;
+    for (const n of rest) loadImg(n);
+  };
+  const tick = ()=>{ PRELOAD.done++; if (PRELOAD.done >= PRELOAD.total) release(); };
+  for (const n of first){
+    const im = loadImg(n);
+    /* `addEventListener` and not `onload`: `loadImg` has already put its own handler there
+       and it is the one that clears `imgPending` and invalidates the plate cache. */
+    if (im.complete) tick();
+    else { im.addEventListener("load", tick, {once:true});
+           im.addEventListener("error", tick, {once:true}); }
+  }
+  setTimeout(release, 12000);
 }
 
 /* =========================================================================
@@ -17585,6 +17625,9 @@ function boot(){
     introOn = true;
     const go = ()=>{
       if (!introOn) return;
+      /* and not before there is a room to walk into. Every way in goes through here — the
+         button, a click on the card, Enter, Space — so one guard covers all of them. */
+      if (!PRELOAD.first) return;
       /* FIRST, WHILE THE GESTURE IS STILL WORTH SOMETHING. Before the flags, before the
          sound, before the timeouts — a fullscreen request made after any of those has run
          is made outside the user activation and is refused. Begin is already the visitor
@@ -17615,6 +17658,25 @@ function boot(){
          is already up behind it. */
       setTimeout(showPace, 1750);
     };
+    /* THE BUTTON WAITS FOR THE FIRST FOUR PAINTINGS.
+       Under a second on any ordinary connection, and it is the difference between opening
+       the curtains on a bedroom and opening them on an empty brown rectangle. It says so
+       plainly rather than sitting there inert, and it goes back to saying "Begin" the
+       moment the room is there. Polled rather than driven by a callback because the
+       release can also come from the loader's own timeout. */
+    const beginWord = beginEl.textContent;
+    (function waitForRoom(){
+      if (PRELOAD.first){
+        beginEl.disabled = false;
+        beginEl.textContent = beginWord;
+        beginEl.removeAttribute("aria-disabled");
+        return;
+      }
+      beginEl.disabled = true;
+      beginEl.setAttribute("aria-disabled", "true");
+      beginEl.textContent = "Loading";
+      setTimeout(waitForRoom, 120);
+    })();
     beginEl.addEventListener("click", go);
 
     introEl.addEventListener("click", e=>{ if (e.target===introEl) go(); });
@@ -17836,6 +17898,7 @@ window.__bluer = {
   curtainGap(){ if (!CGEO.built) return null;
     return { gapPx:+(CGEO.R.edges[0].xIn - CGEO.L.edges[0].xIn).toFixed(2),
              cL:+PROOM.cL.toFixed(3), cR:+PROOM.cR.toFixed(3), W:Math.round(W) }; },
+  get preload(){ return PRELOAD; },
   get draw(){ return DRAW; },
   get ptr(){ return P; },
   lookAim(){ return LAIM_DBG.slice(0,5); },

@@ -552,6 +552,10 @@
     padding:1em 2.2em; cursor:pointer; transition:transform .25s, background .25s;
     box-shadow:0 14px 40px rgba(0,0,0,.45); }
   #begin:hover{ background:#fff; transform:translateY(-2px); }
+  /* while the first paintings are still arriving. Quiet rather than broken: the same pill,
+     dimmed, not offering a hover it cannot honour. */
+  #begin:disabled{ opacity:.42; cursor:default; transform:none; box-shadow:none; }
+  #begin:disabled:hover{ background:#f0dfc4; transform:none; }
   #begin:focus-visible{ outline:2px solid #fff; outline-offset:4px; }
   #intro .fine{ margin-top:clamp(.9rem,2vh,1.4rem); font-family:var(--mono); font-size:.6rem; letter-spacing:.14em;
     text-transform:uppercase; opacity:.42; }
